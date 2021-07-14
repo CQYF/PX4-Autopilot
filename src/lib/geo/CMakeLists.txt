@@ -31,15 +31,14 @@
 #
 ############################################################################
 
-add_library(world_magnetic_model
-	geo_mag_declination.cpp
-	geo_mag_declination.h
-	geo_magnetic_tables.hpp
+add_library(geo
+	geo.cpp
+	geo.h
 )
-add_dependencies(world_magnetic_model prebuild_targets)
-target_compile_options(world_magnetic_model PRIVATE ${MAX_CUSTOM_OPT_LEVEL})
+add_dependencies(geo prebuild_targets)
+target_compile_options(geo PRIVATE ${MAX_CUSTOM_OPT_LEVEL})
+target_link_libraries(geo PRIVATE m)
 
 if(CMAKE_PROJECT_NAME MATCHES "px4") # temporary
-	add_compile_options(-Wno-double-promotion)
-	px4_add_unit_gtest(SRC test_geo_lookup.cpp LINKLIBS world_magnetic_model)
+	px4_add_unit_gtest(SRC test_geo.cpp LINKLIBS geo)
 endif()
