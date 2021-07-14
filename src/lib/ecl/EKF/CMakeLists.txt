@@ -1,6 +1,6 @@
 ############################################################################
 #
-#   Copyright (c) 2017 PX4 Development Team. All rights reserved.
+#   Copyright (c) 2015-2018 ECL Development Team. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -12,7 +12,7 @@
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
-# 3. Neither the name PX4 nor the names of its contributors may be
+# 3. Neither the name ECL nor the names of its contributors may be
 #    used to endorse or promote products derived from this software
 #    without specific prior written permission.
 #
@@ -31,43 +31,33 @@
 #
 ############################################################################
 
-px4_add_git_submodule(TARGET git_matrix PATH "matrix")
-px4_add_git_submodule(TARGET git_monocypher PATH "crypto/monocypher")
+add_library(ecl_EKF
+	airspeed_fusion.cpp
+	control.cpp
+	mag_control.cpp
+	covariance.cpp
+	drag_fusion.cpp
+	ekf.cpp
+	ekf_helper.cpp
+	estimator_interface.cpp
+	gps_checks.cpp
+	mag_fusion.cpp
+	optflow_fusion.cpp
+	sideslip_fusion.cpp
+	terrain_estimator.cpp
+	vel_pos_fusion.cpp
+	gps_yaw_fusion.cpp
+	imu_down_sampler.cpp
+	EKFGSF_yaw.cpp
+	sensor_range_finder.cpp
+	utils.cpp
+)
 
-add_subdirectory(airspeed)
-add_subdirectory(airspeed_validator)
-add_subdirectory(avoidance)
-add_subdirectory(battery)
-add_subdirectory(bezier)
-add_subdirectory(cdev)
-add_subdirectory(circuit_breaker)
-add_subdirectory(collision_prevention)
-add_subdirectory(controllib)
-add_subdirectory(component_information)
-add_subdirectory(conversion)
-add_subdirectory(crypto)
-add_subdirectory(drivers)
-add_subdirectory(ecl)
-add_subdirectory(hysteresis)
-add_subdirectory(l1)
-add_subdirectory(landing_slope)
-add_subdirectory(led)
-add_subdirectory(magnetometer_bias_estimator)
-add_subdirectory(mathlib)
-add_subdirectory(mixer)
-add_subdirectory(mixer_module)
-add_subdirectory(motion_planning)
-add_subdirectory(output_limit)
-add_subdirectory(perf)
-add_subdirectory(pid)
-add_subdirectory(pwm)
-add_subdirectory(rc)
-add_subdirectory(sensor_calibration)
-add_subdirectory(slew_rate)
-add_subdirectory(systemlib)
-add_subdirectory(tecs)
-add_subdirectory(terrain_estimation)
-add_subdirectory(tunes)
-add_subdirectory(version)
-add_subdirectory(weather_vane)
-add_subdirectory(world_magnetic_model)
+add_dependencies(ecl_EKF prebuild_targets)
+target_compile_definitions(ecl_EKF PRIVATE -DMODULE_NAME="ecl/EKF")
+target_include_directories(ecl_EKF PUBLIC ${ECL_SOURCE_DIR})
+target_link_libraries(ecl_EKF PRIVATE ecl_geo world_magnetic_model)
+
+set_target_properties(ecl_EKF PROPERTIES PUBLIC_HEADER "ekf.h")
+
+target_compile_options(ecl_EKF PRIVATE -fno-associative-math)
