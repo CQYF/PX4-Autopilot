@@ -1,6 +1,6 @@
 ############################################################################
 #
-#   Copyright (c) 2019 PX4 Development Team. All rights reserved.
+#   Copyright (c) 2018-2021 PX4 Development Team. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -31,11 +31,8 @@
 #
 ############################################################################
 
-px4_add_library(AirspeedValidator AirspeedValidator.cpp)
-
-target_include_directories(AirspeedValidator
-	PUBLIC
-	${CMAKE_CURRENT_SOURCE_DIR}
+add_library(wind_estimator
+	WindEstimator.cpp
+	WindEstimator.hpp
 )
-
-target_link_libraries(AirspeedValidator PUBLIC ecl_airdata)
+add_dependencies(wind_estimator prebuild_targets)
