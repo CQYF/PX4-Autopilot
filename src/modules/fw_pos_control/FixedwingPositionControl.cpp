@@ -3159,6 +3159,11 @@ float FixedwingPositionControl::getLoadFactor()
 
 }
 
+int FixedwingPositionControl::print_status()
+{
+	PX4_INFO("control_mode_current: %d", _control_mode_current);
+	return 0;
+}
 
 extern "C" __EXPORT int fw_pos_control_main(int argc, char *argv[])
 {

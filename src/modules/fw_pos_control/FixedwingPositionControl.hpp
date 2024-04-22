@@ -194,6 +194,8 @@ public:
 
 	bool init();
 
+	int print_status() override;
+
 private:
 	void Run() override;
 
