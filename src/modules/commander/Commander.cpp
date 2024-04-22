@@ -475,6 +475,11 @@ int Commander::custom_command(int argc, char *argv[])
 		return (ret ? 0 : 1);
 	}
 
+	if (!strcmp(argv[0], "figureeight")) {
+		send_vehicle_command(vehicle_command_s::VEHICLE_CMD_DO_FIGUREEIGHT);
+
+		return 0;
+	}
 
 #endif
 
