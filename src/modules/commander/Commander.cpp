@@ -1732,6 +1732,8 @@ void Commander::updateParameters()
 		_mode_switch_mapped = (value_int32 > 0);
 	}
 
+	_vehicle_status.is_wacm = true;//! 赶工期，暂时这么写
+
 }
 
 void Commander::run()

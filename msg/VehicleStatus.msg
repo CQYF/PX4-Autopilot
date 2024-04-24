@@ -112,6 +112,9 @@ bool is_vtol_tailsitter  # True if the system performs a 90° pitch down rotatio
 bool in_transition_mode  # True if VTOL is doing a transition
 bool in_transition_to_fw # True if VTOL is doing a transition from MC to FW
 
+#水空flag
+bool is_wacm
+
 # MAVLink identification
 uint8 system_type  # system type, contains mavlink MAV_TYPE
 uint8 system_id	   # system id, contains MAVLink's system ID field
