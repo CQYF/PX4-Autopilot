@@ -247,6 +247,7 @@ set(msg_files
 	VehicleTrajectoryWaypoint.msg
 	VelocityLimits.msg
 	VtolVehicleStatus.msg
+	WacmMode.msg
 	WheelEncoders.msg
 	Wind.msg
 	YawEstimatorStatus.msg

@@ -73,6 +73,7 @@
 
 #include <uORB/topics/mavlink_log.h>
 #include <uORB/topics/tune_control.h>
+#include <uORB/topics/wacm_mode.h>
 
 typedef enum VEHICLE_MODE_FLAG {
 	VEHICLE_MODE_FLAG_CUSTOM_MODE_ENABLED  = 1,   /* 0b00000001 Reserved for future use. | */
@@ -477,6 +478,26 @@ int Commander::custom_command(int argc, char *argv[])
 
 	if (!strcmp(argv[0], "figureeight")) {
 		send_vehicle_command(vehicle_command_s::VEHICLE_CMD_DO_FIGUREEIGHT);
+
+		return 0;
+	}
+
+	if (!strcmp(argv[0], "wacm")) {
+		uORB::Publication<wacm_mode_s> wacm_mode_pub{ORB_ID(wacm_mode)};
+		wacm_mode_s wacm_mode_msg;
+		bool is_pub = false;
+
+		if (argc > 1) {
+			if (!strcmp(argv[1], "dive")) {
+				wacm_mode_msg.mode = wacm_mode_s::WACM_MODE_AUTO_DIVE;
+				is_pub = true;
+			}
+		}
+
+		if (is_pub) {
+			wacm_mode_msg.timestamp = hrt_absolute_time();
+			wacm_mode_pub.publish(wacm_mode_msg);
+		}
 
 		return 0;
 	}
