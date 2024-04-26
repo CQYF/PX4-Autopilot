@@ -187,6 +187,19 @@ static bool send_vehicle_command(const uint32_t cmd, const float param1 = NAN, c
 	return vcmd_pub.publish(vcmd);
 }
 
+static bool send_wacm_mode(uint8_t mode)
+{
+	static uORB::Publication<wacm_mode_s> wacm_mode_pub{ORB_ID(wacm_mode)};
+	wacm_mode_s wacm_mode_msg{};
+	if(mode <= wacm_mode_s::WACM_MODE_MAX) {
+		wacm_mode_msg.mode = mode;
+		wacm_mode_msg.timestamp = hrt_absolute_time();
+		wacm_mode_pub.publish(wacm_mode_msg);
+		return true;
+	}
+	return false;
+}
+
 static bool wait_for_vehicle_command_reply(const uint32_t cmd,
 		uORB::SubscriptionData<vehicle_command_ack_s> &vehicle_command_ack_sub)
 {
@@ -483,20 +496,11 @@ int Commander::custom_command(int argc, char *argv[])
 	}
 
 	if (!strcmp(argv[0], "wacm")) {
-		uORB::Publication<wacm_mode_s> wacm_mode_pub{ORB_ID(wacm_mode)};
-		wacm_mode_s wacm_mode_msg;
-		bool is_pub = false;
 
 		if (argc > 1) {
 			if (!strcmp(argv[1], "dive")) {
-				wacm_mode_msg.mode = wacm_mode_s::WACM_MODE_AUTO_DIVE;
-				is_pub = true;
+				send_wacm_mode(wacm_mode_s::WACM_MODE_AUTO_DIVE);
 			}
-		}
-
-		if (is_pub) {
-			wacm_mode_msg.timestamp = hrt_absolute_time();
-			wacm_mode_pub.publish(wacm_mode_msg);
 		}
 
 		return 0;
