@@ -1,0 +1,251 @@
+/****************************************************************************
+ *
+ *   Copyright (c) 2013-2023 PX4 Development Team. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in
+ *    the documentation and/or other materials provided with the
+ *    distribution.
+ * 3. Neither the name PX4 nor the names of its contributors may be
+ *    used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ ****************************************************************************/
+
+#include "WacmAttitudeControl.hpp"
+
+using namespace time_literals;
+using namespace matrix;
+
+using math::constrain;
+using math::radians;
+
+WacmAttitudeControl::WacmAttitudeControl() :
+	ModuleParams(nullptr),
+	ScheduledWorkItem(MODULE_NAME, px4::wq_configurations::nav_and_controllers),
+	_loop_perf(perf_alloc(PC_ELAPSED, MODULE_NAME": cycle"))
+{
+	/* fetch initial parameter values */
+	parameters_update();
+}
+
+WacmAttitudeControl::~WacmAttitudeControl()
+{
+	perf_free(_loop_perf);
+}
+
+bool
+WacmAttitudeControl::init()
+{
+	if (!_att_sub.registerCallback()) {
+		PX4_ERR("callback registration failed");
+		return false;
+	}
+
+	return true;
+}
+
+void
+WacmAttitudeControl::parameters_update()
+{
+	_roll_ctrl.set_time_constant(_param_fw_r_tc.get());
+	_roll_ctrl.set_max_rate(radians(_param_fw_r_rmax.get()));
+
+	_pitch_ctrl.set_time_constant(_param_fw_p_tc.get());
+	_pitch_ctrl.set_max_rate_pos(radians(_param_fw_p_rmax_pos.get()));
+	_pitch_ctrl.set_max_rate_neg(radians(_param_fw_p_rmax_neg.get()));
+
+	_yaw_ctrl.set_max_rate(radians(_param_fw_y_rmax.get()));
+}
+
+void
+WacmAttitudeControl::vehicle_attitude_setpoint_poll()
+{
+	if (_att_sp_sub.update(&_att_sp)) {
+		_rates_sp.thrust_body[0] = _att_sp.thrust_body[0];
+		_rates_sp.thrust_body[1] = _att_sp.thrust_body[1];
+		_rates_sp.thrust_body[2] = _att_sp.thrust_body[2];
+	}
+}
+
+float WacmAttitudeControl::get_airspeed_constrained()
+{
+	// if no airspeed measurement is available out best guess is to use the trim airspeed
+	float airspeed = _param_fw_airspd_trim.get();
+
+	return math::constrain(airspeed, _param_fw_airspd_stall.get(), _param_fw_airspd_max.get());
+}
+
+void WacmAttitudeControl::Run()
+{
+	if (should_exit()) {
+		_att_sub.unregisterCallback();
+		exit_and_cleanup();
+		return;
+	}
+
+	perf_begin(_loop_perf);
+
+	// only run controller if attitude changed
+	if (_att_sub.updated() || (hrt_elapsed_time(&_last_run) > 20_ms)) {
+
+		// only update parameters if they changed
+		const bool params_updated = _parameter_update_sub.updated();
+
+		// check for parameter updates
+		if (params_updated) {
+			// clear update
+			parameter_update_s pupdate;
+			_parameter_update_sub.copy(&pupdate);
+
+			// update parameters from storage
+			updateParams();
+			parameters_update();
+		}
+
+		float dt = 0.f;
+
+		static constexpr float DT_MIN = 0.002f;
+		static constexpr float DT_MAX = 0.04f;
+
+		vehicle_attitude_s att{};
+
+		if (_att_sub.copy(&att)) {
+			dt = math::constrain((att.timestamp_sample - _last_run) * 1e-6f, DT_MIN, DT_MAX);
+			_last_run = att.timestamp_sample;
+
+			// get current rotation matrix and euler angles from control state quaternions
+			_R = matrix::Quatf(att.q);
+		}
+
+		if (dt < DT_MIN || dt > DT_MAX) {
+			const hrt_abstime time_now_us = hrt_absolute_time();
+			dt = math::constrain((time_now_us - _last_run) * 1e-6f, DT_MIN, DT_MAX);
+			_last_run = time_now_us;
+		}
+
+		const matrix::Eulerf euler_angles(_R);
+
+		vehicle_attitude_setpoint_poll();
+
+		_vehicle_status_sub.update(&_vehicle_status);
+
+		if (_vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_EXTERNAL2) {
+
+			/* 这里应该是说只要控制器不运行就复位
+			 */
+			if (_att_sp.reset_integral) {
+
+				_rates_sp.reset_integral = true;
+
+			} else {
+				_rates_sp.reset_integral = false;
+			}
+
+			/* Run attitude controllers */
+
+			if (PX4_ISFINITE(_att_sp.roll_body) && PX4_ISFINITE(_att_sp.pitch_body)) {
+				_roll_ctrl.control_roll(_att_sp.roll_body, _yaw_ctrl.get_euler_rate_setpoint(), euler_angles.phi(),
+							euler_angles.theta());
+				_pitch_ctrl.control_pitch(_att_sp.pitch_body, _yaw_ctrl.get_euler_rate_setpoint(), euler_angles.phi(),
+								euler_angles.theta());
+				_yaw_ctrl.control_yaw(_att_sp.roll_body, _pitch_ctrl.get_euler_rate_setpoint(), euler_angles.phi(),
+							euler_angles.theta(), get_airspeed_constrained());
+
+				/* Update input data for rate controllers */
+				Vector3f body_rates_setpoint = Vector3f(_roll_ctrl.get_body_rate_setpoint(), _pitch_ctrl.get_body_rate_setpoint(),
+									_yaw_ctrl.get_body_rate_setpoint());
+
+				/* Publish the rate setpoint for analysis once available */
+				_rates_sp.roll = body_rates_setpoint(0);
+				_rates_sp.pitch = body_rates_setpoint(1);
+				_rates_sp.yaw = body_rates_setpoint(2);
+
+				_rates_sp.timestamp = hrt_absolute_time();
+
+				_rate_sp_pub.publish(_rates_sp);
+			}
+
+		} else {
+
+		}
+	}
+
+	// backup schedule
+	ScheduleDelayed(20_ms);
+
+	perf_end(_loop_perf);
+}
+
+int WacmAttitudeControl::task_spawn(int argc, char *argv[])
+{
+	WacmAttitudeControl *instance = new WacmAttitudeControl();
+
+	if (instance) {
+		_object.store(instance);
+		_task_id = task_id_is_work_queue;
+
+		if (instance->init()) {
+			return PX4_OK;
+		}
+
+	} else {
+		PX4_ERR("alloc failed");
+	}
+
+	delete instance;
+	_object.store(nullptr);
+	_task_id = -1;
+
+	return PX4_ERROR;
+}
+
+int WacmAttitudeControl::custom_command(int argc, char *argv[])
+{
+	return print_usage("unknown command");
+}
+
+int WacmAttitudeControl::print_usage(const char *reason)
+{
+	if (reason) {
+		PX4_WARN("%s\n", reason);
+	}
+
+	PRINT_MODULE_DESCRIPTION(
+		R"DESCR_STR(
+### Description
+wacm_att_control is the water-air cross medium attitude controller.
+
+)DESCR_STR");
+
+	/*PRINT_MODULE_USAGE_NAME("fw_att_control", "controller");
+	PRINT_MODULE_USAGE_COMMAND("start");
+	PRINT_MODULE_USAGE_ARG("vtol", "VTOL mode", true);
+	PRINT_MODULE_USAGE_DEFAULT_COMMANDS();*/
+
+	return 0;
+}
+
+extern "C" __EXPORT int wacm_att_control_main(int argc, char *argv[])
+{
+	return WacmAttitudeControl::main(argc, argv);
+}

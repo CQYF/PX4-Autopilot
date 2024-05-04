@@ -1,0 +1,5 @@
+menuconfig MODULES_WACM_ATT_CONTROL
+	bool "wacm_att_control"
+	default n
+	---help---
+		Enable support for wacm_att_control
