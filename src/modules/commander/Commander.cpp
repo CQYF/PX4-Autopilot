@@ -431,6 +431,34 @@ int Commander::custom_command(int argc, char *argv[])
 				send_vehicle_command(vehicle_command_s::VEHICLE_CMD_DO_SET_MODE, 1, PX4_CUSTOM_MAIN_MODE_AUTO,
 						     PX4_CUSTOM_SUB_MODE_EXTERNAL1);
 
+			} else if (!strcmp(argv[1], "ext2")) {
+				send_vehicle_command(vehicle_command_s::VEHICLE_CMD_DO_SET_MODE, 1, PX4_CUSTOM_MAIN_MODE_AUTO,
+						     PX4_CUSTOM_SUB_MODE_EXTERNAL2);
+
+			} else if (!strcmp(argv[1], "ext3")) {
+				send_vehicle_command(vehicle_command_s::VEHICLE_CMD_DO_SET_MODE, 1, PX4_CUSTOM_MAIN_MODE_AUTO,
+						     PX4_CUSTOM_SUB_MODE_EXTERNAL3);
+
+			} else if (!strcmp(argv[1], "ext4")) {
+				send_vehicle_command(vehicle_command_s::VEHICLE_CMD_DO_SET_MODE, 1, PX4_CUSTOM_MAIN_MODE_AUTO,
+						     PX4_CUSTOM_SUB_MODE_EXTERNAL4);
+
+			} else if (!strcmp(argv[1], "ext5")) {
+				send_vehicle_command(vehicle_command_s::VEHICLE_CMD_DO_SET_MODE, 1, PX4_CUSTOM_MAIN_MODE_AUTO,
+						     PX4_CUSTOM_SUB_MODE_EXTERNAL5);
+
+			} else if (!strcmp(argv[1], "ext6")) {
+				send_vehicle_command(vehicle_command_s::VEHICLE_CMD_DO_SET_MODE, 1, PX4_CUSTOM_MAIN_MODE_AUTO,
+						     PX4_CUSTOM_SUB_MODE_EXTERNAL6);
+
+			} else if (!strcmp(argv[1], "ext7")) {
+				send_vehicle_command(vehicle_command_s::VEHICLE_CMD_DO_SET_MODE, 1, PX4_CUSTOM_MAIN_MODE_AUTO,
+						     PX4_CUSTOM_SUB_MODE_EXTERNAL7);
+
+			} else if (!strcmp(argv[1], "ext8")) {
+				send_vehicle_command(vehicle_command_s::VEHICLE_CMD_DO_SET_MODE, 1, PX4_CUSTOM_MAIN_MODE_AUTO,
+						     PX4_CUSTOM_SUB_MODE_EXTERNAL8);
+
 			} else {
 				PX4_ERR("argument %s unsupported.", argv[1]);
 			}
@@ -498,6 +526,10 @@ int Commander::custom_command(int argc, char *argv[])
 	if (!strcmp(argv[0], "wacm")) {
 
 		if (argc > 1) {
+			if (!strcmp(argv[1], "unused")) {
+				send_wacm_mode(wacm_mode_s::WACM_MODE_UNUSED);
+			}
+
 			if (!strcmp(argv[1], "dive")) {
 				send_wacm_mode(wacm_mode_s::WACM_MODE_AUTO_DIVE);
 			}

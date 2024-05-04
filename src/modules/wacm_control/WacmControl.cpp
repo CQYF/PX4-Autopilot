@@ -183,7 +183,7 @@ void WacmControl::run()
 			_cfg_ctl_sp_msg.timestamp = hrt_absolute_time();
 
 			_config_control_setpoints_pub.publish(_cfg_ctl_sp_msg);
-			PX4_INFO("register reply, success: %d, mode id: %d, check id: %d", _reg_reply_msg.success, _reg_reply_msg.mode_id, _reg_reply_msg.arming_check_id);
+			PX4_INFO("register reply, success: %d, name: %s, mode id: %d, check id: %d", _reg_reply_msg.success, _reg_reply_msg.name, _reg_reply_msg.mode_id, _reg_reply_msg.arming_check_id);
 		}
 
 		if(_arming_check_request_sub.update(&_arming_check_request_msg))
@@ -218,8 +218,8 @@ void WacmControl::run()
 		{
 			//PX4_INFO("Publish SP");
 			_att_sp_msg.yaw_body = 0;
-			_att_sp_msg.roll_body = 0;
-			_att_sp_msg.pitch_body = 0.1;
+			_att_sp_msg.roll_body = -0.2;
+			_att_sp_msg.pitch_body = 0;
 			_att_sp_msg.thrust_body[0] = 0.5;
 			_att_sp_msg.thrust_body[1] = 0;
 			_att_sp_msg.thrust_body[2] = 0;
