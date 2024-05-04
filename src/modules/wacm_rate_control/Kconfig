@@ -1,0 +1,5 @@
+menuconfig MODULES_WACM_RATE_CONTROL
+	bool "wacm_rate_control"
+	default n
+	---help---
+		Enable support for wacm_rate_control

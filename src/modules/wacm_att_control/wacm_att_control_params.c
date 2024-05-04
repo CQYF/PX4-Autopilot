@@ -51,7 +51,7 @@
  * @max 1.0
  * @decimal 2
  * @increment 0.05
- * @group FW Attitude Control
+ * @group Wacm Attitude Control
  */
 PARAM_DEFINE_FLOAT(WACM_R_TC, 0.4f);
 
@@ -66,7 +66,7 @@ PARAM_DEFINE_FLOAT(WACM_R_TC, 0.4f);
  * @max 1.0
  * @decimal 2
  * @increment 0.05
- * @group FW Attitude Control
+ * @group Wacm Attitude Control
  */
 PARAM_DEFINE_FLOAT(WACM_P_TC, 0.4f);
 
@@ -78,7 +78,7 @@ PARAM_DEFINE_FLOAT(WACM_P_TC, 0.4f);
  * @max 180
  * @decimal 1
  * @increment 0.5
- * @group FW Attitude Control
+ * @group Wacm Attitude Control
  */
 PARAM_DEFINE_FLOAT(WACM_P_RMAX_POS, 60.0f);
 
@@ -90,7 +90,7 @@ PARAM_DEFINE_FLOAT(WACM_P_RMAX_POS, 60.0f);
  * @max 180
  * @decimal 1
  * @increment 0.5
- * @group FW Attitude Control
+ * @group Wacm Attitude Control
  */
 PARAM_DEFINE_FLOAT(WACM_P_RMAX_NEG, 60.0f);
 
@@ -102,7 +102,7 @@ PARAM_DEFINE_FLOAT(WACM_P_RMAX_NEG, 60.0f);
  * @max 180
  * @decimal 1
  * @increment 0.5
- * @group FW Attitude Control
+ * @group Wacm Attitude Control
  */
 PARAM_DEFINE_FLOAT(WACM_R_RMAX, 70.0f);
 
@@ -114,6 +114,6 @@ PARAM_DEFINE_FLOAT(WACM_R_RMAX, 70.0f);
  * @max 180
  * @decimal 1
  * @increment 0.5
- * @group FW Attitude Control
+ * @group Wacm Attitude Control
  */
 PARAM_DEFINE_FLOAT(WACM_Y_RMAX, 50.0f);
