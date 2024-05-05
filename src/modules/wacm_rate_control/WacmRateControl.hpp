@@ -123,29 +123,29 @@ private:
 	float _battery_scale{1.0f};
 
 	DEFINE_PARAMETERS(
-		(ParamFloat<px4::params::FW_AIRSPD_MAX>) _param_fw_airspd_max,
-		(ParamFloat<px4::params::FW_AIRSPD_MIN>) _param_fw_airspd_min,
-		(ParamFloat<px4::params::FW_AIRSPD_STALL>) _param_fw_airspd_stall,
-		(ParamFloat<px4::params::FW_AIRSPD_TRIM>) _param_fw_airspd_trim,
+		(ParamFloat<px4::params::FW_AIRSPD_MAX>) _param_fw_airspd_max,		//最大空速
+		(ParamFloat<px4::params::FW_AIRSPD_MIN>) _param_fw_airspd_min,		//最小空速
+		(ParamFloat<px4::params::FW_AIRSPD_STALL>) _param_fw_airspd_stall,	//失速空速
+		(ParamFloat<px4::params::FW_AIRSPD_TRIM>) _param_fw_airspd_trim,	//平衡空速
 
-		(ParamInt<px4::params::WA_ARSP_SCALE_EN>) _param_fw_arsp_scale_en,
+		(ParamInt<px4::params::WA_ARSP_SCALE_EN>) _param_fw_arsp_scale_en,	//启用空速系数（根据空速对控制器进行补偿）
 
-		(ParamBool<px4::params::WA_BAT_SCALE_EN>) _param_fw_bat_scale_en,
+		(ParamBool<px4::params::WA_BAT_SCALE_EN>) _param_fw_bat_scale_en,	//启用电池系数（应该是当电池输出能力降低时，对推力输出进行放大）
 
-		(ParamFloat<px4::params::WA_DTRIM_P_VMAX>) _param_fw_dtrim_p_vmax,
+		(ParamFloat<px4::params::WA_DTRIM_P_VMAX>) _param_fw_dtrim_p_vmax,	//最大空速下相较于平衡空速还需要额外补偿多少pitch力矩才能使让pitch轴不动
 		(ParamFloat<px4::params::WA_DTRIM_P_VMIN>) _param_fw_dtrim_p_vmin,
 		(ParamFloat<px4::params::WA_DTRIM_R_VMAX>) _param_fw_dtrim_r_vmax,
 		(ParamFloat<px4::params::WA_DTRIM_R_VMIN>) _param_fw_dtrim_r_vmin,
 		(ParamFloat<px4::params::WA_DTRIM_Y_VMAX>) _param_fw_dtrim_y_vmax,
 		(ParamFloat<px4::params::WA_DTRIM_Y_VMIN>) _param_fw_dtrim_y_vmin,
 
-		(ParamFloat<px4::params::WA_PR_FF>) _param_fw_pr_ff,
+		(ParamFloat<px4::params::WA_PR_FF>) _param_fw_pr_ff,			//pitch rate控制器的前馈、ki、imax、kp、kd
 		(ParamFloat<px4::params::WA_PR_I>) _param_fw_pr_i,
 		(ParamFloat<px4::params::WA_PR_IMAX>) _param_fw_pr_imax,
 		(ParamFloat<px4::params::WA_PR_P>) _param_fw_pr_p,
 		(ParamFloat<px4::params::WA_PR_D>) _param_fw_pr_d,
 
-		(ParamFloat<px4::params::WA_RLL_TO_YAW_FF>) _param_fw_rll_to_yaw_ff,
+		(ParamFloat<px4::params::WA_RLL_TO_YAW_FF>) _param_fw_rll_to_yaw_ff,	//将roll轴力矩直接前馈到yaw轴上
 		(ParamFloat<px4::params::WA_RR_FF>) _param_fw_rr_ff,
 		(ParamFloat<px4::params::WA_RR_I>) _param_fw_rr_i,
 		(ParamFloat<px4::params::WA_RR_IMAX>) _param_fw_rr_imax,
@@ -158,7 +158,7 @@ private:
 		(ParamFloat<px4::params::WA_YR_P>) _param_fw_yr_p,
 		(ParamFloat<px4::params::WA_YR_D>) _param_fw_yr_d,
 
-		(ParamFloat<px4::params::TRIM_PITCH>) _param_trim_pitch,
+		(ParamFloat<px4::params::TRIM_PITCH>) _param_trim_pitch,		//平衡空速下需要补偿多少pitch力矩才能使让pitch轴不动
 		(ParamFloat<px4::params::TRIM_ROLL>) _param_trim_roll,
 		(ParamFloat<px4::params::TRIM_YAW>) _param_trim_yaw
 	)

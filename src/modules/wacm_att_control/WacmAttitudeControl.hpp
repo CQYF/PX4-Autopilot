@@ -113,18 +113,18 @@ private:
 	hrt_abstime _last_run{0};
 
 	DEFINE_PARAMETERS(
-		(ParamFloat<px4::params::FW_AIRSPD_MAX>) _param_fw_airspd_max,
-		(ParamFloat<px4::params::FW_AIRSPD_STALL>) _param_fw_airspd_stall,
-		(ParamFloat<px4::params::FW_AIRSPD_TRIM>) _param_fw_airspd_trim,
+		(ParamFloat<px4::params::FW_AIRSPD_MAX>) _param_fw_airspd_max,		//最大空速
+		(ParamFloat<px4::params::FW_AIRSPD_STALL>) _param_fw_airspd_stall,	//失速空速
+		(ParamFloat<px4::params::FW_AIRSPD_TRIM>) _param_fw_airspd_trim,	//平衡空速
 
-		(ParamFloat<px4::params::WACM_P_RMAX_NEG>) _param_fw_p_rmax_neg,
-		(ParamFloat<px4::params::WACM_P_RMAX_POS>) _param_fw_p_rmax_pos,
-		(ParamFloat<px4::params::WACM_P_TC>) _param_fw_p_tc,
+		(ParamFloat<px4::params::WACM_P_RMAX_NEG>) _param_fw_p_rmax_neg,	//机体坐标系下pitch变化率限幅（下限）
+		(ParamFloat<px4::params::WACM_P_RMAX_POS>) _param_fw_p_rmax_pos,	//机体坐标系下pitch变化率限幅（上限）
+		(ParamFloat<px4::params::WACM_P_TC>) _param_fw_p_tc,			//pitch控制器比例时间常数（就是比例因子的倒数）
 
-		(ParamFloat<px4::params::WACM_R_RMAX>) _param_fw_r_rmax,
-		(ParamFloat<px4::params::WACM_R_TC>) _param_fw_r_tc,
+		(ParamFloat<px4::params::WACM_R_RMAX>) _param_fw_r_rmax,		//机体坐标系下roll变化率限幅
+		(ParamFloat<px4::params::WACM_R_TC>) _param_fw_r_tc,			//roll控制器比例时间常数（就是比例因子的倒数）
 
-		(ParamFloat<px4::params::WACM_Y_RMAX>) _param_fw_y_rmax
+		(ParamFloat<px4::params::WACM_Y_RMAX>) _param_fw_y_rmax			//机体坐标系下yaw变化率限幅（yaw的变化率直接由当前的roll角和pitch角计算得到，没有反馈控制）
 
 	)
 
