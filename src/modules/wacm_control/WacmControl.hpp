@@ -49,6 +49,7 @@
 #include <uORB/topics/arming_check_request.h>
 #include <uORB/topics/vehicle_attitude_setpoint.h>
 
+#include <drivers/drv_hrt.h>
 
 using namespace time_literals;
 
@@ -82,6 +83,11 @@ public:
 
 private:
 
+	struct RegisteredMode {
+		int8_t mode_id;
+		int8_t arming_check_id;
+	};
+
 	uORB::Publication<vehicle_control_mode_s> 		_config_control_setpoints_pub{ORB_ID(config_control_setpoints)};
 	uORB::Publication<register_ext_component_request_s> 	_register_ext_component_request_pub{ORB_ID(register_ext_component_request)};
 	uORB::Publication<arming_check_reply_s> 		_arming_check_reply_pub{ORB_ID(arming_check_reply)};
@@ -98,6 +104,11 @@ private:
 	vehicle_control_mode_s _cfg_ctl_sp_msg{0};
 	vehicle_attitude_setpoint_s _att_sp_msg{0};
 	vehicle_status_s _vehicle_status;
+
+	int _registered_mode_num{0};
+	RegisteredMode _registered_mode[8];
+
+	hrt_abstime _last_register_time;
 
 	/**
 	 * Check for parameter changes and update them if needed.

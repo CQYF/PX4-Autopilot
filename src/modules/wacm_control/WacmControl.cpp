@@ -42,6 +42,8 @@
 
 #include <matrix/math.hpp>
 
+#include "user_hfile/wacm_mode_name.hpp"
+
 int WacmControl::print_status()
 {
 	PX4_INFO("Running");
@@ -145,71 +147,90 @@ void WacmControl::run()
 
 	usleep(1000000);
 
-	_reg_request_msg.request_id = 1;
-	_reg_request_msg.px4_ros2_api_version = register_ext_component_request_s::LATEST_PX4_ROS2_API_VERSION;
-	_reg_request_msg.register_arming_check = true;
-	_reg_request_msg.register_mode = true;
-	_reg_request_msg.register_mode_executor = false;
-	_reg_request_msg.enable_replace_internal_mode = false;
-	_reg_request_msg.replace_internal_mode = 0;
-	_reg_request_msg.activate_mode_immediately = false;
-	snprintf(_reg_request_msg.name, sizeof(_reg_request_msg.name), "mode1");
-	_reg_request_msg.timestamp = hrt_absolute_time();
-
-	_register_ext_component_request_pub.publish(_reg_request_msg);
-	PX4_INFO("Request Send");
+	_last_register_time = hrt_absolute_time();
 
 	while (!should_exit()) {
 
-		usleep(10000);
+		usleep(1_ms);
+
+		if (_registered_mode_num < 8 && hrt_absolute_time() - _last_register_time > 50_ms)
+		{
+			_reg_request_msg.request_id = _registered_mode_num + 1;
+			_reg_request_msg.px4_ros2_api_version = register_ext_component_request_s::LATEST_PX4_ROS2_API_VERSION;
+			_reg_request_msg.register_arming_check = true;
+			_reg_request_msg.register_mode = true;
+			_reg_request_msg.register_mode_executor = false;
+			_reg_request_msg.enable_replace_internal_mode = false;
+			_reg_request_msg.replace_internal_mode = 0;
+			_reg_request_msg.activate_mode_immediately = false;
+			snprintf(_reg_request_msg.name, sizeof(_reg_request_msg.name), "mode%d", _registered_mode_num + 1);
+			_reg_request_msg.timestamp = hrt_absolute_time();
+
+			_register_ext_component_request_pub.publish(_reg_request_msg);
+
+			_last_register_time = hrt_absolute_time();
+
+			PX4_INFO("Mode register request Send, request_id: %d",  _registered_mode_num + 1);
+		}
 
 		if(_register_ext_component_reply_sub.update(&_reg_reply_msg))
 		{
-			_cfg_ctl_sp_msg.flag_armed = true;//这个变量似乎没有用
-			_cfg_ctl_sp_msg.flag_multicopter_position_control_enabled = false;
-			_cfg_ctl_sp_msg.flag_control_manual_enabled = false;
-			_cfg_ctl_sp_msg.flag_control_auto_enabled = false;
-			_cfg_ctl_sp_msg.flag_control_offboard_enabled = false;
-			_cfg_ctl_sp_msg.flag_control_rates_enabled = true;
-			_cfg_ctl_sp_msg.flag_control_attitude_enabled = true;
-			_cfg_ctl_sp_msg.flag_control_acceleration_enabled = true;
-			_cfg_ctl_sp_msg.flag_control_velocity_enabled = true;
-			_cfg_ctl_sp_msg.flag_control_position_enabled = false;
-			_cfg_ctl_sp_msg.flag_control_altitude_enabled = true;
-			_cfg_ctl_sp_msg.flag_control_climb_rate_enabled = true;
-			_cfg_ctl_sp_msg.flag_control_allocation_enabled = true;
-			_cfg_ctl_sp_msg.flag_control_termination_enabled = false;
-			_cfg_ctl_sp_msg.source_id = _reg_reply_msg.mode_id;
-			_cfg_ctl_sp_msg.timestamp = hrt_absolute_time();
+			if(_reg_reply_msg.success)
+			{
+				_cfg_ctl_sp_msg.flag_armed = true;//这个变量似乎没有用
+				_cfg_ctl_sp_msg.flag_multicopter_position_control_enabled = false;
+				_cfg_ctl_sp_msg.flag_control_manual_enabled = false;
+				_cfg_ctl_sp_msg.flag_control_auto_enabled = false;
+				_cfg_ctl_sp_msg.flag_control_offboard_enabled = false;
+				_cfg_ctl_sp_msg.flag_control_rates_enabled = false;
+				_cfg_ctl_sp_msg.flag_control_attitude_enabled = false;
+				_cfg_ctl_sp_msg.flag_control_acceleration_enabled = true;
+				_cfg_ctl_sp_msg.flag_control_velocity_enabled = true;
+				_cfg_ctl_sp_msg.flag_control_position_enabled = false;
+				_cfg_ctl_sp_msg.flag_control_altitude_enabled = true;
+				_cfg_ctl_sp_msg.flag_control_climb_rate_enabled = true;
+				_cfg_ctl_sp_msg.flag_control_allocation_enabled = true;
+				_cfg_ctl_sp_msg.flag_control_termination_enabled = false;
+				_cfg_ctl_sp_msg.source_id = _reg_reply_msg.mode_id;
+				_cfg_ctl_sp_msg.timestamp = hrt_absolute_time();
 
-			_config_control_setpoints_pub.publish(_cfg_ctl_sp_msg);
-			PX4_INFO("register reply, success: %d, name: %s, mode id: %d, check id: %d", _reg_reply_msg.success, _reg_reply_msg.name, _reg_reply_msg.mode_id, _reg_reply_msg.arming_check_id);
+				_config_control_setpoints_pub.publish(_cfg_ctl_sp_msg);
+
+				_registered_mode[_registered_mode_num].mode_id = _reg_reply_msg.mode_id;
+				_registered_mode[_registered_mode_num].arming_check_id = _reg_reply_msg.arming_check_id;
+				_registered_mode_num++;
+			}
+			PX4_INFO("Mode register reply, success: %d, name: %s, mode id: %d, check id: %d", _reg_reply_msg.success, _reg_reply_msg.name, _reg_reply_msg.mode_id, _reg_reply_msg.arming_check_id);
 		}
 
 		if(_arming_check_request_sub.update(&_arming_check_request_msg))
 		{
-			//PX4_INFO("Get arming check request");
-			_arming_check_reply_msg.request_id = _arming_check_request_msg.request_id;
-			_arming_check_reply_msg.registration_id = _reg_reply_msg.arming_check_id;
-			_arming_check_reply_msg.health_component_index = 0;
-			_arming_check_reply_msg.health_component_is_present = true;
-			_arming_check_reply_msg.health_component_warning = false;
-			_arming_check_reply_msg.health_component_error = false;
-			_arming_check_reply_msg.can_arm_and_run = true;
-			_arming_check_reply_msg.num_events = 0;
-			_arming_check_reply_msg.mode_req_angular_velocity = false;
-			_arming_check_reply_msg.mode_req_attitude = false;
-			_arming_check_reply_msg.mode_req_local_alt = false;
-			_arming_check_reply_msg.mode_req_local_position = false;
-			_arming_check_reply_msg.mode_req_local_position_relaxed = false;
-			_arming_check_reply_msg.mode_req_global_position = false;
-			_arming_check_reply_msg.mode_req_mission = false;
-			_arming_check_reply_msg.mode_req_home_position = false;
-			_arming_check_reply_msg.mode_req_prevent_arming = false;
-			_arming_check_reply_msg.mode_req_manual_control = false;
-			_arming_check_reply_msg.timestamp = hrt_absolute_time();
+			for(uint8_t i=0; i<_registered_mode_num; i++)
+			{
+				_arming_check_reply_msg.request_id = _arming_check_request_msg.request_id;
+				_arming_check_reply_msg.registration_id = _registered_mode[i].arming_check_id;
+				_arming_check_reply_msg.health_component_index = 0;
+				_arming_check_reply_msg.health_component_is_present = true;
+				_arming_check_reply_msg.health_component_warning = false;
+				_arming_check_reply_msg.health_component_error = false;
+				_arming_check_reply_msg.can_arm_and_run = true;
+				_arming_check_reply_msg.num_events = 0;
+				_arming_check_reply_msg.mode_req_angular_velocity = false;
+				_arming_check_reply_msg.mode_req_attitude = false;
+				_arming_check_reply_msg.mode_req_local_alt = false;
+				_arming_check_reply_msg.mode_req_local_position = false;
+				_arming_check_reply_msg.mode_req_local_position_relaxed = false;
+				_arming_check_reply_msg.mode_req_global_position = false;
+				_arming_check_reply_msg.mode_req_mission = false;
+				_arming_check_reply_msg.mode_req_home_position = false;
+				_arming_check_reply_msg.mode_req_prevent_arming = false;
+				_arming_check_reply_msg.mode_req_manual_control = false;
+				_arming_check_reply_msg.timestamp = hrt_absolute_time();
 
-			_arming_check_reply_pub.publish(_arming_check_reply_msg);
+				_arming_check_reply_pub.publish(_arming_check_reply_msg);
+
+				//PX4_INFO("Arming check reply, arming_check_id: %d", _registered_mode[i].arming_check_id);
+			}
 		}
 
 		_vehicle_status_sub.update(&_vehicle_status);
