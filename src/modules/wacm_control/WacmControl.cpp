@@ -235,7 +235,7 @@ void WacmControl::run()
 
 		_vehicle_status_sub.update(&_vehicle_status);
 
-		if(_vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_EXTERNAL2)
+		/*if(_vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_EXTERNAL2)
 		{
 			//PX4_INFO("Publish SP");
 			_att_sp_msg.yaw_body = 0;
@@ -249,7 +249,7 @@ void WacmControl::run()
 			q.copyTo(_att_sp_msg.q_d);
 
 			_vehicle_attitude_setpoint_pub.publish(_att_sp_msg);
-		}
+		}*/
 
 		parameters_update();
 	}

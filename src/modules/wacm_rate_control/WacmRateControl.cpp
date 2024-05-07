@@ -33,6 +33,8 @@
 
 #include "WacmRateControl.hpp"
 
+#include "user_hfile/wacm_mode_name.hpp"
+
 using namespace time_literals;
 using namespace matrix;
 
@@ -82,6 +84,39 @@ WacmRateControl::parameters_update()
 		Vector3f(0.f, 0.f, 0.f));
 
 	return PX4_OK;
+}
+
+void
+WacmRateControl::vehicle_manual_poll()
+{
+	if (_vehicle_status.nav_state == WACM_MODE_ACRO || _vehicle_status.nav_state == WACM_MODE_MANUAL) {
+
+		// Always copy the new manual setpoint, even if it wasn't updated, to fill the actuators with valid values
+		if (_manual_control_setpoint_sub.copy(&_manual_control_setpoint)) {
+
+			if (_vehicle_status.nav_state == WACM_MODE_ACRO) {
+
+				_rates_sp.roll = _manual_control_setpoint.roll * radians(_param_fw_acro_x_max.get());
+				_rates_sp.yaw = _manual_control_setpoint.yaw * radians(_param_fw_acro_z_max.get());
+				_rates_sp.pitch = -_manual_control_setpoint.pitch * radians(_param_fw_acro_y_max.get());
+				_rates_sp.timestamp = hrt_absolute_time();
+				_rates_sp.thrust_body[0] = (_manual_control_setpoint.throttle + 1.f) * .5f;
+
+				_rate_sp_pub.publish(_rates_sp);
+
+			} else { // _vehicle_status.nav_state == WACM_MODE_MANUAL
+
+				_vehicle_torque_setpoint.xyz[0] = math::constrain(_manual_control_setpoint.roll * _param_fw_man_r_sc.get() +
+								  _param_trim_roll.get(), -1.f, 1.f);
+				_vehicle_torque_setpoint.xyz[1] = math::constrain(-_manual_control_setpoint.pitch * _param_fw_man_p_sc.get() +
+								  _param_trim_pitch.get(), -1.f, 1.f);
+				_vehicle_torque_setpoint.xyz[2] = math::constrain(_manual_control_setpoint.yaw * _param_fw_man_y_sc.get() +
+								  _param_trim_yaw.get(), -1.f, 1.f);
+
+				_vehicle_thrust_setpoint.xyz[0] = math::constrain((_manual_control_setpoint.throttle + 1.f) * .5f, 0.f, 1.f);
+			}
+		}
+	}
 }
 
 float WacmRateControl::get_airspeed_and_update_scaling()
@@ -150,7 +185,9 @@ void WacmRateControl::Run()
 
 		_vehicle_status_sub.update(&_vehicle_status);
 
-		if (_vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_EXTERNAL2) {
+		vehicle_manual_poll();
+
+		if (_vehicle_status.nav_state == WACM_MODE_STABILIZED || _vehicle_status.nav_state == WACM_MODE_AUTO_DIVE || _vehicle_status.nav_state == WACM_MODE_ACRO) {
 
 			const float airspeed = get_airspeed_and_update_scaling();
 
@@ -195,6 +232,12 @@ void WacmRateControl::Run()
 
 			Vector3f control_u = angular_acceleration_setpoint * _airspeed_scaling * _airspeed_scaling + feedforward;
 
+			// Special case yaw in Acro: if the parameter FW_ACRO_YAW_CTL is not set then don't control yaw
+			if (_vehicle_status.nav_state == WACM_MODE_ACRO && !_param_fw_acro_yaw_en.get()) {
+				control_u(2) = _manual_control_setpoint.yaw * _param_fw_man_y_sc.get();
+				_rate_control.resetIntegral(2);
+			}
+
 			if (control_u.isAllFinite()) {
 				matrix::constrain(control_u + trim, -1.f, 1.f).copyTo(_vehicle_torque_setpoint.xyz);
 
@@ -220,11 +263,17 @@ void WacmRateControl::Run()
 				_vehicle_thrust_setpoint.xyz[0] *= _battery_scale;
 			}
 
+		} else {
+			_rate_control.resetIntegral();
+		}
+
+		if (_vehicle_status.nav_state == WACM_MODE_STABILIZED || _vehicle_status.nav_state == WACM_MODE_AUTO_DIVE ||\
+			_vehicle_status.nav_state == WACM_MODE_ACRO || _vehicle_status.nav_state == WACM_MODE_MANUAL)
+		{
 			// Add feed-forward from roll control output to yaw control output
 			// This can be used to counteract the adverse yaw effect when rolling the plane
 			_vehicle_torque_setpoint.xyz[2] = math::constrain(_vehicle_torque_setpoint.xyz[2] + _param_fw_rll_to_yaw_ff.get() *
 							_vehicle_torque_setpoint.xyz[0], -1.f, 1.f);
-
 
 			_vehicle_thrust_setpoint.timestamp = hrt_absolute_time();
 			_vehicle_thrust_setpoint.timestamp_sample = angular_velocity.timestamp_sample;
@@ -233,9 +282,6 @@ void WacmRateControl::Run()
 			_vehicle_torque_setpoint.timestamp = hrt_absolute_time();
 			_vehicle_torque_setpoint.timestamp_sample = angular_velocity.timestamp_sample;
 			_vehicle_torque_setpoint_pub.publish(_vehicle_torque_setpoint);
-
-		} else {
-			_rate_control.resetIntegral();
 		}
 	}
 

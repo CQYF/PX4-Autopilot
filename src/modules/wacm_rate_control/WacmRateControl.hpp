@@ -102,13 +102,16 @@ private:
 	uORB::SubscriptionInterval _parameter_update_sub{ORB_ID(parameter_update), 1_s};
 
 	uORB::Subscription _battery_status_sub{ORB_ID(battery_status)};
+	uORB::Subscription _manual_control_setpoint_sub{ORB_ID(manual_control_setpoint)};
 	uORB::Subscription _rates_sp_sub{ORB_ID(vehicle_rates_setpoint)};
 	uORB::Subscription _vehicle_status_sub{ORB_ID(vehicle_status)};
 	uORB::Subscription _vehicle_rates_sub{ORB_ID(vehicle_angular_velocity)};
 
+	uORB::Publication<vehicle_rates_setpoint_s>	_rate_sp_pub{ORB_ID(vehicle_rates_setpoint)};
 	uORB::Publication<vehicle_torque_setpoint_s>	_vehicle_torque_setpoint_pub{ORB_ID(vehicle_torque_setpoint)};
 	uORB::Publication<vehicle_thrust_setpoint_s>	_vehicle_thrust_setpoint_pub{ORB_ID(vehicle_thrust_setpoint)};
 
+	manual_control_setpoint_s		_manual_control_setpoint{};
 	vehicle_thrust_setpoint_s		_vehicle_thrust_setpoint{};
 	vehicle_torque_setpoint_s		_vehicle_torque_setpoint{};
 	vehicle_rates_setpoint_s		_rates_sp{};
@@ -128,6 +131,11 @@ private:
 		(ParamFloat<px4::params::FW_AIRSPD_STALL>) _param_fw_airspd_stall,	//失速空速
 		(ParamFloat<px4::params::FW_AIRSPD_TRIM>) _param_fw_airspd_trim,	//平衡空速
 
+		(ParamFloat<px4::params::WA_ACRO_X_MAX>) _param_fw_acro_x_max,		//ACRO模式下各轴杆量最大时对应的角度变化率
+		(ParamFloat<px4::params::WA_ACRO_Y_MAX>) _param_fw_acro_y_max,
+		(ParamFloat<px4::params::WA_ACRO_Z_MAX>) _param_fw_acro_z_max,
+		(ParamInt<px4::params::WA_ACRO_YAW_EN>) _param_fw_acro_yaw_en,		//ACRO模式下是否启用YAW轴控制（不启用则yaw杆量映射到torque上）
+
 		(ParamInt<px4::params::WA_ARSP_SCALE_EN>) _param_fw_arsp_scale_en,	//启用空速系数（根据空速对控制器进行补偿）
 
 		(ParamBool<px4::params::WA_BAT_SCALE_EN>) _param_fw_bat_scale_en,	//启用电池系数（应该是当电池输出能力降低时，对推力输出进行放大）
@@ -138,6 +146,10 @@ private:
 		(ParamFloat<px4::params::WA_DTRIM_R_VMIN>) _param_fw_dtrim_r_vmin,
 		(ParamFloat<px4::params::WA_DTRIM_Y_VMAX>) _param_fw_dtrim_y_vmax,
 		(ParamFloat<px4::params::WA_DTRIM_Y_VMIN>) _param_fw_dtrim_y_vmin,
+
+		(ParamFloat<px4::params::WA_MAN_P_SC>) _param_fw_man_p_sc,		//MANUAL模式下各轴杆量最大时对应的torque
+		(ParamFloat<px4::params::WA_MAN_R_SC>) _param_fw_man_r_sc,
+		(ParamFloat<px4::params::WA_MAN_Y_SC>) _param_fw_man_y_sc,
 
 		(ParamFloat<px4::params::WA_PR_FF>) _param_fw_pr_ff,			//pitch rate控制器的前馈、ki、imax、kp、kd
 		(ParamFloat<px4::params::WA_PR_I>) _param_fw_pr_i,
@@ -172,4 +184,5 @@ private:
 	int		parameters_update();
 
 	float 		get_airspeed_and_update_scaling();
+	void		vehicle_manual_poll();
 };

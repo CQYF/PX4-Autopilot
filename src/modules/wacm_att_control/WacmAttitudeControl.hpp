@@ -99,12 +99,15 @@ private:
 
 	uORB::Subscription _att_sp_sub{ORB_ID(vehicle_attitude_setpoint)};			/**< vehicle attitude setpoint */
 	uORB::Subscription _vehicle_status_sub{ORB_ID(vehicle_status)};				/**< vehicle status subscription */
+	uORB::Subscription _manual_control_setpoint_sub{ORB_ID(manual_control_setpoint)};	/**< notification of manual control updates */
 
 	uORB::Publication<vehicle_rates_setpoint_s>	_rate_sp_pub{ORB_ID(vehicle_rates_setpoint)};
+	uORB::Publication<vehicle_attitude_setpoint_s>	_attitude_sp_pub{ORB_ID(vehicle_attitude_setpoint)};
 
 	vehicle_attitude_setpoint_s		_att_sp{};
 	vehicle_rates_setpoint_s		_rates_sp{};
 	vehicle_status_s			_vehicle_status{};
+	manual_control_setpoint_s		_manual_control_setpoint{};
 
 	matrix::Dcmf _R{matrix::eye<float, 3>()};
 
@@ -117,15 +120,19 @@ private:
 		(ParamFloat<px4::params::FW_AIRSPD_STALL>) _param_fw_airspd_stall,	//失速空速
 		(ParamFloat<px4::params::FW_AIRSPD_TRIM>) _param_fw_airspd_trim,	//平衡空速
 
-		(ParamFloat<px4::params::WACM_P_RMAX_NEG>) _param_fw_p_rmax_neg,	//机体坐标系下pitch变化率限幅（下限）
-		(ParamFloat<px4::params::WACM_P_RMAX_POS>) _param_fw_p_rmax_pos,	//机体坐标系下pitch变化率限幅（上限）
-		(ParamFloat<px4::params::WACM_P_TC>) _param_fw_p_tc,			//pitch控制器比例时间常数（就是比例因子的倒数）
+		(ParamFloat<px4::params::WA_P_RMAX_NEG>) _param_fw_p_rmax_neg,		//机体坐标系下pitch变化率限幅（下限）
+		(ParamFloat<px4::params::WA_P_RMAX_POS>) _param_fw_p_rmax_pos,		//机体坐标系下pitch变化率限幅（上限）
+		(ParamFloat<px4::params::WA_P_TC>) _param_fw_p_tc,			//pitch控制器比例时间常数（就是比例因子的倒数）
 
-		(ParamFloat<px4::params::WACM_R_RMAX>) _param_fw_r_rmax,		//机体坐标系下roll变化率限幅
-		(ParamFloat<px4::params::WACM_R_TC>) _param_fw_r_tc,			//roll控制器比例时间常数（就是比例因子的倒数）
+		(ParamFloat<px4::params::WA_R_RMAX>) _param_fw_r_rmax,			//机体坐标系下roll变化率限幅
+		(ParamFloat<px4::params::WA_R_TC>) _param_fw_r_tc,			//roll控制器比例时间常数（就是比例因子的倒数）
 
-		(ParamFloat<px4::params::WACM_Y_RMAX>) _param_fw_y_rmax			//机体坐标系下yaw变化率限幅（yaw的变化率直接由当前的roll角和pitch角计算得到，没有反馈控制）
+		(ParamFloat<px4::params::WA_Y_RMAX>) _param_fw_y_rmax,			//机体坐标系下yaw变化率限幅（yaw的变化率直接由当前的roll角和pitch角计算得到，没有反馈控制）
 
+		(ParamFloat<px4::params::WA_PSP_OFF>) _param_fw_psp_off,		//pitch杆量为0时的pitch偏移量
+		(ParamFloat<px4::params::WA_MAN_P_MAX>) _param_fw_man_p_max,		//pitch杆量为最大时的pitch角度
+		(ParamFloat<px4::params::WA_MAN_R_MAX>) _param_fw_man_r_max,		//roll杆量为最大时的roll角度
+		(ParamFloat<px4::params::WA_MAN_YR_MAX>) _param_man_yr_max		//yaw杆量为最大时的yaw变化率
 	)
 
 	RollController _roll_ctrl;
@@ -133,6 +140,7 @@ private:
 	YawController _yaw_ctrl;
 
 	void parameters_update();
+	void vehicle_manual_poll(const float yaw_body);
 	void vehicle_attitude_setpoint_poll();
 	float get_airspeed_constrained();
 };

@@ -226,6 +226,36 @@ PARAM_DEFINE_FLOAT(WA_PR_FF, 0.5f);
 PARAM_DEFINE_FLOAT(WA_YR_FF, 0.3f);
 
 /**
+ * Acro body roll max rate setpoint
+ *
+ * @min 10
+ * @max 720
+ * @unit deg
+ * @group Wacm Rate Control
+ */
+PARAM_DEFINE_FLOAT(WA_ACRO_X_MAX, 90);
+
+/**
+ * Acro body pitch max rate setpoint
+ *
+ * @min 10
+ * @max 720
+ * @unit deg
+ * @group Wacm Rate Control
+ */
+PARAM_DEFINE_FLOAT(WA_ACRO_Y_MAX, 90);
+
+/**
+ * Acro body yaw max rate setpoint
+ *
+ * @min 10
+ * @max 720
+ * @unit deg
+ * @group Wacm Rate Control
+ */
+PARAM_DEFINE_FLOAT(WA_ACRO_Z_MAX, 45);
+
+/**
  * Enable throttle scale by battery level
  *
  * This compensates for voltage drop of the battery over time by attempting to
@@ -330,6 +360,49 @@ PARAM_DEFINE_FLOAT(WA_DTRIM_P_VMAX, 0.0f);
 PARAM_DEFINE_FLOAT(WA_DTRIM_Y_VMAX, 0.0f);
 
 /**
+ * Manual roll scale
+ *
+ * Scale factor applied to the desired roll actuator command in full manual mode. This parameter allows
+ * to adjust the throws of the control surfaces.
+ *
+ * @unit norm
+ * @min 0.0
+ * @max 1.0
+ * @decimal 2
+ * @increment 0.01
+ * @group Wacm Rate Control
+ */
+PARAM_DEFINE_FLOAT(WA_MAN_R_SC, 1.0f);
+
+/**
+ * Manual pitch scale
+ *
+ * Scale factor applied to the desired pitch actuator command in full manual mode. This parameter allows
+ * to adjust the throws of the control surfaces.
+ *
+ * @unit norm
+ * @min 0.0
+ * @decimal 2
+ * @increment 0.01
+ * @group Wacm Rate Control
+ */
+PARAM_DEFINE_FLOAT(WA_MAN_P_SC, 1.0f);
+
+/**
+ * Manual yaw scale
+ *
+ * Scale factor applied to the desired yaw actuator command in full manual mode. This parameter allows
+ * to adjust the throws of the control surfaces.
+ *
+ * @unit norm
+ * @min 0.0
+ * @decimal 2
+ * @increment 0.01
+ * @group Wacm Rate Control
+ */
+PARAM_DEFINE_FLOAT(WA_MAN_Y_SC, 1.0f);
+
+/**
  * Roll control to yaw control feedforward gain.
  *
  * This gain can be used to counteract the "adverse yaw" effect for fixed wings.
@@ -342,3 +415,16 @@ PARAM_DEFINE_FLOAT(WA_DTRIM_Y_VMAX, 0.0f);
  * @group Wacm Rate Control
  */
 PARAM_DEFINE_FLOAT(WA_RLL_TO_YAW_FF, 0.0f);
+
+/**
+ * Enable yaw rate controller in Acro
+ *
+ * If this parameter is set to 1, the yaw rate controller is enabled in Fixed-wing Acro mode.
+ * Otherwise the pilot commands directly the yaw actuator.
+ * It is disabled by default because an active yaw rate controller will fight against the
+ * natural turn coordination of the plane.
+ *
+ * @boolean
+ * @group Wacm Rate Control
+ */
+PARAM_DEFINE_INT32(WA_ACRO_YAW_EN, 0);

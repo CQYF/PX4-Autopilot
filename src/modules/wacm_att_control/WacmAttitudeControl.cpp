@@ -33,6 +33,8 @@
 
 #include "WacmAttitudeControl.hpp"
 
+#include "user_hfile/wacm_mode_name.hpp"
+
 using namespace time_literals;
 using namespace matrix;
 
@@ -75,6 +77,35 @@ WacmAttitudeControl::parameters_update()
 	_pitch_ctrl.set_max_rate_neg(radians(_param_fw_p_rmax_neg.get()));
 
 	_yaw_ctrl.set_max_rate(radians(_param_fw_y_rmax.get()));
+}
+
+void
+WacmAttitudeControl::vehicle_manual_poll(const float yaw_body)
+{
+	if (_vehicle_status.nav_state == WACM_MODE_STABILIZED) {
+
+		// Always copy the new manual setpoint, even if it wasn't updated, to fill the actuators with valid values
+		if (_manual_control_setpoint_sub.copy(&_manual_control_setpoint)) {
+
+			_att_sp.roll_body = _manual_control_setpoint.roll * radians(_param_fw_man_r_max.get());
+
+			_att_sp.pitch_body = -_manual_control_setpoint.pitch * radians(_param_fw_man_p_max.get())
+						+ radians(_param_fw_psp_off.get());
+			_att_sp.pitch_body = constrain(_att_sp.pitch_body, -radians(_param_fw_man_p_max.get()), radians(_param_fw_man_p_max.get()));
+
+			_att_sp.yaw_body = yaw_body; // yaw is not controlled, so set setpoint to current yaw
+			_att_sp.thrust_body[0] = (_manual_control_setpoint.throttle + 1.f) * .5f;
+
+			Quatf q(Eulerf(_att_sp.roll_body, _att_sp.pitch_body, _att_sp.yaw_body));
+			q.copyTo(_att_sp.q_d);
+
+			_att_sp.reset_integral = false;
+
+			_att_sp.timestamp = hrt_absolute_time();
+
+			_attitude_sp_pub.publish(_att_sp);
+		}
+	}
 }
 
 void
@@ -145,18 +176,16 @@ void WacmAttitudeControl::Run()
 
 		const matrix::Eulerf euler_angles(_R);
 
-		vehicle_attitude_setpoint_poll();
-
 		_vehicle_status_sub.update(&_vehicle_status);
 
-		if (_vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_EXTERNAL2) {
+		vehicle_manual_poll(euler_angles.psi());
 
-			/* 这里应该是说只要控制器不运行就复位
-			 */
+		vehicle_attitude_setpoint_poll();
+
+		if (_vehicle_status.nav_state == WACM_MODE_STABILIZED || _vehicle_status.nav_state == WACM_MODE_AUTO_DIVE ) {
+
 			if (_att_sp.reset_integral) {
-
 				_rates_sp.reset_integral = true;
-
 			} else {
 				_rates_sp.reset_integral = false;
 			}
@@ -174,6 +203,13 @@ void WacmAttitudeControl::Run()
 				/* Update input data for rate controllers */
 				Vector3f body_rates_setpoint = Vector3f(_roll_ctrl.get_body_rate_setpoint(), _pitch_ctrl.get_body_rate_setpoint(),
 									_yaw_ctrl.get_body_rate_setpoint());
+
+				/* add yaw rate setpoint from sticks */
+				if (_vehicle_status.nav_state == WACM_MODE_STABILIZED)
+				{
+					body_rates_setpoint(2) += math::constrain(_manual_control_setpoint.yaw * radians(_param_man_yr_max.get()),
+										  -radians(_param_fw_y_rmax.get()), radians(_param_fw_y_rmax.get()));
+				}
 
 				/* Publish the rate setpoint for analysis once available */
 				_rates_sp.roll = body_rates_setpoint(0);

@@ -27,3 +27,11 @@ fw_autotune_attitude_control start
 # Start Land Detector.
 #
 land_detector start fixedwing
+
+#
+# Start Wacm Controller.
+#
+wacm_control start
+
+wacm_att_control start
+wacm_rate_control start
