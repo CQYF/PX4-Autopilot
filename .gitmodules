@@ -83,3 +83,7 @@
 [submodule "boards/modalai/voxl2/libfc-sensor-api"]
 	path = boards/modalai/voxl2/libfc-sensor-api
 	url = https://gitlab.com/voxl-public/voxl-sdk/core-libs/libfc-sensor-api.git
+[submodule "src/lib/tinympc/tinympc"]
+	path = src/lib/tinympc/tinympc
+	url = https://github.com/CQYF/TinyMPC.git
+	branch = px4
