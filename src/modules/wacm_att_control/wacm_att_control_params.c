@@ -175,3 +175,126 @@ PARAM_DEFINE_FLOAT(WA_MAN_R_MAX, 45.0f);
  * @group Wacm Attitude Control
  */
 PARAM_DEFINE_FLOAT(WA_MAN_P_MAX, 30.0f);
+
+/**
+ * Dive pitch angle down
+ *
+ * Dive pitch angle down
+ *
+ * @unit deg
+ * @min -80.0
+ * @max 0.0
+ * @decimal 1
+ * @increment 0.5
+ * @group Wacm Attitude Control
+ */
+PARAM_DEFINE_FLOAT(WA_DIVE_DN_DEG, -30.0f);
+
+/**
+ * Dive thrust down
+ *
+ * Dive thrust down
+ *
+ * @min 0.0
+ * @max 1.0
+ * @decimal 2
+ * @increment 0.01
+ * @group Wacm Attitude Control
+ */
+PARAM_DEFINE_FLOAT(WA_DIVE_DN_THR, 0.5f);
+
+/**
+ * Dive time down
+ *
+ * Dive time down
+ *
+ * @unit s
+ * @min 0.0
+ * @max 10.0
+ * @decimal 2
+ * @increment 0.01
+ * @group Wacm Attitude Control
+ */
+PARAM_DEFINE_FLOAT(WA_DIVE_DN_SEC, 0.2f);
+
+/**
+ * Dive pitch angle cruise
+ *
+ * Dive pitch angle cruise
+ *
+ * @unit deg
+ * @min -40.0
+ * @max 40.0
+ * @decimal 1
+ * @increment 0.5
+ * @group Wacm Attitude Control
+ */
+PARAM_DEFINE_FLOAT(WA_DIVE_CRU_DEG, 0.0f);
+
+/**
+ * Dive thrust cruise
+ *
+ * Dive thrust cruise
+ *
+ * @min 0.0
+ * @max 1.0
+ * @decimal 2
+ * @increment 0.01
+ * @group Wacm Attitude Control
+ */
+PARAM_DEFINE_FLOAT(WA_DIVE_CRU_THR, 0.5f);
+
+/**
+ * Dive time cruise
+ *
+ * Dive time cruise
+ *
+ * @unit s
+ * @min 0.0
+ * @max 10.0
+ * @decimal 2
+ * @increment 0.01
+ * @group Wacm Attitude Control
+ */
+PARAM_DEFINE_FLOAT(WA_DIVE_CRU_SEC, 0.2f);
+
+/**
+ * Dive pitch angle up
+ *
+ * Dive pitch angle up
+ *
+ * @unit deg
+ * @min 0.0
+ * @max 80.0
+ * @decimal 1
+ * @increment 0.5
+ * @group Wacm Attitude Control
+ */
+PARAM_DEFINE_FLOAT(WA_DIVE_UP_DEG, 30.0f);
+
+/**
+ * Dive thrust up
+ *
+ * Dive thrust up
+ *
+ * @min 0.0
+ * @max 1.0
+ * @decimal 2
+ * @increment 0.01
+ * @group Wacm Attitude Control
+ */
+PARAM_DEFINE_FLOAT(WA_DIVE_UP_THR, 0.5f);
+
+/**
+ * Dive time up
+ *
+ * Dive time up
+ *
+ * @unit s
+ * @min 0.0
+ * @max 10.0
+ * @decimal 2
+ * @increment 0.01
+ * @group Wacm Attitude Control
+ */
+PARAM_DEFINE_FLOAT(WA_DIVE_UP_SEC, 0.4f);

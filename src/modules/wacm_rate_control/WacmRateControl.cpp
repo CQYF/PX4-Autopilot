@@ -275,6 +275,10 @@ void WacmRateControl::Run()
 			_vehicle_torque_setpoint.xyz[2] = math::constrain(_vehicle_torque_setpoint.xyz[2] + _param_fw_rll_to_yaw_ff.get() *
 							_vehicle_torque_setpoint.xyz[0], -1.f, 1.f);
 
+			//推力前馈到pit轴力矩上
+			_vehicle_torque_setpoint.xyz[1] = math::constrain(_vehicle_torque_setpoint.xyz[1] + _param_thr_to_pit_ff.get() *
+							_vehicle_thrust_setpoint.xyz[0], -1.f, 1.f);
+
 			_vehicle_thrust_setpoint.timestamp = hrt_absolute_time();
 			_vehicle_thrust_setpoint.timestamp_sample = angular_velocity.timestamp_sample;
 			_vehicle_thrust_setpoint_pub.publish(_vehicle_thrust_setpoint);

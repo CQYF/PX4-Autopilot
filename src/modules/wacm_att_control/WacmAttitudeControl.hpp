@@ -132,14 +132,32 @@ private:
 		(ParamFloat<px4::params::WA_PSP_OFF>) _param_fw_psp_off,		//pitch杆量为0时的pitch偏移量
 		(ParamFloat<px4::params::WA_MAN_P_MAX>) _param_fw_man_p_max,		//pitch杆量为最大时的pitch角度
 		(ParamFloat<px4::params::WA_MAN_R_MAX>) _param_fw_man_r_max,		//roll杆量为最大时的roll角度
-		(ParamFloat<px4::params::WA_MAN_YR_MAX>) _param_man_yr_max		//yaw杆量为最大时的yaw变化率
+		(ParamFloat<px4::params::WA_MAN_YR_MAX>) _param_man_yr_max,		//yaw杆量为最大时的yaw变化率
+
+		(ParamFloat<px4::params::WA_DIVE_DN_DEG>) _param_dive_dn_deg,		//自动潜行（下潜）的角度
+		(ParamFloat<px4::params::WA_DIVE_DN_THR>) _param_dive_dn_thr,		//自动潜行（下潜）的推力
+		(ParamFloat<px4::params::WA_DIVE_DN_SEC>) _param_dive_dn_sec,		//自动潜行（下潜）的时间
+		(ParamFloat<px4::params::WA_DIVE_DN_DEG>) _param_dive_cru_deg,		//自动潜行（航行）
+		(ParamFloat<px4::params::WA_DIVE_DN_THR>) _param_dive_cru_thr,
+		(ParamFloat<px4::params::WA_DIVE_DN_SEC>) _param_dive_cru_sec,
+		(ParamFloat<px4::params::WA_DIVE_DN_DEG>) _param_dive_up_deg,		//自动潜行（上浮）
+		(ParamFloat<px4::params::WA_DIVE_DN_THR>) _param_dive_up_thr,
+		(ParamFloat<px4::params::WA_DIVE_DN_SEC>) _param_dive_up_sec
 	)
 
 	RollController _roll_ctrl;
 	PitchController _pitch_ctrl;
 	YawController _yaw_ctrl;
 
+	hrt_abstime _dive_dn_total_time;
+	hrt_abstime _dive_cru_total_time;
+	hrt_abstime _dive_up_total_time;
+
+	hrt_abstime _auto_dive_start_time{0};
+	uint8_t _last_nav_state{255};
+
 	void parameters_update();
+	void auto_dive_poll(const float yaw_body);
 	void vehicle_manual_poll(const float yaw_body);
 	void vehicle_attitude_setpoint_poll();
 	float get_airspeed_constrained();

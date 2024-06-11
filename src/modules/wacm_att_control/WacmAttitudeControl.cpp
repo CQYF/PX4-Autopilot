@@ -77,6 +77,50 @@ WacmAttitudeControl::parameters_update()
 	_pitch_ctrl.set_max_rate_neg(radians(_param_fw_p_rmax_neg.get()));
 
 	_yaw_ctrl.set_max_rate(radians(_param_fw_y_rmax.get()));
+
+	_dive_dn_total_time = (hrt_abstime)(1000000.0f * _param_dive_dn_sec.get());
+	_dive_cru_total_time = _dive_dn_total_time + (hrt_abstime)(1000000.0f * _param_dive_cru_sec.get());
+	_dive_up_total_time = _dive_cru_total_time + (hrt_abstime)(1000000.0f * _param_dive_up_sec.get());
+}
+
+void
+WacmAttitudeControl::auto_dive_poll(const float yaw_body)
+{
+	if (_vehicle_status.nav_state == WACM_MODE_AUTO_DIVE) {
+
+		_att_sp.roll_body = 0;
+		_att_sp.yaw_body = yaw_body;
+
+		if(hrt_absolute_time() - _auto_dive_start_time < _dive_dn_total_time)
+		{
+			_att_sp.pitch_body = radians(_param_dive_dn_deg.get());
+			_att_sp.thrust_body[0] = _param_dive_dn_thr.get();
+		}
+		else if(hrt_absolute_time() - _auto_dive_start_time < _dive_cru_total_time)
+		{
+			_att_sp.pitch_body = radians(_param_dive_cru_deg.get());
+			_att_sp.thrust_body[0] = _param_dive_cru_thr.get();
+		}
+		else if(hrt_absolute_time() - _auto_dive_start_time < _dive_up_total_time)
+		{
+			_att_sp.pitch_body = radians(_param_dive_up_deg.get());
+			_att_sp.thrust_body[0] = _param_dive_up_thr.get();
+		}
+		else
+		{
+			_att_sp.pitch_body = radians(0);
+			_att_sp.thrust_body[0] = 0;
+		}
+
+		Quatf q(Eulerf(_att_sp.roll_body, _att_sp.pitch_body, _att_sp.yaw_body));
+		q.copyTo(_att_sp.q_d);
+
+		_att_sp.reset_integral = false;
+
+		_att_sp.timestamp = hrt_absolute_time();
+
+		_attitude_sp_pub.publish(_att_sp);
+	}
 }
 
 void
@@ -177,6 +221,12 @@ void WacmAttitudeControl::Run()
 		const matrix::Eulerf euler_angles(_R);
 
 		_vehicle_status_sub.update(&_vehicle_status);
+		if(_last_nav_state != _vehicle_status.nav_state)
+		{
+			_auto_dive_start_time = hrt_absolute_time();
+		}
+
+		auto_dive_poll(euler_angles.psi());
 
 		vehicle_manual_poll(euler_angles.psi());
 
@@ -224,6 +274,7 @@ void WacmAttitudeControl::Run()
 		} else {
 
 		}
+		_last_nav_state = _vehicle_status.nav_state;
 	}
 
 	// backup schedule

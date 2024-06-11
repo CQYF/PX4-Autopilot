@@ -428,3 +428,17 @@ PARAM_DEFINE_FLOAT(WA_RLL_TO_YAW_FF, 0.0f);
  * @group Wacm Rate Control
  */
 PARAM_DEFINE_INT32(WA_ACRO_YAW_EN, 0);
+
+/**
+ * Thrust to pit control feedforward gain.
+ *
+ * Thrust to pit control feedforward gain.
+ *
+ * @min -1.0
+ * @max 1.0
+ * @decimal 2
+ * @increment 0.01
+ * @group Wacm Rate Control
+ */
+PARAM_DEFINE_FLOAT(WA_THR_TO_PIT_FF, 0.0f);
+

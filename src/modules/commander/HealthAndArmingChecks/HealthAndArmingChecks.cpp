@@ -60,7 +60,7 @@ bool HealthAndArmingChecks::update(bool force_reporting)
 		if (!_checks[i]) {
 			break;
 		}
-
+	//PX4_INFO("%d   %x", i, (uint32_t)_reporter._results[_reporter._current_result].arming_checks.can_run);
 		_checks[i]->checkAndReport(_context, _reporter);
 	}
 

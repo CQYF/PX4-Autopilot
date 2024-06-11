@@ -172,7 +172,9 @@ private:
 
 		(ParamFloat<px4::params::TRIM_PITCH>) _param_trim_pitch,		//平衡空速下需要补偿多少pitch力矩才能使让pitch轴不动
 		(ParamFloat<px4::params::TRIM_ROLL>) _param_trim_roll,
-		(ParamFloat<px4::params::TRIM_YAW>) _param_trim_yaw
+		(ParamFloat<px4::params::TRIM_YAW>) _param_trim_yaw,
+
+		(ParamFloat<px4::params::WA_THR_TO_PIT_FF>) _param_thr_to_pit_ff	//推力前馈到pit轴力矩上
 	)
 
 	RateControl _rate_control; ///< class for rate control calculations

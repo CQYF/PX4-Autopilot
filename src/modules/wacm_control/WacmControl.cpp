@@ -76,7 +76,7 @@ int WacmControl::task_spawn(int argc, char *argv[])
 	_task_id = px4_task_spawn_cmd("wacm_control",
 				      SCHED_DEFAULT,
 				      SCHED_PRIORITY_DEFAULT,
-				      1024,
+				      2048,
 				      (px4_main_t)&run_trampoline,
 				      (char *const *)argv);
 
@@ -170,7 +170,7 @@ void WacmControl::run()
 
 			_last_register_time = hrt_absolute_time();
 
-			PX4_INFO("Mode register request Send, request_id: %d",  _registered_mode_num + 1);
+			//PX4_INFO("Mode register request Send, request_id: %d",  _registered_mode_num + 1);
 		}
 
 		if(_register_ext_component_reply_sub.update(&_reg_reply_msg))
@@ -200,7 +200,7 @@ void WacmControl::run()
 				_registered_mode[_registered_mode_num].arming_check_id = _reg_reply_msg.arming_check_id;
 				_registered_mode_num++;
 			}
-			PX4_INFO("Mode register reply, success: %d, name: %s, mode id: %d, check id: %d", _reg_reply_msg.success, _reg_reply_msg.name, _reg_reply_msg.mode_id, _reg_reply_msg.arming_check_id);
+			//PX4_INFO("Mode register reply, success: %d, name: %s, mode id: %d, check id: %d", _reg_reply_msg.success, _reg_reply_msg.name, _reg_reply_msg.mode_id, _reg_reply_msg.arming_check_id);
 		}
 
 		if(_arming_check_request_sub.update(&_arming_check_request_msg))
@@ -224,8 +224,13 @@ void WacmControl::run()
 				_arming_check_reply_msg.mode_req_mission = false;
 				_arming_check_reply_msg.mode_req_home_position = false;
 				_arming_check_reply_msg.mode_req_prevent_arming = false;
-				_arming_check_reply_msg.mode_req_manual_control = false;
+				_arming_check_reply_msg.mode_req_manual_control = true;//试一下这样能不能实现在出现遥控信号中断时自动处理
 				_arming_check_reply_msg.timestamp = hrt_absolute_time();
+
+				if(_registered_mode[i].mode_id == WACM_MODE_AUTO_DIVE)
+				{
+					_arming_check_reply_msg.mode_req_manual_control = false;//自动模式显然不需要检查遥控输入
+				}
 
 				_arming_check_reply_pub.publish(_arming_check_reply_msg);
 
