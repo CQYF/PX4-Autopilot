@@ -79,7 +79,9 @@ private:
 	bool ParametersUpdate(bool force = false);
 	void UpdateStatus();
 
-	static constexpr int MAX_SENSOR_COUNT = 4;
+	float PressureToAltitude(float pressure_pa, float temperature = 15.f) const;
+
+	static constexpr int MAX_SENSOR_COUNT = 6;
 
 	uORB::Publication<sensors_status_s> _sensors_status_baro_pub{ORB_ID(sensors_status_baro)};
 
@@ -94,6 +96,8 @@ private:
 		{this, ORB_ID(sensor_baro), 1},
 		{this, ORB_ID(sensor_baro), 2},
 		{this, ORB_ID(sensor_baro), 3},
+		{this, ORB_ID(sensor_baro), 4},
+		{this, ORB_ID(sensor_baro), 5},
 	};
 
 	calibration::Barometer _calibration[MAX_SENSOR_COUNT];
@@ -105,6 +109,8 @@ private:
 
 	DataValidatorGroup _voter{1};
 	unsigned _last_failover_count{0};
+
+	float sensor_data[MAX_SENSOR_COUNT][MAX_SENSOR_COUNT];
 
 	uint64_t _timestamp_sample_sum[MAX_SENSOR_COUNT] {0};
 	float _data_sum[MAX_SENSOR_COUNT] {};
@@ -125,7 +131,14 @@ private:
 
 	DEFINE_PARAMETERS(
 		(ParamFloat<px4::params::SENS_BARO_QNH>) _param_sens_baro_qnh,
-		(ParamFloat<px4::params::SENS_BARO_RATE>) _param_sens_baro_rate
+		(ParamFloat<px4::params::SENS_BARO_RATE>) _param_sens_baro_rate,
+		(ParamInt<px4::params::SENS_BARO_MEDIUM>) _param_sens_baro_medium
 	)
 };
 }; // namespace sensors
+
+enum Medium{
+	Air,
+	FreshWater,
+	SaltWater
+};

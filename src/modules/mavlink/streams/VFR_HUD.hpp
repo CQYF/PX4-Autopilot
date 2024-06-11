@@ -113,8 +113,14 @@ private:
 
 			if (lpos.z_valid && lpos.z_global) {
 				/* use local position estimate */
-				msg.alt = -lpos.z + lpos.ref_alt;
+				// msg.alt = -lpos.z + lpos.ref_alt;
+				vehicle_air_data_s air_data{};
+				_air_data_sub.copy(&air_data);
 
+				/* fall back to baro altitude */
+				if (air_data.timestamp > 0) {
+					msg.alt = air_data.baro_alt_meter;
+				}
 			} else {
 				vehicle_air_data_s air_data{};
 				_air_data_sub.copy(&air_data);

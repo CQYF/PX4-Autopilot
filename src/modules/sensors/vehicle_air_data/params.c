@@ -39,7 +39,7 @@
  * @group Sensors
  * @unit hPa
  */
-PARAM_DEFINE_FLOAT(SENS_BARO_QNH, 1013.25f);
+PARAM_DEFINE_FLOAT(SENS_BARO_QNH, 1028.25f);
 
 /**
  * Baro max rate.
@@ -53,3 +53,15 @@ PARAM_DEFINE_FLOAT(SENS_BARO_QNH, 1013.25f);
  * @unit Hz
  */
 PARAM_DEFINE_FLOAT(SENS_BARO_RATE, 20.0f);
+
+/**
+ * air,fresh or salt water
+ *
+ * @min 0
+ * @max 2
+ * @value 0 Air
+ * @value 1 Fresh water
+ * @value 2 Salt water
+ * @group Sensors
+ */
+PARAM_DEFINE_INT32(SENS_BARO_MEDIUM,1);
