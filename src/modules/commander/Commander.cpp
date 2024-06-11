@@ -39,6 +39,7 @@
  */
 
 #include "Commander.hpp"
+#include <lib/tinympc/tinympc/src/tinympc/tiny_api.hpp>
 
 /* commander module headers */
 #include "Arming/ArmAuthorization/ArmAuthorization.h"
