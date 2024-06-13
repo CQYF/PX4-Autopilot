@@ -44,6 +44,8 @@
 #include "UserModeIntention.hpp"
 #include "worker_thread.hpp"
 
+
+#include <lib/tinympc/tinympc/src/tinympc/tiny_api.hpp>
 #include <lib/controllib/blocks.hpp>
 #include <lib/hysteresis/hysteresis.h>
 #include <lib/mathlib/mathlib.h>

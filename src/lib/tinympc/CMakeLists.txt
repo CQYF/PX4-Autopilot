@@ -31,8 +31,12 @@
 #
 ############################################################################
 
-px4_add_library(tinympc
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=float-equal")
+
+add_library(tinympc
 	tinympc/src/tinympc/admm.cpp
-    	tinympc/src/tinympc/tiny_api.cpp
-	tinympc/include/Eigen/Eigen.h
+	tinympc/src/tinympc/tiny_api.cpp
 )
+
+target_include_directories(tinympc PUBLIC tinympc/include/Eigen)
+target_include_directories(tinympc PUBLIC tinympc/src/tinympc)

@@ -75,6 +75,7 @@ px4_add_module(
 		MulticopterThrowLaunch
 		sensor_calibration
 		world_magnetic_model
+		tinympc
         atmosphere
 	)
 

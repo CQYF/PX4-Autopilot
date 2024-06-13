@@ -39,7 +39,6 @@
  */
 
 #include "Commander.hpp"
-#include <lib/tinympc/tinympc/src/tinympc/tiny_api.hpp>
 
 /* commander module headers */
 #include "Arming/ArmAuthorization/ArmAuthorization.h"
@@ -1735,6 +1734,9 @@ void Commander::run()
 	/* initialize */
 	led_init();
 	buzzer_init();
+
+	// TinySolver solver;
+	// tiny_solve(&solver);
 
 #if defined(BOARD_HAS_POWER_CONTROL)
 	{
