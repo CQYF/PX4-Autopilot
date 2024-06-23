@@ -138,9 +138,9 @@ ControlAllocator::parameters_updated()
 	}
 
 	_stopped_actuator_bitmasks[(int)AllocaterHydroState::StopAll] = 		(uint16_t)0b1111111111111111;
-	_stopped_actuator_bitmasks[(int)AllocaterHydroState::WaterOnly] = 	(uint16_t)0b0000000100111100;
-	_stopped_actuator_bitmasks[(int)AllocaterHydroState::WaterAir] = 	(uint16_t)0b0000000000000000;
-	_stopped_actuator_bitmasks[(int)AllocaterHydroState::AirOnly] = 		(uint16_t)0b0000001011100011;
+	_stopped_actuator_bitmasks[(int)AllocaterHydroState::WaterOnly] = 		(uint16_t)0b0000000000011100;
+	_stopped_actuator_bitmasks[(int)AllocaterHydroState::WaterAir] = 		(uint16_t)0b0000000000000000;
+	_stopped_actuator_bitmasks[(int)AllocaterHydroState::AirOnly] = 		(uint16_t)0b0000000011000011;
 
 	update_effectiveness_matrix_if_needed(EffectivenessUpdateReason::CONFIGURATION_UPDATE);
 }
