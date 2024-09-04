@@ -1,0 +1,18 @@
+module_name: vtrack
+parameters:
+- group: OptiTrack
+  definitions:
+    VTRACK_ALPHA:
+      description:
+        short: The filtering factor alpha of the EMA filter
+        long: The filtering factor alpha of the EMA filter
+          determines the weight ratio between the current value
+          and the historical value. The closer alpha is to 1,
+          the slower the filter's response to new data;
+          The closer alpha is to 0, the faster the filter's
+          response to new data.
+      type: float
+      default: 1.0
+      min: 0.0
+      max: 1.0
+      decimal: 3
