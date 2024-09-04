@@ -47,7 +47,10 @@
 #include <drivers/drv_hrt.h>
 #include "../ekf2/EKF/RingBuffer.h"
 
+#include <mathlib/math/filter/MedianFilter.hpp>
+
 using namespace time_literals;
+using namespace math;
 
 class VTrack final : public ModuleBase<VTrack>, public ModuleParams,
 	public px4::ScheduledWorkItem
@@ -89,12 +92,20 @@ private:
 
 	RingBuffer<VisualSample> *_visual_buffer{nullptr};
 
+	MedianFilter<float, 5>* _v_mid_filters[3];
+	MedianFilter<float, 9>* _w_mid_filters[3];
+
 	bool _first_write{true};
 
 	perf_counter_t _loop_perf;
 
+	float _rotvec_max_squared;
+	float _dp_max_squared;
+
 	DEFINE_PARAMETERS(
-		(ParamFloat<px4::params::VTRACK_ALPHA>) _param_vtrack_alpha
+		(ParamFloat<px4::params::VTRACK_ALPHA>) _param_vtrack_alpha,
+		(ParamFloat<px4::params::VTRACK_DQ_MAX>) _param_vtrack_dq_max,
+		(ParamFloat<px4::params::VTRACK_DP_MAX>) _param_vtrack_dp_max
 	)
 
 	void parameters_update(bool force = false);

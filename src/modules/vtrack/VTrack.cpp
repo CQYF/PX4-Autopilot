@@ -35,6 +35,7 @@
 
 #include <matrix/math.hpp>
 
+
 using namespace matrix;
 
 using namespace time_literals;
@@ -44,12 +45,22 @@ VTrack::VTrack() :
 	ScheduledWorkItem(MODULE_NAME, px4::wq_configurations::nav_and_controllers),
 	_loop_perf(perf_alloc(PC_ELAPSED, MODULE_NAME": cycle"))
 {
+	for(int i=0; i<3; i++)
+	{
+		_v_mid_filters[i] = new MedianFilter<float, 5>();
+		_w_mid_filters[i] = new MedianFilter<float, 9>();
+	}
 	_visual_buffer = new RingBuffer<VisualSample>(5);
 	parameters_update(true);
 }
 
 VTrack::~VTrack()
 {
+	for(int i=0; i<3; i++)
+	{
+		delete _v_mid_filters[i];
+		delete _w_mid_filters[i];
+	}
 	delete _visual_buffer;
 	perf_free(_loop_perf);
 }
@@ -107,35 +118,66 @@ void VTrack::Run()
 			float dt = (float)(sample.timestamp_sample - last_sample.timestamp_sample) / 1000000.0f;
 
 			if (dt > 0.0f) {
-				// 速度计算
+				bool is_valid = true;
+				_dp_max_squared = _param_vtrack_dp_max.get() * _param_vtrack_dp_max.get();
+				_rotvec_max_squared = _param_vtrack_dq_max.get() * _param_vtrack_dq_max.get();
+
+				// 计算位置变化量
 				Vector3f curr_p(sample.position);
 				Vector3f last_p(last_sample.position);
-				Vector3f curr_v = (curr_p - last_p) * (1.0f / dt);
+				Vector3f delta_p = curr_p - last_p;
+				if(delta_p.norm_squared() > _dp_max_squared)
+					is_valid = false;
 
-				//四元数微分
+				//四元数微分计算姿态变化量
 				Quatf curr_q(sample.q);
 				Quatf last_q(last_sample.q);
 				Quatf delta_q = curr_q * last_q.inversed();
-				Vector3f curr_w = delta_q.imag() * (2.0f / dt);
-
-				//EMA
-				Vector3f last_v(_diffed_visual_odometry_msg.velocity);
-				Vector3f last_w(_diffed_visual_odometry_msg.angular_velocity);
-
-				float alpha = _param_vtrack_alpha.get();
-
-				Vector3f filted_v = (curr_v * alpha) + (last_v * (1-alpha));
-				Vector3f filted_w = (curr_w * alpha) + (last_w * (1-alpha));
-
-				//赋值
-				_diffed_visual_odometry_msg = _vehicle_visual_odometry_msg;
-				filted_v.copyTo(_diffed_visual_odometry_msg.velocity);
-				filted_w.copyTo(_diffed_visual_odometry_msg.angular_velocity);
+				Vector3f rotvec = delta_q.imag() * 2.0f;
+				if(rotvec.norm_squared() > _rotvec_max_squared)
+					is_valid = false;
 
 				_visual_buffer->push(sample);
 
-				//发布
-				_diffed_visual_odometry_pub.publish(_diffed_visual_odometry_msg);
+				if(is_valid)
+				{
+					_diffed_visual_odometry_msg = _vehicle_visual_odometry_msg;
+
+					//计算速度
+					Vector3f curr_v = delta_p * (1.0f / dt);
+					Vector3f curr_w = rotvec * (1.0f / dt);
+
+					#if 0
+					//EMA滤波
+					Vector3f last_v(_diffed_visual_odometry_msg.velocity);
+					Vector3f last_w(_diffed_visual_odometry_msg.angular_velocity);
+
+					float alpha = _param_vtrack_alpha.get();
+
+					Vector3f v_ema = (curr_v * alpha) + (last_v * (1-alpha));
+					Vector3f w_ema = (curr_w * alpha) + (last_w * (1-alpha));
+
+					v_ema.copyTo(_diffed_visual_odometry_msg.velocity);
+					w_ema.copyTo(_diffed_visual_odometry_msg.angular_velocity);
+
+					#else
+					//中值滤波
+					float curr_v1[3];
+					float curr_w1[3];
+					curr_v.copyTo(curr_v1);
+					curr_w.copyTo(curr_w1);
+
+					for(int i=0; i<3; i++)
+					{
+						_diffed_visual_odometry_msg.velocity[i] = _v_mid_filters[i]->apply(curr_v1[i]);
+						_diffed_visual_odometry_msg.angular_velocity[i] = _w_mid_filters[i]->apply(curr_w1[i]);
+					}
+
+					#endif
+
+					//发布
+					_diffed_visual_odometry_pub.publish(_diffed_visual_odometry_msg);
+				}
 			}
 		}
 	}
