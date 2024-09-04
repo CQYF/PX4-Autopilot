@@ -41,6 +41,16 @@
  */
 
 /**
+ * Body attack feedforward.
+ *
+ * Please refer to the comments in HydroRateControl.cpp for details
+ *
+ * @decimal 3
+ * @group Hydro Rate Control
+ */
+PARAM_DEFINE_FLOAT(HY_ATTACK_FF, 0.00f);
+
+/**
  * Pitch rate proportional gain.
  *
  * @unit %/rad/s
