@@ -40,3 +40,4 @@ hydro_att_control start
 hydro_rate_control start
 
 vtrack start
+mavdebug start
