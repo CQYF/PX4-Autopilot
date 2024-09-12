@@ -41,3 +41,6 @@ hydro_rate_control start
 
 vtrack start
 mavdebug start
+
+param set DEPTH_FUSION_ENABLE 1
+depth_fusion start

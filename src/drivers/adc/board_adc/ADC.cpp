@@ -174,7 +174,8 @@ void ADC::update_adc_report(hrt_abstime now)
 
 	for (i = 0; i < max_num; i++) {
 		adc.channel_id[i] = _samples[i].am_channel;
-		if (adc.channel_id[i] == 8){
+		//if (adc.channel_id[i] == int16_t 8){
+		if (i == 2){
 			int32_t N=5;
 			int32_t sum[N]={0},t;
 			for(t=0;t<N;t++){
@@ -183,12 +184,17 @@ void ADC::update_adc_report(hrt_abstime now)
 			}
 			bubling_sort(sum,N);
 			adc.raw_data[i] = sum[N/2];
+			//adc.depth=-4.387*pow(10,-17)*pow(adc.raw_data[i],4)+4.507*pow(10,-12)*pow(adc.raw_data[i],3)-1.648*pow(10,-7)*pow(adc.raw_data[i],2)+0.002593*adc.raw_data[i]-7.914;
+			//adc.depth=4.277*pow(10,-22)*pow(adc.raw_data[i],5)-7.774*pow(10,-17)*pow(adc.raw_data[i],4)+5.276*pow(10,-12)*pow(adc.raw_data[i],3)-1.66*pow(10,-7)*pow(adc.raw_data[i],2)+0.002464*adc.raw_data[i]-7.224;
+			adc.depth=-8.756*pow(10,4)*pow(adc.raw_data[i],-1.108)+8.528+2.7;
+			if (adc.depth<0){
+				adc.depth=0;
+			}
 		}
 		else{
 			adc.raw_data[i] = _samples[i].am_data;
 		}
 	}
-
 	for (; i < PX4_MAX_ADC_CHANNELS; ++i) {	// set unused channel id to -1
 		adc.channel_id[i] = -1;
 	}
@@ -342,8 +348,8 @@ int ADC::test()
 		PX4_INFO_RAW("DeviceID: %" PRId32 "\n", adc.device_id);
 		PX4_INFO_RAW("Resolution: %" PRId32 "\n", adc.resolution);
 		PX4_INFO_RAW("Voltage Reference: %f\n", (double)adc.v_ref);
-
-		for (unsigned l = 0; l < 2000; ++l) {
+		int32_t Sum=0.0;
+		for (unsigned l = 0; l < 200; ++l) {
 			for (unsigned i = 0; i < PX4_MAX_ADC_CHANNELS; ++i) {
 				//if (adc.channel_id[i] >= 0) {
 				if (adc.channel_id[i] == 8){
@@ -356,6 +362,7 @@ int ADC::test()
 					bubling_sort(sum,N);
 					//PX4_INFO_RAW("% 2" PRId16 " :% 6" PRId32, adc.channel_id[i], adc.raw_data[i]);
 					PX4_INFO_RAW("% 2" PRId16 " :% 6" PRId32, adc.channel_id[i], sum[N/2]);
+					Sum=Sum+sum[N/2];
 				}
 			}
 
@@ -366,7 +373,9 @@ int ADC::test()
 				PX4_INFO_RAW("\t ADC test failed.\n");
 			}
 		}
-
+		PX4_INFO_RAW("\t ADC test average\n");
+		PX4_INFO_RAW("% 2" PRId16 " :% 6" PRId32,8,Sum/200);
+		PX4_INFO_RAW("\n");
 		PX4_INFO_RAW("\t ADC test successful.\n");
 
 		return 0;

@@ -1,0 +1,5 @@
+menuconfig MODULES_DEPTH_FUSION
+	bool "depth_fusion"
+	default n
+	---help---
+		Enable support for depth_fusion
