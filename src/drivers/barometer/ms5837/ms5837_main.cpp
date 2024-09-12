@@ -53,7 +53,7 @@ extern "C" int ms5837_main(int argc, char *argv[])
 	BusCLIArguments cli{true, false};
 	cli.default_i2c_frequency = 400000;
 	uint16_t dev_type_driver = DRV_BARO_DEVTYPE_MS5837;
-	PX4_INFO("here 1");
+	// PX4_INFO("here 1");
 
 	const char *verb = cli.parseDefaultArguments(argc, argv);
 
