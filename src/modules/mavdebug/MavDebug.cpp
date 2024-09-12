@@ -41,8 +41,7 @@ MavDebug::MavDebug() :
 	_loop_perf(perf_alloc(PC_ELAPSED, MODULE_NAME": cycle"))
 {
 	const char name[] = "alpha";
-	memcpy(_debug_array_msg.name, name, sizeof(name));
-	_debug_array_msg.id = 0;
+	memcpy(_debug_vect_msg.name, name, sizeof(name));
 	parameters_update(true);
 }
 
@@ -54,7 +53,7 @@ MavDebug::~MavDebug()
 bool
 MavDebug::init()
 {
-	if (!_vehicle_air_data_sub.registerCallback()) {
+	if (!_vehicle_air_data_sub.registerCallback() || !_estimator_states_sub.registerCallback()) {
 		PX4_ERR("callback registration failed");
 		return false;
 	}
@@ -80,6 +79,7 @@ void MavDebug::Run()
 {
 	if (should_exit()) {
 		_vehicle_air_data_sub.unregisterCallback();
+		_estimator_states_sub.unregisterCallback();
 		exit_and_cleanup();
 		return;
 	}
@@ -88,10 +88,15 @@ void MavDebug::Run()
 
 	if (_vehicle_air_data_sub.update(&_vehicle_air_data_msg))
 	{
-		_debug_array_msg.timestamp = hrt_absolute_time();
-		_debug_array_msg.data[0] = _vehicle_air_data_msg.baro_alt_meter;
-		_debug_array_pub.publish(_debug_array_msg);
+		_debug_vect_msg.x = _vehicle_air_data_msg.baro_alt_meter;
 	}
+	if (_estimator_states_sub.update(&_estimator_states_msg))
+	{
+		_debug_vect_msg.y = - _estimator_states_msg.states[9];
+	}
+
+	_debug_vect_msg.timestamp = hrt_absolute_time();
+	_debug_vect_pub.publish(_debug_vect_msg);
 
 	parameters_update();
 
