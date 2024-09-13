@@ -29,3 +29,4 @@ int8 quality
 
 # TOPICS vehicle_odometry vehicle_mocap_odometry vehicle_visual_odometry
 # TOPICS estimator_odometry
+# TOPICS diffed_visual_odometry

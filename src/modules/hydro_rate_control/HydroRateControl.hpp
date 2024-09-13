@@ -68,6 +68,7 @@
 #include <uORB/topics/vehicle_status.h>
 #include <uORB/topics/vehicle_thrust_setpoint.h>
 #include <uORB/topics/vehicle_torque_setpoint.h>
+#include <uORB/topics/vehicle_attitude.h>
 
 using matrix::Eulerf;
 using matrix::Quatf;
@@ -106,6 +107,7 @@ private:
 	uORB::Subscription _rates_sp_sub{ORB_ID(vehicle_rates_setpoint)};
 	uORB::Subscription _vehicle_status_sub{ORB_ID(vehicle_status)};
 	uORB::Subscription _vehicle_rates_sub{ORB_ID(vehicle_angular_velocity)};
+	uORB::Subscription _vehicle_attitude_sub{ORB_ID(vehicle_attitude)};
 
 	uORB::Publication<vehicle_rates_setpoint_s>	_rate_sp_pub{ORB_ID(vehicle_rates_setpoint)};
 	uORB::Publication<vehicle_torque_setpoint_s>	_vehicle_torque_setpoint_pub{ORB_ID(vehicle_torque_setpoint)};
@@ -116,6 +118,7 @@ private:
 	vehicle_torque_setpoint_s		_vehicle_torque_setpoint{};
 	vehicle_rates_setpoint_s		_rates_sp{};
 	vehicle_status_s			_vehicle_status{};
+	vehicle_attitude_s			_vehicle_attitude{};
 
 	perf_counter_t _loop_perf;
 
@@ -174,7 +177,8 @@ private:
 		(ParamFloat<px4::params::TRIM_ROLL>) _param_trim_roll,
 		(ParamFloat<px4::params::TRIM_YAW>) _param_trim_yaw,
 
-		(ParamFloat<px4::params::HY_THR_TO_PIT_FF>) _param_thr_to_pit_ff	//推力前馈到pit轴力矩上
+		(ParamFloat<px4::params::HY_THR_TO_PIT_FF>) _param_thr_to_pit_ff,	//推力前馈到pit轴力矩上
+		(ParamFloat<px4::params::HY_ATTACK_FF>) _param_attack_ff		//机身攻角补偿
 	)
 
 	RateControl _rate_control; ///< class for rate control calculations

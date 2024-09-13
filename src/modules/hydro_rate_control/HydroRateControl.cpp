@@ -279,6 +279,18 @@ void HydroRateControl::Run()
 			_vehicle_torque_setpoint.xyz[1] = math::constrain(_vehicle_torque_setpoint.xyz[1] + _param_thr_to_pit_ff.get() *
 							_vehicle_thrust_setpoint.xyz[0], -1.f, 1.f);
 
+			//px4的算法忽略了机身的攻角对操纵面实际攻角的影响，认为操纵面的实际攻角始终等于操纵面相对于机身的角度，但这对于滑行控制而言是不可接受的，
+			//飞机在滑行时机身总是保持一定的正攻角，此时水翼的0控制量也就对应了这个正攻角，在高速滑行时，水翼只需要很小的实际攻角就可以实现控制，
+			//这个正攻角就会将实际平衡点向上大幅推移，并且一般会直接推移到平衡范围之外，也就出现了滑行中在水面上跳动的情况（当然这只是因素之一）
+			//这项增益的目的是让水翼的攻角始终以水平面为0，实现原理是利用机身的实际pit角度（也就是机身的攻角）制造一个线性项，加到俯仰力矩当中
+			//这项增益在手动模式下依然有效，并且由于控制分配机制的存在，会对小平尾产生附带影响。
+			//! 这项增益会在起飞后造成麻烦（大概），暂时只用于滑行，如果要起飞，应当将增益置0
+			//! 这项增益在手动模式下依然存在，调节增益系数的方法是在手动模式下俯仰飞机，直到在任何角度下水翼都保持水平
+			_vehicle_attitude_sub.update(&_vehicle_attitude);
+			Eulerf euler_angles(Quatf(_vehicle_attitude.q));
+			_vehicle_torque_setpoint.xyz[1] = math::constrain(_vehicle_torque_setpoint.xyz[1] + _param_attack_ff.get() *
+							euler_angles.theta(), -1.f, 1.f);
+
 			_vehicle_thrust_setpoint.timestamp = hrt_absolute_time();
 			_vehicle_thrust_setpoint.timestamp_sample = angular_velocity.timestamp_sample;
 			_vehicle_thrust_setpoint_pub.publish(_vehicle_thrust_setpoint);

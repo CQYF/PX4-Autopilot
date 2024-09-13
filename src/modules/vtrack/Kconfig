@@ -1,0 +1,5 @@
+menuconfig MODULES_VTRACK
+	bool "vtrack"
+	default n
+	---help---
+		Enable support for vtrack

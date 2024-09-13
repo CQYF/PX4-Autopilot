@@ -45,6 +45,10 @@ using namespace px4::logger;
 
 void LoggedTopics::add_default_topics()
 {
+	// USER TOPIC START
+	add_topic("diffed_visual_odometry", 0);
+
+	// USER TOPIC END
 	add_topic("action_request");
 	add_topic("actuator_armed");
 	add_optional_topic("actuator_controls_status_0", 300);
@@ -174,7 +178,7 @@ void LoggedTopics::add_default_topics()
 	add_topic("estimator_innovations", 500);
 	add_topic("estimator_optical_flow_vel", 200);
 	add_topic("estimator_sensor_bias", 0);
-	add_topic("estimator_states", 1000);
+	add_topic("estimator_states", 0);//原本是1000ms记录一次，现在改为无限，便于分析
 	add_topic("estimator_status", 200);
 	add_topic("estimator_status_flags", 0);
 	add_topic("yaw_estimator_status", 1000);

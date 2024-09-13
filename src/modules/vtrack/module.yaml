@@ -1,0 +1,43 @@
+module_name: vtrack
+parameters:
+- group: OptiTrack
+  definitions:
+    VTRACK_ALPHA:
+      description:
+        short: The filtering factor alpha of the EMA filter
+        long: The filtering factor alpha of the EMA filter
+          determines the weight ratio between the current value
+          and the historical value. The closer alpha is to 1,
+          the slower the filter's response to new data;
+          The closer alpha is to 0, the faster the filter's
+          response to new data.
+      type: float
+      default: 1.0
+      min: 0.0
+      max: 1.0
+      decimal: 3
+    VTRACK_DQ_MAX:
+      description:
+        short: The maximum of attitude change between two visual samples
+        long: The maximum of attitude change between two visual samples.
+          Attitude change refers to the three-axis angle change calculated
+          using quaternion differentiation and calculating its L2 norm.
+          Samples exceeding this value are considered illegal.
+          By analyzing the sampled raw data using MATLAB,
+          we can determine what value this parameter should be set to.
+      type: float
+      default: 0.5
+      min: 0.0
+      decimal: 3
+    VTRACK_DP_MAX:
+      description:
+        short: The maximum of position change between two visual samples
+        long: The maximum of position change between two visual samples.
+          calculated using L2 norm.
+          Samples exceeding this value are considered illegal.
+          By analyzing the sampled raw data using MATLAB,
+          we can determine what value this parameter should be set to.
+      type: float
+      default: 0.1
+      min: 0.0
+      decimal: 3

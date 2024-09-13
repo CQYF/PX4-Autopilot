@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2022 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2018 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,52 +31,59 @@
  *
  ****************************************************************************/
 
-#include <px4_platform_common/px4_config.h>
-#include <px4_platform_common/getopt.h>
-#include <px4_platform_common/i2c_spi_buses.h>
+#pragma once
+
 #include <px4_platform_common/module.h>
+#include <px4_platform_common/px4_work_queue/ScheduledWorkItem.hpp>
+#include <px4_platform_common/module_params.h>
+#include <uORB/Publication.hpp>
+#include <uORB/SubscriptionCallback.hpp>
+#include <uORB/SubscriptionInterval.hpp>
 
-#include "MS5837.hpp"
+#include <uORB/topics/parameter_update.h>
 
-void MS5837::print_usage()
+#include <uORB/topics/debug_vect.h>
+#include <uORB/topics/vehicle_air_data.h>
+#include <uORB/topics/estimator_states.h>
+
+#include <drivers/drv_hrt.h>
+
+using namespace time_literals;
+
+class MavDebug final : public ModuleBase<MavDebug>, public ModuleParams,
+	public px4::ScheduledWorkItem
 {
-	PRINT_MODULE_USAGE_NAME("ms5837", "driver");
-	PRINT_MODULE_USAGE_SUBCATEGORY("baro");
-	PRINT_MODULE_USAGE_COMMAND("start");
-	PRINT_MODULE_USAGE_PARAMS_I2C_SPI_DRIVER(true, false);
-	PRINT_MODULE_USAGE_DEFAULT_COMMANDS();
-}
+public:
+	MavDebug();
+	~MavDebug() override;
 
-extern "C" int ms5837_main(int argc, char *argv[])
-{
-	using ThisDriver = MS5837;
-	BusCLIArguments cli{true, false};
-	cli.default_i2c_frequency = 400000;
-	uint16_t dev_type_driver = DRV_BARO_DEVTYPE_MS5837;
-	// PX4_INFO("here 1");
+	/** @see ModuleBase */
+	static int task_spawn(int argc, char *argv[]);
 
-	const char *verb = cli.parseDefaultArguments(argc, argv);
+	/** @see ModuleBase */
+	static int custom_command(int argc, char *argv[]);
 
-	if (!verb) {
-		ThisDriver::print_usage();
-		return -1;
-	}
+	/** @see ModuleBase */
+	static int print_usage(const char *reason = nullptr);
 
-	cli.i2c_address = MS5837_ADDRESS;
-	BusInstanceIterator iterator(MODULE_NAME, cli, dev_type_driver);
+	bool init();
 
-	if (!strcmp(verb, "start")) {
-		return ThisDriver::module_start(cli, iterator);
-	}
+private:
+	void Run() override;
 
-	if (!strcmp(verb, "stop")) {
-		return ThisDriver::module_stop(iterator);
-	}
+	uORB::SubscriptionInterval _parameter_update_sub{ORB_ID(parameter_update), 1_s};
 
-	if (!strcmp(verb, "status")) {
-		return ThisDriver::module_status(iterator);
-	}
+	uORB::SubscriptionCallbackWorkItem 	_vehicle_air_data_sub{this, ORB_ID(vehicle_air_data)};
+	uORB::SubscriptionCallbackWorkItem 	_estimator_states_sub{this, ORB_ID(estimator_states)};
 
-	ThisDriver::print_usage();
-	return -1;
-}
+	vehicle_air_data_s			_vehicle_air_data_msg{0};
+	estimator_states_s			_estimator_states_msg{0};
+
+	uORB::Publication<debug_vect_s>		_debug_vect_pub{ORB_ID(debug_vect)};
+
+	debug_vect_s				_debug_vect_msg{0};
+
+	perf_counter_t _loop_perf;
+
+	void parameters_update(bool force = false);
+};
