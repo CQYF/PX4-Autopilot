@@ -111,3 +111,5 @@ log/
 
 
 /ulog/*
+
+/mavros/*
