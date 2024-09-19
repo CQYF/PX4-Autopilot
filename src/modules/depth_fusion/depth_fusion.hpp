@@ -143,7 +143,7 @@ private:
 	uORB::Subscription _adc_report_sub{ORB_ID(adc_report)};
 	uORB::Publication<depth_fusion_s> _depth_fusion_pub{ORB_ID(depth_fusion)};
 	perf_counter_t			_loop_perf;
-	static const hrt_abstime	interval_us{20_ms};
+	static const hrt_abstime	interval_us{100_ms};
 	KalmanFilter kf1;
     KalmanFilter kf2;
 };
