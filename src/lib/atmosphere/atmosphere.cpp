@@ -73,7 +73,7 @@ float getAltitudeFromPressure(float pressure_pa, float pressure_sealevel_pa)
 }
 float getDepthFromPressure(float pressure_pa, float pressure_sealevel_pa, float rho)
 {
-	return(pressure_pa-pressure_sealevel_pa)/(rho*CONSTANTS_ONE_G);
+	return(pressure_pa-pressure_sealevel_pa)/(rho*CONSTANTS_ONE_G)*100.0f;
 }
 float getStandardTemperatureAtAltitude(float altitude_m)
 {

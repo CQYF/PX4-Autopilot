@@ -48,6 +48,10 @@ void LoggedTopics::add_default_topics()
 	// USER TOPIC START
 	add_topic("diffed_visual_odometry", 0);
 	add_topic("depth_fusion");
+	add_topic("debug_array");
+	add_topic("debug_key_value");
+	add_topic("debug_value");
+	add_topic("debug_vect");
 
 	// USER TOPIC END
 	add_topic("action_request");
