@@ -1,0 +1,148 @@
+module_name: hydro_allocator
+parameters:
+- group: HydroAllocator
+  definitions:
+    HA_RT${i}_IDX:
+      description:
+        short: The correspondence between hydro actuators and configuration actuators
+      type: int32
+      num_instances: 2
+      default: 1
+      min: 1
+      max: 8
+    HA_SV${i}_IDX:
+      description:
+        short: The correspondence between hydro actuators and configuration actuators
+      type: int32
+      num_instances: 2
+      default: 1
+      min: 1
+      max: 8
+
+    HA_VZRT${i}_X_R:
+      description:
+        short: X ratio of Z-direction virtual motor
+      type: float
+      num_instances: 2
+      default: 0.0
+      min: -1.0
+      max: 1.0
+      decimal: 3
+    HA_VZRT${i}_Y_R:
+      description:
+        short: Y ratio of Z-direction virtual motor
+      type: float
+      num_instances: 2
+      default: 0.0
+      min: -1.0
+      max: 1.0
+      decimal: 3
+    HA_VZRT${i}_Z_R:
+      description:
+        short: Z ratio of Z-direction virtual motor
+      type: float
+      num_instances: 2
+      default: 0.0
+      min: -1.0
+      max: 1.0
+      decimal: 3
+    HA_VZRT${i}_PIT_R:
+      description:
+        short: PIT ratio of Z-direction virtual motor
+      type: float
+      num_instances: 2
+      default: 0.0
+      min: -1.0
+      max: 1.0
+      decimal: 3
+    HA_VZRT${i}_YAW_R:
+      description:
+        short: YAW ratio of Z-direction virtual motor
+      type: float
+      num_instances: 2
+      default: 0.0
+      min: -1.0
+      max: 1.0
+      decimal: 3
+    HA_VZRT${i}_ROL_R:
+      description:
+        short: ROL ratio of Z-direction virtual motor
+      type: float
+      num_instances: 2
+      default: 0.0
+      min: -1.0
+      max: 1.0
+      decimal: 3
+
+    HA_VXRT${i}_X_R:
+      description:
+        short: X ratio of X-direction virtual motor
+      type: float
+      num_instances: 2
+      default: 0.0
+      min: -1.0
+      max: 1.0
+      decimal: 3
+    HA_VXRT${i}_Y_R:
+      description:
+        short: Y ratio of X-direction virtual motor
+      type: float
+      num_instances: 2
+      default: 0.0
+      min: -1.0
+      max: 1.0
+      decimal: 3
+    HA_VXRT${i}_Z_R:
+      description:
+        short: Z ratio of X-direction virtual motor
+      type: float
+      num_instances: 2
+      default: 0.0
+      min: -1.0
+      max: 1.0
+      decimal: 3
+    HA_VXRT${i}_PIT_R:
+      description:
+        short: PIT ratio of X-direction virtual motor
+      type: float
+      num_instances: 2
+      default: 0.0
+      min: -1.0
+      max: 1.0
+      decimal: 3
+    HA_VXRT${i}_YAW_R:
+      description:
+        short: YAW ratio of X-direction virtual motor
+      type: float
+      num_instances: 2
+      default: 0.0
+      min: -1.0
+      max: 1.0
+      decimal: 3
+    HA_VXRT${i}_ROL_R:
+      description:
+        short: ROL ratio of X-direction virtual motor
+      type: float
+      num_instances: 2
+      default: 0.0
+      min: -1.0
+      max: 1.0
+      decimal: 3
+
+    HA_ALT_SPEED:
+      description:
+        short: Alternative speed when there is no speed measurement
+      type: float
+      default: 1.0
+      min: 0.0
+      max: 15.0
+      decimal: 2
+
+    HA_SPEED_SELECT:
+      description:
+        short: Speed selection
+      type: enum
+      values:
+        0: Alternative speed only
+        1: Measurement first (Unsupported)
+      default: 0

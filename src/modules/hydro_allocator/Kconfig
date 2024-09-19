@@ -1,0 +1,5 @@
+menuconfig MODULES_HYDRO_ALLOCATOR
+	bool "hydro_allocator"
+	default n
+	---help---
+		Enable support for hydro_allocator

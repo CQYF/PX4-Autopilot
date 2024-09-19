@@ -181,6 +181,9 @@ private:
 	uORB::Subscription _vehicle_torque_setpoint1_sub{ORB_ID(vehicle_torque_setpoint), 1};  /**< vehicle torque setpoint subscription (2. instance) */
 	uORB::Subscription _vehicle_thrust_setpoint1_sub{ORB_ID(vehicle_thrust_setpoint), 1};	 /**< vehicle thrust setpoint subscription (2. instance) */
 
+	uORB::Subscription _hydro_motors_sub{ORB_ID(hydro_motors)};
+	uORB::Subscription _hydro_servos_sub{ORB_ID(hydro_servos)};
+
 	// Outputs
 	uORB::PublicationMulti<control_allocator_status_s> _control_allocator_status_pub[2] {ORB_ID(control_allocator_status), ORB_ID(control_allocator_status)};
 
@@ -196,6 +199,9 @@ private:
 	uORB::Subscription _manual_control_setpoint_sub{ORB_ID(manual_control_setpoint)};
 
 	uint16_t _stopped_actuator_bitmasks[4];		//bitmask，用于指定不同状态下停止运行的执行器
+
+	actuator_motors_s _hydro_motors{0};
+	actuator_servos_s _hydro_servos{0};
 
 	enum class AllocaterHydroState : int32_t {
 		StopAll = 0,
