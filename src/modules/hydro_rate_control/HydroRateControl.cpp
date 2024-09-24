@@ -291,19 +291,19 @@ void HydroRateControl::Run()
 
 
 			// TODO 深度真值与设定值，PID和PID参数
-			float depth;
-			float depth_setpoint;
+			float depth = 0;
+			float depth_setpoint = 0;
 
 			//水平推力，向前为正，和原来的推力一致
 			float hydro_horizontal_thrust_setpoint = _vehicle_thrust_setpoint.xyz[0];
 			//竖直推力，向!下!为正，等于深度控制的输出加上重力补偿
-			float hydro_vertical_thrust_setpoint = 0.5*(depth_setpoint - depth) - 0.4;
+			float hydro_vertical_thrust_setpoint = 0.5f*(depth_setpoint - depth) - 0.4f;
 			//滑行时，机身的俯仰角近似为自然攻角，实际攻角等于翼面偏转角度加上自然攻角
 			float alpha0 = _vehicle_torque_setpoint.xyz[1];
 
 			//水平和竖直推力转换为机身坐标系下的推力，使用二维坐标转换（注意，这些推力都是归一化的，范围是0-1）
-			_hydro_thrust_setpoint.xyz[0] = math::constrain(hydro_horizontal_thrust_setpoint * sin(alpha0) - hydro_vertical_thrust_setpoint * cos(alpha0), 0.f, 1.f);
-			_hydro_thrust_setpoint.xyz[2] = math::constrain(hydro_horizontal_thrust_setpoint * cos(alpha0) + hydro_vertical_thrust_setpoint * sin(alpha0), 0.f, 1.f);
+			_hydro_thrust_setpoint.xyz[0] = math::constrain(hydro_horizontal_thrust_setpoint * std::sin(alpha0) - hydro_vertical_thrust_setpoint * std::cos(alpha0), 0.f, 1.f);
+			_hydro_thrust_setpoint.xyz[2] = math::constrain(hydro_horizontal_thrust_setpoint * std::cos(alpha0) + hydro_vertical_thrust_setpoint * std::sin(alpha0), 0.f, 1.f);
 
 			//y方向推力始终为0，力矩和原来的保持一致
 			_hydro_thrust_setpoint.xyz[1] = 0;
