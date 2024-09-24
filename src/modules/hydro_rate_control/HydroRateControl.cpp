@@ -310,11 +310,34 @@ void HydroRateControl::Run()
 			_hydro_torque_setpoint = _vehicle_torque_setpoint;
 		}
 
+		//根据遥控器上某个辅助通道的状态，判断当前的运行模式
+		if(_manual_control_setpoint.aux2 < -0.5f)
+		{
+			_hydro_running_state = HydroRunningState::WaterOnly;
+		}
+		else if(_manual_control_setpoint.aux2 > 0.5f)
+		{
+			_hydro_running_state = HydroRunningState::AirOnly;
+		}
+		else
+		{
+			_hydro_running_state = HydroRunningState::WaterAir;
+		}
+
 		//TODO 把switch屏蔽执行器的功能移动到这里
-		//在全部的自定义模式下，都要发布vehicle的setpoint
+		//在全部的自定义模式下，都要发布vehicle的setpoint，但在仅水下部分运行时要发送0
 		if (_vehicle_status.nav_state == HYDRO_MODE_STABILIZED || _vehicle_status.nav_state == HYDRO_MODE_AUTO_DIVE ||
 			_vehicle_status.nav_state == HYDRO_MODE_ACRO || _vehicle_status.nav_state == HYDRO_MODE_MANUAL)
 		{
+			if(_hydro_running_state == HydroRunningState::WaterOnly)
+			{
+				_vehicle_thrust_setpoint.xyz[0] = 0;
+				_vehicle_thrust_setpoint.xyz[1] = 0;
+				_vehicle_thrust_setpoint.xyz[2] = 0;
+				_vehicle_torque_setpoint.xyz[0] = 0;
+				_vehicle_torque_setpoint.xyz[1] = 0;
+				_vehicle_torque_setpoint.xyz[2] = 0;
+			}
 			_vehicle_thrust_setpoint.timestamp = hrt_absolute_time();
 			_vehicle_thrust_setpoint.timestamp_sample = angular_velocity.timestamp_sample;
 			_vehicle_thrust_setpoint_pub.publish(_vehicle_thrust_setpoint);
@@ -324,17 +347,11 @@ void HydroRateControl::Run()
 			_vehicle_torque_setpoint_pub.publish(_vehicle_torque_setpoint);
 		}
 
-		//在全部的自定义模式下，都要发布hydro的setpoint，其他模式下，也要发0
-		if (_vehicle_status.nav_state == HYDRO_MODE_STABILIZED || _vehicle_status.nav_state == HYDRO_MODE_AUTO_DIVE ||
-			_vehicle_status.nav_state == HYDRO_MODE_ACRO || _vehicle_status.nav_state == HYDRO_MODE_MANUAL)
+		//在全部的自定义模式下且水下部分需要运行时，正常发布hydro的setpoint；其他情况，也要发布0
+		if((_vehicle_status.nav_state == HYDRO_MODE_STABILIZED || _vehicle_status.nav_state == HYDRO_MODE_AUTO_DIVE ||
+			_vehicle_status.nav_state == HYDRO_MODE_ACRO || _vehicle_status.nav_state == HYDRO_MODE_MANUAL) && (_hydro_running_state != HydroRunningState::AirOnly))
 		{
-			_hydro_thrust_setpoint.timestamp = hrt_absolute_time();
-			_hydro_thrust_setpoint.timestamp_sample = angular_velocity.timestamp_sample;
-			_hydro_thrust_setpoint_pub.publish(_hydro_thrust_setpoint);
-
-			_hydro_torque_setpoint.timestamp = hrt_absolute_time();
-			_hydro_torque_setpoint.timestamp_sample = angular_velocity.timestamp_sample;
-			_hydro_torque_setpoint_pub.publish(_hydro_torque_setpoint);
+			;
 		}
 		else
 		{
@@ -344,15 +361,14 @@ void HydroRateControl::Run()
 			_hydro_torque_setpoint.xyz[0] = 0;
 			_hydro_torque_setpoint.xyz[1] = 0;
 			_hydro_torque_setpoint.xyz[2] = 0;
-
-			_hydro_thrust_setpoint.timestamp = hrt_absolute_time();
-			_hydro_thrust_setpoint.timestamp_sample = angular_velocity.timestamp_sample;
-			_hydro_thrust_setpoint_pub.publish(_hydro_thrust_setpoint);
-
-			_hydro_torque_setpoint.timestamp = hrt_absolute_time();
-			_hydro_torque_setpoint.timestamp_sample = angular_velocity.timestamp_sample;
-			_hydro_torque_setpoint_pub.publish(_hydro_torque_setpoint);
 		}
+		_hydro_thrust_setpoint.timestamp = hrt_absolute_time();
+		_hydro_thrust_setpoint.timestamp_sample = angular_velocity.timestamp_sample;
+		_hydro_thrust_setpoint_pub.publish(_hydro_thrust_setpoint);
+
+		_hydro_torque_setpoint.timestamp = hrt_absolute_time();
+		_hydro_torque_setpoint.timestamp_sample = angular_velocity.timestamp_sample;
+		_hydro_torque_setpoint_pub.publish(_hydro_torque_setpoint);
 	}
 
 	// backup schedule

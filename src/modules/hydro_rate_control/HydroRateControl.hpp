@@ -115,6 +115,14 @@ private:
 	uORB::Publication<vehicle_torque_setpoint_s>	_hydro_torque_setpoint_pub{ORB_ID(hydro_torque_setpoint)};
 	uORB::Publication<vehicle_thrust_setpoint_s>	_hydro_thrust_setpoint_pub{ORB_ID(hydro_thrust_setpoint)};
 
+	//自定义模式下的控制状态
+	enum class HydroRunningState : int32_t {
+		WaterOnly,
+		WaterAir,
+		AirOnly
+	};
+	HydroRunningState _hydro_running_state{HydroRunningState::WaterOnly};
+
 	manual_control_setpoint_s		_manual_control_setpoint{0};
 	vehicle_thrust_setpoint_s		_vehicle_thrust_setpoint{};
 	vehicle_torque_setpoint_s		_vehicle_torque_setpoint{};
