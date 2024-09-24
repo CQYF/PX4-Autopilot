@@ -87,39 +87,6 @@ HydroRateControl::parameters_update()
 	return PX4_OK;
 }
 
-void
-HydroRateControl::vehicle_manual_poll()
-{
-	if (_vehicle_status.nav_state == HYDRO_MODE_ACRO || _vehicle_status.nav_state == HYDRO_MODE_MANUAL) {
-
-		// Always copy the new manual setpoint, even if it wasn't updated, to fill the actuators with valid values
-		if (_manual_control_setpoint_sub.copy(&_manual_control_setpoint)) {
-
-			if (_vehicle_status.nav_state == HYDRO_MODE_ACRO) {
-
-				_rates_sp.roll = _manual_control_setpoint.roll * radians(_param_hy_acro_x_max.get());
-				_rates_sp.yaw = _manual_control_setpoint.yaw * radians(_param_hy_acro_z_max.get());
-				_rates_sp.pitch = -_manual_control_setpoint.pitch * radians(_param_hy_acro_y_max.get());
-				_rates_sp.timestamp = hrt_absolute_time();
-				_rates_sp.thrust_body[0] = (_manual_control_setpoint.throttle + 1.f) * .5f;
-
-				_rate_sp_pub.publish(_rates_sp);
-
-			} else { // _vehicle_status.nav_state == HYDRO_MODE_MANUAL
-
-				_vehicle_torque_setpoint.xyz[0] = math::constrain(_manual_control_setpoint.roll * _param_hy_man_r_sc.get() +
-								  _param_trim_roll.get(), -1.f, 1.f);
-				_vehicle_torque_setpoint.xyz[1] = math::constrain(-_manual_control_setpoint.pitch * _param_hy_man_p_sc.get() +
-								  _param_trim_pitch.get(), -1.f, 1.f);
-				_vehicle_torque_setpoint.xyz[2] = math::constrain(_manual_control_setpoint.yaw * _param_hy_man_y_sc.get() +
-								  _param_trim_yaw.get(), -1.f, 1.f);
-
-				_vehicle_thrust_setpoint.xyz[0] = math::constrain((_manual_control_setpoint.throttle + 1.f) * .5f, 0.f, 1.f);
-			}
-		}
-	}
-}
-
 float HydroRateControl::get_airspeed_and_update_scaling()
 {
 	// if no airspeed measurement is available out best guess is to use the trim airspeed
@@ -186,7 +153,33 @@ void HydroRateControl::Run()
 
 		_vehicle_status_sub.update(&_vehicle_status);
 
-		vehicle_manual_poll();
+		//读手动操控信息
+		_manual_control_setpoint_sub.copy(&_manual_control_setpoint);
+
+		//特技模式下，操控量映射到rate_sp
+		if (_vehicle_status.nav_state == HYDRO_MODE_ACRO)
+		{
+			_rates_sp.roll = _manual_control_setpoint.roll * radians(_param_hy_acro_x_max.get());
+			_rates_sp.yaw = _manual_control_setpoint.yaw * radians(_param_hy_acro_z_max.get());
+			_rates_sp.pitch = -_manual_control_setpoint.pitch * radians(_param_hy_acro_y_max.get());
+			_rates_sp.timestamp = hrt_absolute_time();
+			_rates_sp.thrust_body[0] = (_manual_control_setpoint.throttle + 1.f) * .5f;
+
+			_rate_sp_pub.publish(_rates_sp);
+
+		}
+		//手动模式下，操控量映射到torque和thrust
+		else if(_vehicle_status.nav_state == HYDRO_MODE_MANUAL)
+		{
+			_vehicle_torque_setpoint.xyz[0] = math::constrain(_manual_control_setpoint.roll * _param_hy_man_r_sc.get() +
+							_param_trim_roll.get(), -1.f, 1.f);
+			_vehicle_torque_setpoint.xyz[1] = math::constrain(-_manual_control_setpoint.pitch * _param_hy_man_p_sc.get() +
+							_param_trim_pitch.get(), -1.f, 1.f);
+			_vehicle_torque_setpoint.xyz[2] = math::constrain(_manual_control_setpoint.yaw * _param_hy_man_y_sc.get() +
+							_param_trim_yaw.get(), -1.f, 1.f);
+
+			_vehicle_thrust_setpoint.xyz[0] = math::constrain((_manual_control_setpoint.throttle + 1.f) * .5f, 0.f, 1.f);
+		}
 
 		//在非手动的自定义模式下，执行控制算法
 		if (_vehicle_status.nav_state == HYDRO_MODE_STABILIZED || _vehicle_status.nav_state == HYDRO_MODE_AUTO_DIVE || _vehicle_status.nav_state == HYDRO_MODE_ACRO) {

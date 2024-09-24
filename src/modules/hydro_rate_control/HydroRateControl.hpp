@@ -113,7 +113,7 @@ private:
 	uORB::Publication<vehicle_torque_setpoint_s>	_vehicle_torque_setpoint_pub{ORB_ID(vehicle_torque_setpoint)};
 	uORB::Publication<vehicle_thrust_setpoint_s>	_vehicle_thrust_setpoint_pub{ORB_ID(vehicle_thrust_setpoint)};
 
-	manual_control_setpoint_s		_manual_control_setpoint{};
+	manual_control_setpoint_s		_manual_control_setpoint{0};
 	vehicle_thrust_setpoint_s		_vehicle_thrust_setpoint{};
 	vehicle_torque_setpoint_s		_vehicle_torque_setpoint{};
 	vehicle_rates_setpoint_s		_rates_sp{};
