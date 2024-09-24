@@ -120,6 +120,10 @@ private:
 	vehicle_status_s			_vehicle_status{};
 	vehicle_attitude_s			_vehicle_attitude{};
 
+	//水翼部分的setpoint
+	vehicle_thrust_setpoint_s		_hydro_thrust_setpoint{};
+	vehicle_torque_setpoint_s		_hydro_torque_setpoint{};
+
 	perf_counter_t _loop_perf;
 
 	hrt_abstime _last_run{0};

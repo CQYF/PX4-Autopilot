@@ -34,6 +34,7 @@
 #include "HydroRateControl.hpp"
 
 #include <include/HyModeName.hpp>
+#include <math.h>
 
 using namespace time_literals;
 using namespace matrix;
@@ -187,6 +188,7 @@ void HydroRateControl::Run()
 
 		vehicle_manual_poll();
 
+		//在非手动的自定义模式下，执行控制算法
 		if (_vehicle_status.nav_state == HYDRO_MODE_STABILIZED || _vehicle_status.nav_state == HYDRO_MODE_AUTO_DIVE || _vehicle_status.nav_state == HYDRO_MODE_ACRO) {
 
 			const float airspeed = get_airspeed_and_update_scaling();
@@ -267,6 +269,7 @@ void HydroRateControl::Run()
 			_rate_control.resetIntegral();
 		}
 
+		//在全部的自定义模式下，执行补偿操作
 		if (_vehicle_status.nav_state == HYDRO_MODE_STABILIZED || _vehicle_status.nav_state == HYDRO_MODE_AUTO_DIVE ||
 			_vehicle_status.nav_state == HYDRO_MODE_ACRO || _vehicle_status.nav_state == HYDRO_MODE_MANUAL)
 		{
@@ -279,6 +282,9 @@ void HydroRateControl::Run()
 			_vehicle_torque_setpoint.xyz[1] = math::constrain(_vehicle_torque_setpoint.xyz[1] + _param_thr_to_pit_ff.get() *
 							_vehicle_thrust_setpoint.xyz[0], -1.f, 1.f);
 
+			//获取姿态
+			_vehicle_attitude_sub.update(&_vehicle_attitude);
+			Eulerf euler_angles(Quatf(_vehicle_attitude.q));
 			//px4的算法忽略了机身的攻角对操纵面实际攻角的影响，认为操纵面的实际攻角始终等于操纵面相对于机身的角度，但这对于滑行控制而言是不可接受的，
 			//飞机在滑行时机身总是保持一定的正攻角，此时水翼的0控制量也就对应了这个正攻角，在高速滑行时，水翼只需要很小的实际攻角就可以实现控制，
 			//这个正攻角就会将实际平衡点向上大幅推移，并且一般会直接推移到平衡范围之外，也就出现了滑行中在水面上跳动的情况（当然这只是因素之一）
@@ -286,11 +292,36 @@ void HydroRateControl::Run()
 			//这项增益在手动模式下依然有效，并且由于控制分配机制的存在，会对小平尾产生附带影响。
 			//! 这项增益会在起飞后造成麻烦（大概），暂时只用于滑行，如果要起飞，应当将增益置0
 			//! 这项增益在手动模式下依然存在，调节增益系数的方法是在手动模式下俯仰飞机，直到在任何角度下水翼都保持水平
-			_vehicle_attitude_sub.update(&_vehicle_attitude);
-			Eulerf euler_angles(Quatf(_vehicle_attitude.q));
-			_vehicle_torque_setpoint.xyz[1] = math::constrain(_vehicle_torque_setpoint.xyz[1] + _param_attack_ff.get() *
-							euler_angles.theta(), -1.f, 1.f);
+			// _vehicle_torque_setpoint.xyz[1] = math::constrain(_vehicle_torque_setpoint.xyz[1] + _param_attack_ff.get() *
+			// 				euler_angles.theta(), -1.f, 1.f);
+			//（使用新的控制和分配逻辑时，不需要此补偿）
 
+
+			// TODO 深度真值与设定值，PID和PID参数
+			float depth;
+			float depth_setpoint;
+
+			//水平推力，向前为正，和原来的推力一致
+			float hydro_horizontal_thrust_setpoint = _vehicle_thrust_setpoint.xyz[0];
+			//竖直推力，向!下!为正，等于深度控制的输出加上重力补偿
+			float hydro_vertical_thrust_setpoint = 0.5*(depth_setpoint - depth) - 0.4;
+			//滑行时，机身的俯仰角近似为自然攻角，实际攻角等于翼面偏转角度加上自然攻角
+			float alpha0 = _vehicle_torque_setpoint.xyz[1];
+
+			//水平和竖直推力转换为机身坐标系下的推力，使用二维坐标转换（注意，这些推力都是归一化的，范围是0-1）
+			_hydro_thrust_setpoint.xyz[0] = math::constrain(hydro_horizontal_thrust_setpoint * sin(alpha0) - hydro_vertical_thrust_setpoint * cos(alpha0), 0.f, 1.f);
+			_hydro_thrust_setpoint.xyz[2] = math::constrain(hydro_horizontal_thrust_setpoint * cos(alpha0) + hydro_vertical_thrust_setpoint * sin(alpha0), 0.f, 1.f);
+
+			//y方向推力始终为0，力矩和原来的保持一致
+			_hydro_thrust_setpoint.xyz[1] = 0;
+			_hydro_torque_setpoint = _vehicle_torque_setpoint;
+		}
+
+		//TODO 把switch屏蔽执行器的功能移动到这里
+		//在全部的自定义模式下，都要发布vehicle的setpoint
+		if (_vehicle_status.nav_state == HYDRO_MODE_STABILIZED || _vehicle_status.nav_state == HYDRO_MODE_AUTO_DIVE ||
+			_vehicle_status.nav_state == HYDRO_MODE_ACRO || _vehicle_status.nav_state == HYDRO_MODE_MANUAL)
+		{
 			_vehicle_thrust_setpoint.timestamp = hrt_absolute_time();
 			_vehicle_thrust_setpoint.timestamp_sample = angular_velocity.timestamp_sample;
 			_vehicle_thrust_setpoint_pub.publish(_vehicle_thrust_setpoint);
@@ -298,6 +329,36 @@ void HydroRateControl::Run()
 			_vehicle_torque_setpoint.timestamp = hrt_absolute_time();
 			_vehicle_torque_setpoint.timestamp_sample = angular_velocity.timestamp_sample;
 			_vehicle_torque_setpoint_pub.publish(_vehicle_torque_setpoint);
+		}
+
+		//在全部的自定义模式下，都要发布hydro的setpoint，其他模式下，也要发0
+		if (_vehicle_status.nav_state == HYDRO_MODE_STABILIZED || _vehicle_status.nav_state == HYDRO_MODE_AUTO_DIVE ||
+			_vehicle_status.nav_state == HYDRO_MODE_ACRO || _vehicle_status.nav_state == HYDRO_MODE_MANUAL)
+		{
+			_hydro_thrust_setpoint.timestamp = hrt_absolute_time();
+			_hydro_thrust_setpoint.timestamp_sample = angular_velocity.timestamp_sample;
+			_hydro_thrust_setpoint_pub.publish(_hydro_thrust_setpoint);
+
+			_hydro_torque_setpoint.timestamp = hrt_absolute_time();
+			_hydro_torque_setpoint.timestamp_sample = angular_velocity.timestamp_sample;
+			_hydro_torque_setpoint_pub.publish(_hydro_torque_setpoint);
+		}
+		else
+		{
+			_hydro_thrust_setpoint.xyz[0] = 0;
+			_hydro_thrust_setpoint.xyz[1] = 0;
+			_hydro_thrust_setpoint.xyz[2] = 0;
+			_hydro_torque_setpoint.xyz[0] = 0;
+			_hydro_torque_setpoint.xyz[1] = 0;
+			_hydro_torque_setpoint.xyz[2] = 0;
+
+			_hydro_thrust_setpoint.timestamp = hrt_absolute_time();
+			_hydro_thrust_setpoint.timestamp_sample = angular_velocity.timestamp_sample;
+			_hydro_thrust_setpoint_pub.publish(_hydro_thrust_setpoint);
+
+			_hydro_torque_setpoint.timestamp = hrt_absolute_time();
+			_hydro_torque_setpoint.timestamp_sample = angular_velocity.timestamp_sample;
+			_hydro_torque_setpoint_pub.publish(_hydro_torque_setpoint);
 		}
 	}
 
