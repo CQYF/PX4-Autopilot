@@ -46,8 +46,6 @@
 #include <mathlib/math/Limits.hpp>
 #include <mathlib/math/Functions.hpp>
 
-#include <include/HyModeName.hpp>
-
 using namespace matrix;
 using namespace time_literals;
 
@@ -136,11 +134,6 @@ ControlAllocator::parameters_updated()
 	for (int i = 0; i < _num_control_allocation; ++i) {
 		_control_allocation[i]->updateParameters();
 	}
-
-	_stopped_actuator_bitmasks[(int)AllocaterHydroState::StopAll] = 		(uint16_t)0b1111111111111111;
-	_stopped_actuator_bitmasks[(int)AllocaterHydroState::WaterOnly] = 		(uint16_t)0b0000000000011100;
-	_stopped_actuator_bitmasks[(int)AllocaterHydroState::WaterAir] = 		(uint16_t)0b0000000000000000;
-	_stopped_actuator_bitmasks[(int)AllocaterHydroState::AirOnly] = 		(uint16_t)0b0000000011000011;
 
 	update_effectiveness_matrix_if_needed(EffectivenessUpdateReason::CONFIGURATION_UPDATE);
 }
@@ -304,50 +297,6 @@ ControlAllocator::update_effectiveness_source()
 }
 
 void
-ControlAllocator::update_allocate_hydro_state()
-{
-	AllocaterHydroState new_state;
-	manual_control_setpoint_s manual_control_setpoint;
-	vehicle_status_s vehicle_status;
-
-	_manual_control_setpoint_sub.copy(&manual_control_setpoint);
-	_vehicle_status_sub.copy(&vehicle_status);
-
-	if(vehicle_status.nav_state == HYDRO_MODE_AUTO_DIVE)
-	{
-		new_state = AllocaterHydroState::WaterOnly;
-	}
-	else if(vehicle_status.nav_state == HYDRO_MODE_STABILIZED || vehicle_status.nav_state == HYDRO_MODE_ACRO || vehicle_status.nav_state == HYDRO_MODE_MANUAL)
-	{
-		if(manual_control_setpoint.aux2 < -0.5f)
-		{
-			new_state = AllocaterHydroState::WaterOnly;
-		}
-		else if(manual_control_setpoint.aux2 > 0.5f)
-		{
-			new_state = AllocaterHydroState::AirOnly;
-		}
-		else
-		{
-			new_state = AllocaterHydroState::WaterAir;
-		}
-	}
-	else
-	{
-		new_state = AllocaterHydroState::AirOnly;
-	}
-
-	if(_allocate_hydro_state == new_state)
-	{
-		return;
-	}
-
-	_allocate_hydro_state = new_state;
-	//update_effectiveness_matrix_if_needed(EffectivenessUpdateReason::CONFIGURATION_UPDATE);
-	//PX4_INFO("update_allocate_hydro_state, new_state: %d", (int)new_state);
-}
-
-void
 ControlAllocator::Run()
 {
 	if (should_exit()) {
@@ -422,8 +371,6 @@ ControlAllocator::Run()
 		}
 	}
 
-	update_allocate_hydro_state();
-
 	// Guard against too small (< 0.2ms) and too large (> 20ms) dt's.
 	const hrt_abstime now = hrt_absolute_time();
 	const float dt = math::constrain(((now - _last_run) / 1e6f), 0.0002f, 0.02f);
@@ -493,7 +440,6 @@ ControlAllocator::Run()
 			_actuator_effectiveness->allocateAuxilaryControls(dt, i, _control_allocation[i]->_actuator_sp); //flaps and spoilers
 			_actuator_effectiveness->updateSetpoint(c[i], i, _control_allocation[i]->_actuator_sp,
 								_control_allocation[i]->getActuatorMin(), _control_allocation[i]->getActuatorMax());
-			_control_allocation[i]->zero_stopped_actuators(_stopped_actuator_bitmasks[(int)_allocate_hydro_state]);//关闭停止的执行器
 
 			if (_has_slew_rate) {
 				_control_allocation[i]->applySlewRateLimit(dt);
