@@ -262,7 +262,7 @@ void HydroRateControl::Run()
 			_rate_control.resetIntegral();
 		}
 
-		//在全部的自定义模式下，执行补偿操作
+		//在全部的自定义模式下，执行补偿操作和滑行深度控制
 		if (_vehicle_status.nav_state == HYDRO_MODE_STABILIZED || _vehicle_status.nav_state == HYDRO_MODE_AUTO_DIVE ||
 			_vehicle_status.nav_state == HYDRO_MODE_ACRO || _vehicle_status.nav_state == HYDRO_MODE_MANUAL)
 		{
