@@ -194,8 +194,10 @@ private:
 		(ParamFloat<px4::params::HY_THR_TO_PIT_FF>) _param_thr_to_pit_ff,	//推力前馈到pit轴力矩上
 		(ParamFloat<px4::params::HY_ATTACK_FF>) _param_attack_ff,		//机身攻角补偿
 
-		(ParamFloat<px4::params::HY_D_P>) _param_hy_d_p,			//深度控制
-		(ParamFloat<px4::params::HY_D_FF>) _param_hy_d_ff
+		(ParamFloat<px4::params::HY_D_P>) _param_hy_d_p,			//深度控制参数
+		(ParamFloat<px4::params::HY_D_FF>) _param_hy_d_ff,
+
+		(ParamFloat<px4::params::HY_RT_MAX_THRUST>) _param_hy_rt_max_thrust	//单个水下推进器最大推力
 	)
 
 	RateControl _rate_control; ///< class for rate control calculations

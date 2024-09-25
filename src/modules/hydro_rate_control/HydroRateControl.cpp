@@ -294,19 +294,22 @@ void HydroRateControl::Run()
 			float depth = 0;
 			float depth_setpoint = 0;
 
-			//水平推力，向前为正，和原来的推力一致
-			float hydro_horizontal_thrust_setpoint = _vehicle_thrust_setpoint.xyz[0];
+			//! 注意，水翼的推力计算都用真值，单位是N，但力矩仍用归一化值
+			//水平推力，向前为正，和原来的推力一致，最大为水下推进器推力的2倍
+			float hydro_horizontal_thrust_setpoint = _vehicle_thrust_setpoint.xyz[0] * 2 * _param_hy_rt_max_thrust.get();
 			//竖直推力，向!下!为正，等于深度控制的输出加上重力补偿
 			float hydro_vertical_thrust_setpoint = _param_hy_d_p.get() * (depth_setpoint - depth) - _param_hy_d_ff.get();
 			//滑行时，机身的俯仰角近似为自然攻角，实际攻角等于翼面偏转角度加上自然攻角
 			float alpha0 = euler_angles.theta();
 
-			//水平和竖直推力转换为机身坐标系下的推力，使用二维坐标转换（注意，这些推力都是归一化的，x方向范围是0～1，z方向范围是-1～1）
-			_hydro_thrust_setpoint.xyz[0] = math::constrain(hydro_horizontal_thrust_setpoint * std::cos(alpha0) - hydro_vertical_thrust_setpoint * std::sin(alpha0), 0.f, 1.f);
-			_hydro_thrust_setpoint.xyz[2] = math::constrain(hydro_horizontal_thrust_setpoint * std::sin(alpha0) + hydro_vertical_thrust_setpoint * std::cos(alpha0), -1.f, 1.f);
+			//水平和竖直推力转换为机身坐标系下的推力，使用二维坐标转换
+			_hydro_thrust_setpoint.xyz[0] = hydro_horizontal_thrust_setpoint * std::cos(alpha0) - hydro_vertical_thrust_setpoint * std::sin(alpha0);
+			_hydro_thrust_setpoint.xyz[2] = hydro_horizontal_thrust_setpoint * std::sin(alpha0) + hydro_vertical_thrust_setpoint * std::cos(alpha0);
 
-			//y方向推力始终为0，力矩和原来的保持一致
+			//y方向推力始终为0
 			_hydro_thrust_setpoint.xyz[1] = 0;
+
+			//力矩和原来保持一致
 			_hydro_torque_setpoint = _vehicle_torque_setpoint;
 		}
 

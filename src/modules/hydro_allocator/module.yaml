@@ -89,3 +89,21 @@ parameters:
         0: Alternative speed
         1: Measurement speed (Unsupported)
       default: 0
+
+    #单个水下推进器最大推力
+    HY_RT_MAX_THRUST:
+      description:
+        short: Maximum thrust of a single underwater thruster
+      type: float
+      default: 30.0
+      min: 0.0
+      decimal: 1
+
+    #单个翼面水下升力系数
+    HY_WING_KL:
+      description:
+        short: Single wing surface underwater lift coefficient
+      type: float
+      default: 5.0
+      min: 0.0
+      decimal: 2
