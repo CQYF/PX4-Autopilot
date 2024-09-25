@@ -299,11 +299,11 @@ void HydroRateControl::Run()
 			//竖直推力，向!下!为正，等于深度控制的输出加上重力补偿
 			float hydro_vertical_thrust_setpoint = 0.5f*(depth_setpoint - depth) - 0.4f;
 			//滑行时，机身的俯仰角近似为自然攻角，实际攻角等于翼面偏转角度加上自然攻角
-			float alpha0 = _vehicle_torque_setpoint.xyz[1];
+			float alpha0 = euler_angles.theta();
 
-			//水平和竖直推力转换为机身坐标系下的推力，使用二维坐标转换（注意，这些推力都是归一化的，范围是0-1）
+			//水平和竖直推力转换为机身坐标系下的推力，使用二维坐标转换（注意，这些推力都是归一化的，x方向范围是0～1，z方向范围是-1～1）
 			_hydro_thrust_setpoint.xyz[0] = math::constrain(hydro_horizontal_thrust_setpoint * std::sin(alpha0) - hydro_vertical_thrust_setpoint * std::cos(alpha0), 0.f, 1.f);
-			_hydro_thrust_setpoint.xyz[2] = math::constrain(hydro_horizontal_thrust_setpoint * std::cos(alpha0) + hydro_vertical_thrust_setpoint * std::sin(alpha0), 0.f, 1.f);
+			_hydro_thrust_setpoint.xyz[2] = math::constrain(hydro_horizontal_thrust_setpoint * std::cos(alpha0) + hydro_vertical_thrust_setpoint * std::sin(alpha0), -1.f, 1.f);
 
 			//y方向推力始终为0，力矩和原来的保持一致
 			_hydro_thrust_setpoint.xyz[1] = 0;
@@ -324,8 +324,7 @@ void HydroRateControl::Run()
 			_hydro_running_state = HydroRunningState::WaterAir;
 		}
 
-		//TODO 把switch屏蔽执行器的功能移动到这里
-		//在全部的自定义模式下，都要发布vehicle的setpoint，但在仅水下部分运行时要发送0
+		//在全部的自定义模式下，要发布vehicle的setpoint（其余模式下px4自带的模块会发布setpoint），但在仅水下部分运行时要发送0
 		if (_vehicle_status.nav_state == HYDRO_MODE_STABILIZED || _vehicle_status.nav_state == HYDRO_MODE_AUTO_DIVE ||
 			_vehicle_status.nav_state == HYDRO_MODE_ACRO || _vehicle_status.nav_state == HYDRO_MODE_MANUAL)
 		{
