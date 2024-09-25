@@ -302,8 +302,8 @@ void HydroRateControl::Run()
 			float alpha0 = euler_angles.theta();
 
 			//水平和竖直推力转换为机身坐标系下的推力，使用二维坐标转换（注意，这些推力都是归一化的，x方向范围是0～1，z方向范围是-1～1）
-			_hydro_thrust_setpoint.xyz[0] = math::constrain(hydro_horizontal_thrust_setpoint * std::sin(alpha0) - hydro_vertical_thrust_setpoint * std::cos(alpha0), 0.f, 1.f);
-			_hydro_thrust_setpoint.xyz[2] = math::constrain(hydro_horizontal_thrust_setpoint * std::cos(alpha0) + hydro_vertical_thrust_setpoint * std::sin(alpha0), -1.f, 1.f);
+			_hydro_thrust_setpoint.xyz[0] = math::constrain(hydro_horizontal_thrust_setpoint * std::cos(alpha0) - hydro_vertical_thrust_setpoint * std::sin(alpha0), 0.f, 1.f);
+			_hydro_thrust_setpoint.xyz[2] = math::constrain(hydro_horizontal_thrust_setpoint * std::sin(alpha0) + hydro_vertical_thrust_setpoint * std::cos(alpha0), -1.f, 1.f);
 
 			//y方向推力始终为0，力矩和原来的保持一致
 			_hydro_thrust_setpoint.xyz[1] = 0;
