@@ -40,6 +40,48 @@ HydroAllocator::HydroAllocator() :
 	ScheduledWorkItem(MODULE_NAME, px4::wq_configurations::rate_ctrl),
 	_loop_perf(perf_alloc(PC_ELAPSED, MODULE_NAME": cycle"))
 {
+	for (int i = 0; i < 2; ++i) {
+		char buffer[17];
+		snprintf(buffer, sizeof(buffer), "HY_RT%u_IDX", i);
+		_param_handles.hy_rt_idx[i] = param_find(buffer);
+	}
+	for (int i = 0; i < 2; ++i) {
+		char buffer[17];
+		snprintf(buffer, sizeof(buffer), "HY_SV%u_IDX", i);
+		_param_handles.hy_sv_idx[i] = param_find(buffer);
+	}
+	for (int i = 0; i < 2; ++i) {
+		char buffer[17];
+		snprintf(buffer, sizeof(buffer), "HY_VZRT%u_PIT_R", i);
+		_param_handles.hy_vzrt_pit_r[i] = param_find(buffer);
+	}
+	for (int i = 0; i < 2; ++i) {
+		char buffer[17];
+		snprintf(buffer, sizeof(buffer), "HY_VZRT%u_YAW_R", i);
+		_param_handles.hy_vzrt_yaw_r[i] = param_find(buffer);
+	}
+	for (int i = 0; i < 2; ++i) {
+		char buffer[17];
+		snprintf(buffer, sizeof(buffer), "HY_VZRT%u_ROL_R", i);
+		_param_handles.hy_vzrt_rol_r[i] = param_find(buffer);
+	}
+	for (int i = 0; i < 2; ++i) {
+		char buffer[17];
+		snprintf(buffer, sizeof(buffer), "HY_VXRT%u_PIT_R", i);
+		_param_handles.hy_vxrt_pit_r[i] = param_find(buffer);
+	}
+	for (int i = 0; i < 2; ++i) {
+		char buffer[17];
+		snprintf(buffer, sizeof(buffer), "HY_VXRT%u_YAW_R", i);
+		_param_handles.hy_vxrt_yaw_r[i] = param_find(buffer);
+	}
+	for (int i = 0; i < 2; ++i) {
+		char buffer[17];
+		snprintf(buffer, sizeof(buffer), "HY_VXRT%u_ROL_R", i);
+		_param_handles.hy_vxrt_rol_r[i] = param_find(buffer);
+	}
+
+
 	parameters_update(true);
 }
 
@@ -70,6 +112,18 @@ HydroAllocator::parameters_update(bool force)
 
 		// update parameters from storage
 		updateParams();
+
+		//更新多实例参数
+		for (int i = 0; i < 2; ++i) {
+			param_get(_param_handles.hy_rt_idx[i], &_params.hy_rt_idx[i]);
+			param_get(_param_handles.hy_sv_idx[i], &_params.hy_sv_idx[i]);
+			param_get(_param_handles.hy_vzrt_pit_r[i], &_params.hy_vzrt_pit_r[i]);
+			param_get(_param_handles.hy_vzrt_yaw_r[i], &_params.hy_vzrt_yaw_r[i]);
+			param_get(_param_handles.hy_vzrt_rol_r[i], &_params.hy_vzrt_rol_r[i]);
+			param_get(_param_handles.hy_vxrt_pit_r[i], &_params.hy_vxrt_pit_r[i]);
+			param_get(_param_handles.hy_vxrt_yaw_r[i], &_params.hy_vxrt_yaw_r[i]);
+			param_get(_param_handles.hy_vxrt_rol_r[i], &_params.hy_vxrt_rol_r[i]);
+		}
 	}
 }
 
@@ -92,6 +146,19 @@ void HydroAllocator::Run()
 	{
 		;
 	}
+	//0是左边，1是右边
+	// float thrust_x[2];
+	// float thrust_z[2];
+	// thrust_x[0] = _hydro_thrust_setpoint_msg.xyz[0] / 2;
+	// thrust_x[1] = thrust_x[0];
+	// thrust_z[0] = _hydro_thrust_setpoint_msg.xyz[2] / 2;
+	// thrust_z[1] = thrust_z[0];
+	// float yaw_ratio[2];
+	// float pit_ratio[2];
+	// float rol_ratio[2];
+
+
+
 
 	parameters_update();
 

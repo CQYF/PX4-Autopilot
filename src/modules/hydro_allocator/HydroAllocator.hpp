@@ -89,4 +89,36 @@ private:
 	perf_counter_t _loop_perf;
 
 	void parameters_update(bool force = false);
+
+	struct ParamHandles {
+		param_t hy_rt_idx[2];
+		param_t hy_sv_idx[2];
+		param_t hy_vzrt_pit_r[2];
+		param_t hy_vzrt_yaw_r[2];
+		param_t hy_vzrt_rol_r[2];
+		param_t hy_vxrt_pit_r[2];
+		param_t hy_vxrt_yaw_r[2];
+		param_t hy_vxrt_rol_r[2];
+	};
+
+	struct Params {
+		float hy_rt_idx[2];
+		float hy_sv_idx[2];
+		float hy_vzrt_pit_r[2];
+		float hy_vzrt_yaw_r[2];
+		float hy_vzrt_rol_r[2];
+		float hy_vxrt_pit_r[2];
+		float hy_vxrt_yaw_r[2];
+		float hy_vxrt_rol_r[2];
+	};
+
+	ParamHandles _param_handles{};
+	Params _params{};
+
+	DEFINE_PARAMETERS(
+		(ParamFloat<px4::params::HY_ALT_SPEED>) _param_hy_alt_speed,
+		(ParamInt<px4::params::HY_SPEED_SELECT>) _param_hy_speed_select,
+		(ParamFloat<px4::params::HY_RT_MAX_THRUST>) _param_hy_rt_max_thrust,
+		(ParamFloat<px4::params::HY_WING_KL>) _param_hy_wing_kl
+	)
 };
