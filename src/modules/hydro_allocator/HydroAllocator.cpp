@@ -33,7 +33,10 @@
 
 #include "HydroAllocator.hpp"
 
+#include <lib/matrix/matrix/math.hpp>
+
 using namespace time_literals;
+using namespace matrix;
 
 HydroAllocator::HydroAllocator() :
 	ModuleParams(nullptr),
@@ -146,17 +149,29 @@ void HydroAllocator::Run()
 	{
 		;
 	}
-	//0是左边，1是右边
-	// float thrust_x[2];
-	// float thrust_z[2];
-	// thrust_x[0] = _hydro_thrust_setpoint_msg.xyz[0] / 2;
-	// thrust_x[1] = thrust_x[0];
-	// thrust_z[0] = _hydro_thrust_setpoint_msg.xyz[2] / 2;
-	// thrust_z[1] = thrust_z[0];
-	// float yaw_ratio[2];
-	// float pit_ratio[2];
-	// float rol_ratio[2];
 
+	//0是左边，1是右边
+	float thrust_x[2];
+	float thrust_z[2];
+	thrust_x[0] = _hydro_thrust_setpoint_msg.xyz[0] / 2;
+	thrust_x[1] = thrust_x[0];
+	thrust_z[0] = _hydro_thrust_setpoint_msg.xyz[2] / 2;
+	thrust_z[1] = thrust_z[0];
+
+	//执行器顺序：x0 z0 x1 z1
+	//力矩顺序：  rol pit yaw
+	float allocate_matrix_array[4][3] = {
+		{_params.hy_vxrt_rol_r[0], _params.hy_vxrt_pit_r[0], _params.hy_vxrt_yaw_r[0]},
+		{_params.hy_vzrt_rol_r[0], _params.hy_vzrt_pit_r[0], _params.hy_vzrt_yaw_r[0]},
+		{_params.hy_vxrt_rol_r[1], _params.hy_vxrt_pit_r[1], _params.hy_vxrt_yaw_r[1]},
+		{_params.hy_vzrt_rol_r[1], _params.hy_vzrt_pit_r[1], _params.hy_vzrt_yaw_r[1]}
+	};
+
+	Matrix<float, 4, 3> allocate_matrix(allocate_matrix_array);
+	Matrix<float, 3, 1> torque_vector(_hydro_torque_setpoint_msg.xyz);
+	Matrix<float, 4, 1> delta_force_vector;
+
+	delta_force_vector = allocate_matrix * torque_vector;
 
 
 
