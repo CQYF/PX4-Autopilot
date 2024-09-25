@@ -192,7 +192,10 @@ private:
 		(ParamFloat<px4::params::TRIM_YAW>) _param_trim_yaw,
 
 		(ParamFloat<px4::params::HY_THR_TO_PIT_FF>) _param_thr_to_pit_ff,	//推力前馈到pit轴力矩上
-		(ParamFloat<px4::params::HY_ATTACK_FF>) _param_attack_ff		//机身攻角补偿
+		(ParamFloat<px4::params::HY_ATTACK_FF>) _param_attack_ff,		//机身攻角补偿
+
+		(ParamFloat<px4::params::HY_D_P>) _param_hy_d_p,			//深度控制
+		(ParamFloat<px4::params::HY_D_FF>) _param_hy_d_ff
 	)
 
 	RateControl _rate_control; ///< class for rate control calculations

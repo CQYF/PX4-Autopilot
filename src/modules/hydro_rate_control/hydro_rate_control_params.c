@@ -485,3 +485,19 @@ PARAM_DEFINE_FLOAT(HY_AIRSPD_MIN, 10.0f); //最小空速
  * @group FW Attitude Control
  */
 PARAM_DEFINE_FLOAT(HY_MAN_YR_MAX, 30.f);
+
+/**
+ * Depth control PID proportional gain
+ *
+ * @decimal 3
+ * @group Hydro Depth Control
+ */
+PARAM_DEFINE_FLOAT(HY_D_P, 0.1f);
+
+/**
+ * Depth control gravity feedforward
+ *
+ * @decimal 3
+ * @group Hydro Depth Control
+ */
+PARAM_DEFINE_FLOAT(HY_D_FF, 0.f);
