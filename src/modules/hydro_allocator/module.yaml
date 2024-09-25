@@ -2,6 +2,8 @@ module_name: hydro_allocator
 parameters:
 - group: HydroAllocator
   definitions:
+    #水翼舵机和电机与Actuator配置页面中的舵机电机的对应关系
+    #电机
     HA_RT${i}_IDX:
       description:
         short: The correspondence between hydro actuators and configuration actuators
@@ -10,6 +12,7 @@ parameters:
       default: 1
       min: 1
       max: 8
+    #舵机
     HA_SV${i}_IDX:
       description:
         short: The correspondence between hydro actuators and configuration actuators
@@ -19,41 +22,16 @@ parameters:
       min: 1
       max: 8
 
-    HA_VZRT${i}_X_R:
-      description:
-        short: X ratio of Z-direction virtual motor
-      type: float
-      num_instances: 2
-      default: 0.0
-      min: -1.0
-      max: 1.0
-      decimal: 3
-    HA_VZRT${i}_Y_R:
-      description:
-        short: Y ratio of Z-direction virtual motor
-      type: float
-      num_instances: 2
-      default: 0.0
-      min: -1.0
-      max: 1.0
-      decimal: 3
-    HA_VZRT${i}_Z_R:
-      description:
-        short: Z ratio of Z-direction virtual motor
-      type: float
-      num_instances: 2
-      default: 0.0
-      min: -1.0
-      max: 1.0
-      decimal: 3
+    #水翼的虚拟执行器面对三轴力矩时需要执行的倍数
+    #注意，虚拟执行器的输出单位是N，没有归一化，而三轴力矩是归一化的数值，因此这里的参数应当是较大的值
+    #为什么只有力矩，没有力？ 因为水翼的thrust_setpoint也是没有归一化的值，不需要按倍数放大
+    #z轴虚拟执行器
     HA_VZRT${i}_PIT_R:
       description:
         short: PIT ratio of Z-direction virtual motor
       type: float
       num_instances: 2
       default: 0.0
-      min: -1.0
-      max: 1.0
       decimal: 3
     HA_VZRT${i}_YAW_R:
       description:
@@ -61,8 +39,6 @@ parameters:
       type: float
       num_instances: 2
       default: 0.0
-      min: -1.0
-      max: 1.0
       decimal: 3
     HA_VZRT${i}_ROL_R:
       description:
@@ -70,45 +46,14 @@ parameters:
       type: float
       num_instances: 2
       default: 0.0
-      min: -1.0
-      max: 1.0
       decimal: 3
-
-    HA_VXRT${i}_X_R:
-      description:
-        short: X ratio of X-direction virtual motor
-      type: float
-      num_instances: 2
-      default: 0.0
-      min: -1.0
-      max: 1.0
-      decimal: 3
-    HA_VXRT${i}_Y_R:
-      description:
-        short: Y ratio of X-direction virtual motor
-      type: float
-      num_instances: 2
-      default: 0.0
-      min: -1.0
-      max: 1.0
-      decimal: 3
-    HA_VXRT${i}_Z_R:
-      description:
-        short: Z ratio of X-direction virtual motor
-      type: float
-      num_instances: 2
-      default: 0.0
-      min: -1.0
-      max: 1.0
-      decimal: 3
+    #x轴虚拟执行器
     HA_VXRT${i}_PIT_R:
       description:
         short: PIT ratio of X-direction virtual motor
       type: float
       num_instances: 2
       default: 0.0
-      min: -1.0
-      max: 1.0
       decimal: 3
     HA_VXRT${i}_YAW_R:
       description:
@@ -116,8 +61,6 @@ parameters:
       type: float
       num_instances: 2
       default: 0.0
-      min: -1.0
-      max: 1.0
       decimal: 3
     HA_VXRT${i}_ROL_R:
       description:
@@ -125,10 +68,9 @@ parameters:
       type: float
       num_instances: 2
       default: 0.0
-      min: -1.0
-      max: 1.0
       decimal: 3
 
+    #当没有可靠的速度源时，使用一个假设的定值滑行速度
     HA_ALT_SPEED:
       description:
         short: Alternative speed when there is no speed measurement
@@ -138,11 +80,12 @@ parameters:
       max: 15.0
       decimal: 2
 
+    #滑行速度源选择
     HA_SPEED_SELECT:
       description:
         short: Speed selection
       type: enum
       values:
-        0: Alternative speed only
-        1: Measurement first (Unsupported)
+        0: Alternative speed
+        1: Measurement speed (Unsupported)
       default: 0

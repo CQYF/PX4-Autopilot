@@ -493,11 +493,14 @@ PARAM_DEFINE_FLOAT(HY_MAN_YR_MAX, 30.f);
  * @group Hydro Depth Control
  */
 PARAM_DEFINE_FLOAT(HY_D_P, 0.1f);
+//深度控制比例增益
 
 /**
  * Depth control gravity feedforward
  *
+ * @unit N
  * @decimal 3
  * @group Hydro Depth Control
  */
-PARAM_DEFINE_FLOAT(HY_D_FF, 0.f);
+PARAM_DEFINE_FLOAT(HY_D_FF, 20.f);
+//深度控制重力补偿
