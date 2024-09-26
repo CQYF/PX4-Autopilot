@@ -130,6 +130,7 @@ HydroAllocator::parameters_update(bool force)
 	}
 }
 
+//待优化求解的方程，优化求解的目标就是让这个方程等于0
 Vector2f HydroAllocator::func(Vector2f x, NfParams p)
 {
 	float alpha = x(0);
@@ -143,6 +144,7 @@ Vector2f HydroAllocator::func(Vector2f x, NfParams p)
 	return out;
 }
 
+//待优化方程的雅可比矩阵
 SquareMatrix<float, 2> HydroAllocator::J_func(Vector2f x, NfParams p)
 {
 	float alpha = x(0);
@@ -158,6 +160,7 @@ SquareMatrix<float, 2> HydroAllocator::J_func(Vector2f x, NfParams p)
 	return J;
 }
 
+//使用牛顿法优化求解
 void HydroAllocator::optim(float x_array[2], NfParams p)
 {
 	Vector2f x(x_array);
@@ -227,25 +230,26 @@ void HydroAllocator::Run()
 		{_params.hy_vzrt_rol_r[1], _params.hy_vzrt_pit_r[1], _params.hy_vzrt_yaw_r[1]}
 	};
 
+	//计算torque_setpoint导致的各虚拟执行器的期望推力变化量
 	Matrix<float, 4, 3> allocate_matrix(allocate_matrix_array);
-	Matrix<float, 3, 1> torque_vector(_hydro_torque_setpoint_msg.xyz);
-	Matrix<float, 4, 1> delta_force_vector;
+	Vector3f torque_vector(_hydro_torque_setpoint_msg.xyz);
+	Vector4f delta_force_vector;
 
 	delta_force_vector = allocate_matrix * torque_vector;
 
-	float delta_force_vector_array[4];
-	delta_force_vector.copyTo(delta_force_vector_array);
-	thrust_x[0] += delta_force_vector_array[0];
-	thrust_z[0] += delta_force_vector_array[1];
-	thrust_x[1] += delta_force_vector_array[2];
-	thrust_z[1] += delta_force_vector_array[3];
+	thrust_x[0] += delta_force_vector(0);
+	thrust_z[0] += delta_force_vector(1);
+	thrust_x[1] += delta_force_vector(2);
+	thrust_z[1] += delta_force_vector(3);
 
+	//定义待优化求解的变量，第一行是左侧水翼，第二行是右侧水翼，第一列是攻角，第二列是推力
+	//攻角的初始值为0，推力初始值为x方向期望推力的一半
 	float x[2][2] = {
 		{0, _hydro_thrust_setpoint_msg.xyz[0] / 2},
 		{0, _hydro_thrust_setpoint_msg.xyz[0] / 2}
 	};
 
-
+	//填入方程的参数
 	_nf_params.alpha0 = 0; //TODO
 
 	_nf_params.KL = _param_hy_wing_kl.get();
@@ -259,6 +263,7 @@ void HydroAllocator::Run()
 		_nf_params.v = _param_hy_alt_speed.get();//TODO 暂时不支持真实速度，都用替代速度
 	}
 
+	//代入虚拟执行器的期望力，并进行优化求解
 	_nf_params.Fx = thrust_x[0];
 	_nf_params.Fz = thrust_z[0];
 	optim(x[0], _nf_params);
@@ -266,12 +271,30 @@ void HydroAllocator::Run()
 	_nf_params.Fz = thrust_z[1];
 	optim(x[1], _nf_params);
 
+	//归一化，并再次限幅确保安全
 	x[0][0] = math::constrain(x[0][0] / _param_hy_wing_max_a.get(), -1.f, 1.f);
 	x[1][0] = math::constrain(x[1][0] / _param_hy_wing_max_a.get(), -1.f, 1.f);
 	x[0][1] = math::constrain(x[0][1] / _param_hy_rt_max_thrust.get(), 0.f, 1.f);
 	x[1][1] = math::constrain(x[1][1] / _param_hy_rt_max_thrust.get(), 0.f, 1.f);
 
+	//根据参数设置的对应关系填入数据并发送
+	actuator_motors_s hydro_motors_msg{0};
+	actuator_servos_s hydro_servos_msg{0};
 
+	hydro_motors_msg.timestamp = hrt_absolute_time();
+	hydro_motors_msg.timestamp_sample = _hydro_thrust_setpoint_msg.timestamp_sample;
+
+	hydro_servos_msg.timestamp = hrt_absolute_time();
+	hydro_servos_msg.timestamp_sample = _hydro_torque_setpoint_msg.timestamp_sample;
+
+	hydro_motors_msg.control[_params.hy_rt_idx[0]] = x[0][1];
+	hydro_motors_msg.control[_params.hy_rt_idx[1]] = x[1][1];
+
+	hydro_servos_msg.control[_params.hy_sv_idx[0]] = x[0][0];
+	hydro_servos_msg.control[_params.hy_sv_idx[1]] = x[1][0];
+
+	_hydro_motors_pub.publish(hydro_motors_msg);
+	_hydro_servos_pub.publish(hydro_servos_msg);
 
 	parameters_update();
 

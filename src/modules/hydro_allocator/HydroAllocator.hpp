@@ -99,9 +99,6 @@ private:
 	uORB::Publication<actuator_motors_s>	_hydro_motors_pub{ORB_ID(hydro_motors)};
 	uORB::Publication<actuator_servos_s>	_hydro_servos_pub{ORB_ID(hydro_servos)};
 
-	actuator_motors_s			_hydro_motors_msg{0};
-	actuator_servos_s			_hydro_servos_msg{0};
-
 	perf_counter_t _loop_perf;
 
 	void parameters_update(bool force = false);
@@ -118,8 +115,8 @@ private:
 	};
 
 	struct Params {
-		float hy_rt_idx[2];
-		float hy_sv_idx[2];
+		int32_t hy_rt_idx[2];
+		int32_t hy_sv_idx[2];
 		float hy_vzrt_pit_r[2];
 		float hy_vzrt_yaw_r[2];
 		float hy_vzrt_rol_r[2];
