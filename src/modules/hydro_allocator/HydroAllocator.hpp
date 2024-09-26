@@ -49,7 +49,10 @@
 
 #include <drivers/drv_hrt.h>
 
+#include <lib/matrix/matrix/math.hpp>
+
 using namespace time_literals;
+using namespace matrix;
 
 class HydroAllocator final : public ModuleBase<HydroAllocator>, public ModuleParams,
 	public px4::ScheduledWorkItem
@@ -71,6 +74,19 @@ public:
 
 private:
 	void Run() override;
+
+	struct NfParams {
+		float KL;
+		float v;
+		float alpha0;
+		float Fx;
+		float Fz;
+	};
+	NfParams _nf_params;
+
+	Vector2f func(Vector2f x, NfParams p);
+	SquareMatrix<float, 2> J_func(Vector2f x, NfParams p);
+	void optim(float x_array[2], NfParams p);
 
 	uORB::SubscriptionInterval _parameter_update_sub{ORB_ID(parameter_update), 1_s};
 
@@ -119,6 +135,7 @@ private:
 		(ParamFloat<px4::params::HY_ALT_SPEED>) _param_hy_alt_speed,
 		(ParamInt<px4::params::HY_SPEED_SELECT>) _param_hy_speed_select,
 		(ParamFloat<px4::params::HY_RT_MAX_THRUST>) _param_hy_rt_max_thrust,
-		(ParamFloat<px4::params::HY_WING_KL>) _param_hy_wing_kl
+		(ParamFloat<px4::params::HY_WING_KL>) _param_hy_wing_kl,
+		(ParamFloat<px4::params::HY_WING_MAX_A>) _param_hy_wing_max_a
 	)
 };

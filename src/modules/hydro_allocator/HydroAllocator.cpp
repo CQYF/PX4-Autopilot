@@ -130,6 +130,66 @@ HydroAllocator::parameters_update(bool force)
 	}
 }
 
+Vector2f HydroAllocator::func(Vector2f x, NfParams p)
+{
+	float alpha = x(0);
+	float T = x(1);
+
+	Vector2f out;
+
+	out(0) = p.Fx - p.KL*p.v*p.v*(alpha+p.alpha0)*std::sin(p.alpha0) - T*std::cos(alpha);
+	out(1) = p.Fz + p.KL*p.v*p.v*(alpha+p.alpha0)*std::cos(p.alpha0) + T*std::sin(alpha);
+
+	return out;
+}
+
+SquareMatrix<float, 2> HydroAllocator::J_func(Vector2f x, NfParams p)
+{
+	float alpha = x(0);
+	float T = x(1);
+
+	SquareMatrix<float, 2> J;
+
+	J(0, 0) = -p.KL*p.v*p.v*std::sin(p.alpha0) + T*std::sin(alpha);
+	J(0, 1) = -std::cos(alpha);
+	J(1, 0) = p.KL*p.v*p.v*std::cos(p.alpha0) + T*std::cos(alpha);
+	J(1, 1) = std::sin(alpha);
+
+	return J;
+}
+
+void HydroAllocator::optim(float x_array[2], NfParams p)
+{
+	Vector2f x(x_array);
+	SquareMatrix<float, 2> J;
+	Vector2f func_out;
+	SquareMatrix<float, 2> J_inv;
+	Vector2f delta_x;
+	Vector2f x_new;
+
+	for(int i=0; i<10; i++)
+	{
+		J = J_func(x, p);
+		func_out = func(x, p);
+
+		inv(J, J_inv);
+
+		delta_x = - J_inv * func_out;
+
+		if(delta_x.norm_squared() < (float)1e-6)
+			break;
+
+		x_new = x + delta_x;
+
+		x_new(0) = math::constrain(x_new(0), - _param_hy_wing_max_a.get(), _param_hy_wing_max_a.get());
+		x_new(1) = math::constrain(x_new(1), 0.f, 100.0f);//TODO 此处的约束要改
+
+		x = x_new;
+	}
+
+	x.copyTo(x_array);
+}
+
 void HydroAllocator::Run()
 {
 	if (should_exit()) {
@@ -172,6 +232,44 @@ void HydroAllocator::Run()
 	Matrix<float, 4, 1> delta_force_vector;
 
 	delta_force_vector = allocate_matrix * torque_vector;
+
+	float delta_force_vector_array[4];
+	delta_force_vector.copyTo(delta_force_vector_array);
+	thrust_x[0] += delta_force_vector_array[0];
+	thrust_z[0] += delta_force_vector_array[1];
+	thrust_x[1] += delta_force_vector_array[2];
+	thrust_z[1] += delta_force_vector_array[3];
+
+	float x[2][2] = {
+		{0, _hydro_thrust_setpoint_msg.xyz[0] / 2},
+		{0, _hydro_thrust_setpoint_msg.xyz[0] / 2}
+	};
+
+
+	_nf_params.alpha0 = 0; //TODO
+
+	_nf_params.KL = _param_hy_wing_kl.get();
+
+	if(_param_hy_speed_select.get() == 0)//使用替代速度
+	{
+		_nf_params.v = _param_hy_alt_speed.get();
+	}
+	else
+	{
+		_nf_params.v = _param_hy_alt_speed.get();//TODO 暂时不支持真实速度，都用替代速度
+	}
+
+	_nf_params.Fx = thrust_x[0];
+	_nf_params.Fz = thrust_z[0];
+	optim(x[0], _nf_params);
+	_nf_params.Fx = thrust_x[1];
+	_nf_params.Fz = thrust_z[1];
+	optim(x[1], _nf_params);
+
+	x[0][0] = math::constrain(x[0][0] / _param_hy_wing_max_a.get(), -1.f, 1.f);
+	x[1][0] = math::constrain(x[1][0] / _param_hy_wing_max_a.get(), -1.f, 1.f);
+	x[0][1] = math::constrain(x[0][1] / _param_hy_rt_max_thrust.get(), 0.f, 1.f);
+	x[1][1] = math::constrain(x[1][1] / _param_hy_rt_max_thrust.get(), 0.f, 1.f);
 
 
 

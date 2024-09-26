@@ -107,3 +107,13 @@ parameters:
       default: 5.0
       min: 0.0
       decimal: 2
+
+    #单个翼面最大攻角
+    HY_WING_MAX_A:
+      description:
+        short: Maximum attack angle of a single wing surface
+      type: float
+      unit: rad
+      default: 5.0
+      min: 0.0
+      decimal: 2
