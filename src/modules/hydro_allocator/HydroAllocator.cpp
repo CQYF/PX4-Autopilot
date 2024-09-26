@@ -185,7 +185,8 @@ void HydroAllocator::optim(float x_array[2], NfParams p)
 		x_new = x + delta_x;
 
 		x_new(0) = math::constrain(x_new(0), - _param_hy_wing_max_a.get(), _param_hy_wing_max_a.get());
-		x_new(1) = math::constrain(x_new(1), 0.f, 100.0f);//TODO 此处的约束要改
+		float x1_max = math::constrain(_param_hy_th_max_gain.get() * _manual_control_setpoint.throttle, 0.f, 1.f) * _param_hy_rt_max_thrust.get();
+		x_new(1) = math::constrain(x_new(1), 0.f, x1_max);
 
 		x = x_new;
 	}
@@ -212,6 +213,7 @@ void HydroAllocator::Run()
 	{
 		;
 	}
+	_manual_control_setpoint_sub.copy(&_manual_control_setpoint);
 
 	//0是左边，1是右边
 	float thrust_x[2];
@@ -250,7 +252,9 @@ void HydroAllocator::Run()
 	};
 
 	//填入方程的参数
-	_nf_params.alpha0 = 0; //TODO
+	_vehicle_attitude_sub.copy(&_vehicle_attitude);
+	Eulerf euler_angles(Quatf(_vehicle_attitude.q));
+	_nf_params.alpha0 = euler_angles.theta();
 
 	_nf_params.KL = _param_hy_wing_kl.get();
 

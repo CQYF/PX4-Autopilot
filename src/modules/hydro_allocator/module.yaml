@@ -114,6 +114,15 @@ parameters:
         short: Maximum attack angle of a single wing surface
       type: float
       unit: rad
-      default: 5.0
+      default: 0.8
       min: 0.0
+      decimal: 2
+
+    #推进器推力上限增益系数，单个推进器推力上限不超过该值*throttle杆量，且不超过1
+    HY_TH_MAX_GAIN:
+      description:
+        short: Upper limit gain coefficient of thrust
+      type: float
+      default: 2.0
+      min: 1.0
       decimal: 2

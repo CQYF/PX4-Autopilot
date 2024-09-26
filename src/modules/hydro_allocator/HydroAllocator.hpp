@@ -46,6 +46,8 @@
 #include <uORB/topics/vehicle_thrust_setpoint.h>
 #include <uORB/topics/actuator_motors.h>
 #include <uORB/topics/actuator_servos.h>
+#include <uORB/topics/manual_control_setpoint.h>
+#include <uORB/topics/vehicle_attitude.h>
 
 #include <drivers/drv_hrt.h>
 
@@ -93,8 +95,14 @@ private:
 	uORB::SubscriptionCallbackWorkItem 	_hydro_torque_setpoint_sub{this, ORB_ID(hydro_torque_setpoint)};
 	uORB::SubscriptionCallbackWorkItem 	_hydro_thrust_setpoint_sub{this, ORB_ID(hydro_thrust_setpoint)};
 
+	uORB::Subscription _manual_control_setpoint_sub{ORB_ID(manual_control_setpoint)};
+	uORB::Subscription _vehicle_attitude_sub{ORB_ID(vehicle_attitude)};
+
 	vehicle_torque_setpoint_s		_hydro_torque_setpoint_msg{0};
 	vehicle_thrust_setpoint_s		_hydro_thrust_setpoint_msg{0};
+
+	manual_control_setpoint_s		_manual_control_setpoint{0};
+	vehicle_attitude_s			_vehicle_attitude{0};
 
 	uORB::Publication<actuator_motors_s>	_hydro_motors_pub{ORB_ID(hydro_motors)};
 	uORB::Publication<actuator_servos_s>	_hydro_servos_pub{ORB_ID(hydro_servos)};
@@ -133,6 +141,7 @@ private:
 		(ParamInt<px4::params::HY_SPEED_SELECT>) _param_hy_speed_select,
 		(ParamFloat<px4::params::HY_RT_MAX_THRUST>) _param_hy_rt_max_thrust,
 		(ParamFloat<px4::params::HY_WING_KL>) _param_hy_wing_kl,
-		(ParamFloat<px4::params::HY_WING_MAX_A>) _param_hy_wing_max_a
+		(ParamFloat<px4::params::HY_WING_MAX_A>) _param_hy_wing_max_a,
+		(ParamFloat<px4::params::HY_TH_MAX_GAIN>) _param_hy_th_max_gain
 	)
 };
