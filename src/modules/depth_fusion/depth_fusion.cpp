@@ -9,8 +9,8 @@ DepthFusion::DepthFusion():ModuleParams(nullptr),//初始化基类ModuleParams�
 	ScheduledWorkItem(MODULE_NAME, px4::wq_configurations::nav_and_controllers),
 	_loop_perf(perf_alloc(PC_ELAPSED, MODULE_NAME": cycle"))
 {
-	kf1.setDeltaTime(0.02);
-	kf2.setDeltaTime(0.02);
+	kf1.setDeltaTime(0.025);
+	kf2.setDeltaTime(0.025);
 	_depth_fusion_pub.advertise();
 }
 DepthFusion::~DepthFusion()
@@ -35,8 +35,12 @@ void DepthFusion::Run()
 	adc_report_s adc_report;
 	_vehicle_air_data_sub.update(&vehicle_air_data);
 	_adc_report_sub.update(&adc_report);
+	vehicle_attitude_s attitude;
+	_vehicle_attitude_sub.update(&attitude);
 
 	float depth1=vehicle_air_data.baro_alt_meter;
+	float cos_theta=QtoEuler(attitude.q);
+	depth1=depth1*cos_theta;
 	kf1.predict();
 	kf1.update(depth1);
 
@@ -92,6 +96,21 @@ void DepthFusion::Run()
 		px4_sleep(20000);
 	}
 }*/
+
+float DepthFusion::QtoEuler(float q[4])
+{
+	float q0=q[0];
+	float q1=q[1];
+	float q2=q[2];
+	float q3=q[3];
+	//float roll=atan((2*(q0*q1+q2*q3))/(1-2*(pow(q1,2)+pow(q2,2))));
+	//float roll = atan2(2 * (q0 * q1 + q2 * q3), 1 - 2 * (pow(q1, 2) + pow(q2, 2)));
+	float pitch = asin(2*(q0*q2-q3*q1));
+	//float yaw =atan2(2*(q0 * q3 + q2 * q1),1-2*(pow(q2,2)+pow(q3,2)));
+	float depth_real_theta=cos(pitch);
+	return depth_real_theta;
+
+}
 
 int DepthFusion::task_spawn(int argc, char *argv[])
 {

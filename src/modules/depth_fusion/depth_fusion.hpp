@@ -15,6 +15,7 @@
 #include <uORB/topics/adc_report.h>
 #include <uORB/topics/vehicle_air_data.h>
 #include <uORB/topics/depth_fusion.h>
+#include <uORB/topics/vehicle_attitude.h>
 #include <math.h>
 
 using namespace time_literals;
@@ -117,7 +118,7 @@ private:
     double Q[2][2];  // 过程噪声协方差
     double R[1][1];  // 测量噪声协方差
     double P[2][2];  // 估计误差协方差
-    double dt = 1.0; // 时间间隔
+    double dt = 0.025; // 时间间隔
 };
 
 class DepthFusion : public ModuleBase<DepthFusion>, public ModuleParams, public px4::ScheduledWorkItem
@@ -139,11 +140,13 @@ public:
 private:
 	void Run() override;
 	void Fusion(hrt_abstime now);
+    float QtoEuler(float q[4]);
 	uORB::Subscription _vehicle_air_data_sub{ORB_ID(vehicle_air_data)};
 	uORB::Subscription _adc_report_sub{ORB_ID(adc_report)};
+    uORB::Subscription _vehicle_attitude_sub{ORB_ID(vehicle_attitude)};
 	uORB::Publication<depth_fusion_s> _depth_fusion_pub{ORB_ID(depth_fusion)};
 	perf_counter_t			_loop_perf;
-	static const hrt_abstime	interval_us{100_ms};
+	static const hrt_abstime	interval_us{25_ms};
 	KalmanFilter kf1;
     KalmanFilter kf2;
 };
