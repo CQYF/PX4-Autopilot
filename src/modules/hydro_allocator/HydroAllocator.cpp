@@ -115,18 +115,18 @@ HydroAllocator::parameters_update(bool force)
 
 		// update parameters from storage
 		updateParams();
+	}
 
-		//更新多实例参数
-		for (int i = 0; i < 2; ++i) {
-			param_get(_param_handles.hy_rt_idx[i], &_params.hy_rt_idx[i]);
-			param_get(_param_handles.hy_sv_idx[i], &_params.hy_sv_idx[i]);
-			param_get(_param_handles.hy_vzrt_pit_r[i], &_params.hy_vzrt_pit_r[i]);
-			param_get(_param_handles.hy_vzrt_yaw_r[i], &_params.hy_vzrt_yaw_r[i]);
-			param_get(_param_handles.hy_vzrt_rol_r[i], &_params.hy_vzrt_rol_r[i]);
-			param_get(_param_handles.hy_vxrt_pit_r[i], &_params.hy_vxrt_pit_r[i]);
-			param_get(_param_handles.hy_vxrt_yaw_r[i], &_params.hy_vxrt_yaw_r[i]);
-			param_get(_param_handles.hy_vxrt_rol_r[i], &_params.hy_vxrt_rol_r[i]);
-		}
+	//更新多实例参数
+	for (int i = 0; i < 2; ++i) {
+		param_get(_param_handles.hy_rt_idx[i], &_params.hy_rt_idx[i]);
+		param_get(_param_handles.hy_sv_idx[i], &_params.hy_sv_idx[i]);
+		param_get(_param_handles.hy_vzrt_pit_r[i], &_params.hy_vzrt_pit_r[i]);
+		param_get(_param_handles.hy_vzrt_yaw_r[i], &_params.hy_vzrt_yaw_r[i]);
+		param_get(_param_handles.hy_vzrt_rol_r[i], &_params.hy_vzrt_rol_r[i]);
+		param_get(_param_handles.hy_vxrt_pit_r[i], &_params.hy_vxrt_pit_r[i]);
+		param_get(_param_handles.hy_vxrt_yaw_r[i], &_params.hy_vxrt_yaw_r[i]);
+		param_get(_param_handles.hy_vxrt_rol_r[i], &_params.hy_vxrt_rol_r[i]);
 	}
 }
 
@@ -185,7 +185,7 @@ void HydroAllocator::optim(float x_array[2], NfParams p)
 		x_new = x + delta_x;
 
 		x_new(0) = math::constrain(x_new(0), - _param_hy_wing_max_a.get(), _param_hy_wing_max_a.get());
-		float x1_max = math::constrain(_param_hy_th_max_gain.get() * _manual_control_setpoint.throttle, 0.f, 1.f) * _param_hy_rt_max_thrust.get();
+		float x1_max = math::constrain(_param_hy_th_max_gain.get() * (_manual_control_setpoint.throttle+1)*0.5f, 0.f, 1.f) * _param_hy_rt_max_thrust.get();
 		x_new(1) = math::constrain(x_new(1), 0.f, x1_max);
 
 		x = x_new;
@@ -291,16 +291,18 @@ void HydroAllocator::Run()
 	hydro_servos_msg.timestamp = hrt_absolute_time();
 	hydro_servos_msg.timestamp_sample = _hydro_torque_setpoint_msg.timestamp_sample;
 
-	hydro_motors_msg.control[_params.hy_rt_idx[0]] = x[0][1];
-	hydro_motors_msg.control[_params.hy_rt_idx[1]] = x[1][1];
+	hydro_motors_msg.control[_params.hy_rt_idx[0] - 1] = x[0][1];
+	hydro_motors_msg.control[_params.hy_rt_idx[1] - 1] = x[1][1];
 
-	hydro_servos_msg.control[_params.hy_sv_idx[0]] = x[0][0];
-	hydro_servos_msg.control[_params.hy_sv_idx[1]] = x[1][0];
+	hydro_servos_msg.control[_params.hy_sv_idx[0] - 1] = x[0][0];
+	hydro_servos_msg.control[_params.hy_sv_idx[1] - 1] = x[1][0];
 
 	_hydro_motors_pub.publish(hydro_motors_msg);
 	_hydro_servos_pub.publish(hydro_servos_msg);
 
-	parameters_update();
+	PX4_INFO("%ld", _params.hy_rt_idx[0]);
+
+	parameters_update(true);// TODO 不加上true，则单实例参数修改无效，原因不明
 
 	// backup schedule
 	ScheduleDelayed(100_ms);

@@ -715,7 +715,7 @@ ControlAllocator::publish_actuator_controls()
 		for (servos_idx = 0; servos_idx < _num_actuators[1] && servos_idx < actuator_servos_s::NUM_CONTROLS; servos_idx++) {
 			int selected_matrix = _control_allocation_selection_indexes[actuator_idx];
 			float actuator_sp = _control_allocation[selected_matrix]->getActuatorSetpoint()(actuator_idx_matrix[selected_matrix]);
-			actuator_sp += _hydro_servos.control[motors_idx];// 加上hydro_allocator的输出
+			actuator_sp += _hydro_servos.control[servos_idx];// 加上hydro_allocator的输出
 			actuator_servos.control[servos_idx] = PX4_ISFINITE(actuator_sp) ? actuator_sp : NAN;
 			++actuator_idx_matrix[selected_matrix];
 			++actuator_idx;

@@ -38,6 +38,7 @@ mode_control start
 #
 hydro_att_control start
 hydro_rate_control start
+hydro_allocator start
 
 vtrack start
 mavdebug start
