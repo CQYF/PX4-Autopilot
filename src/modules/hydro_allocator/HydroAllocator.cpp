@@ -300,8 +300,6 @@ void HydroAllocator::Run()
 	_hydro_motors_pub.publish(hydro_motors_msg);
 	_hydro_servos_pub.publish(hydro_servos_msg);
 
-	PX4_INFO("%ld", _params.hy_rt_idx[0]);
-
 	parameters_update(true);// TODO 不加上true，则单实例参数修改无效，原因不明
 
 	// backup schedule

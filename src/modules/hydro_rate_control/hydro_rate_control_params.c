@@ -502,5 +502,5 @@ PARAM_DEFINE_FLOAT(HY_D_P, 0.1f);
  * @decimal 3
  * @group Hydro Depth Control
  */
-PARAM_DEFINE_FLOAT(HY_D_FF, 20.f);
-//深度控制重力补偿
+PARAM_DEFINE_FLOAT(HY_D_FF, -20.f);
+//深度控制重力补偿，向下为正
