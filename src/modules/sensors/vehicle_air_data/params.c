@@ -52,7 +52,7 @@ PARAM_DEFINE_FLOAT(SENS_BARO_QNH, 1013.25f);
  * @group Sensors
  * @unit Hz
  */
-PARAM_DEFINE_FLOAT(SENS_BARO_RATE, 20.0f);
+PARAM_DEFINE_FLOAT(SENS_BARO_RATE, 200.0f);
 
 /**
  * air,fresh or salt water
