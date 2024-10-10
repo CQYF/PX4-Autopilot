@@ -680,7 +680,7 @@ ControlAllocator::publish_actuator_controls()
 	int actuator_idx = 0;
 	int actuator_idx_matrix[ActuatorEffectiveness::MAX_NUM_MATRICES] {};
 
-	uint32_t stopped_motors = _actuator_effectiveness->getStoppedMotors() | _handled_motor_failure_bitmask;
+	// uint32_t stopped_motors = _actuator_effectiveness->getStoppedMotors() | _handled_motor_failure_bitmask;
 
 	_hydro_motors_sub.update(&_hydro_motors);
 	_hydro_servos_sub.update(&_hydro_servos);
@@ -691,13 +691,28 @@ ControlAllocator::publish_actuator_controls()
 	for (motors_idx = 0; motors_idx < _num_actuators[0] && motors_idx < actuator_motors_s::NUM_CONTROLS; motors_idx++) {
 		int selected_matrix = _control_allocation_selection_indexes[actuator_idx];
 		float actuator_sp = _control_allocation[selected_matrix]->getActuatorSetpoint()(actuator_idx_matrix[selected_matrix]);
-		if(actuator_sp == NAN) actuator_sp = 0; // 一部分输出无效时，令其为0，避免影响另一部分输出
 		actuator_sp += _hydro_motors.control[motors_idx];// 加上hydro_allocator的输出
-		actuator_motors.control[motors_idx] = PX4_ISFINITE(actuator_sp) ? actuator_sp : NAN;
 
-		if (stopped_motors & (1u << motors_idx)) {
+		if(PX4_ISFINITE(actuator_sp))
+		{
+			actuator_sp = math::constrain(actuator_sp, -1.0f, 1.0f);
+			if(actuator_sp < 0.02f && actuator_sp > -0.02f)
+			{
+				actuator_motors.control[motors_idx] = NAN;
+			}
+			else
+			{
+				actuator_motors.control[motors_idx] = actuator_sp;
+			}
+		}
+		else
+		{
 			actuator_motors.control[motors_idx] = NAN;
 		}
+		// stopped motors用于在杆量小于2%时关闭电机，避免遥控器误差造成的影响，但在这里会错误地关闭水翼电机，所以把stopMaskedMotorsWithZeroThrust函数中的内容移到这里，取代原来的功能
+		// if (stopped_motors & (1u << motors_idx)) {
+		// 	actuator_motors.control[motors_idx] = NAN;
+		// }
 
 		++actuator_idx_matrix[selected_matrix];
 		++actuator_idx;
@@ -716,9 +731,8 @@ ControlAllocator::publish_actuator_controls()
 		for (servos_idx = 0; servos_idx < _num_actuators[1] && servos_idx < actuator_servos_s::NUM_CONTROLS; servos_idx++) {
 			int selected_matrix = _control_allocation_selection_indexes[actuator_idx];
 			float actuator_sp = _control_allocation[selected_matrix]->getActuatorSetpoint()(actuator_idx_matrix[selected_matrix]);
-			if(actuator_sp == NAN) actuator_sp = 0; // 一部分输出无效时，令其为0，避免影响另一部分输出
 			actuator_sp += _hydro_servos.control[servos_idx];// 加上hydro_allocator的输出
-			actuator_servos.control[servos_idx] = PX4_ISFINITE(actuator_sp) ? actuator_sp : NAN;
+			actuator_servos.control[servos_idx] = PX4_ISFINITE(actuator_sp) ? math::constrain(actuator_sp, -1.0f, 1.0f) : NAN;
 			++actuator_idx_matrix[selected_matrix];
 			++actuator_idx;
 
