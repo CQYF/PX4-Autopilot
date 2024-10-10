@@ -69,6 +69,7 @@
 #include <uORB/topics/vehicle_thrust_setpoint.h>
 #include <uORB/topics/vehicle_torque_setpoint.h>
 #include <uORB/topics/vehicle_attitude.h>
+#include <uORB/topics/depth_fusion.h>
 
 using matrix::Eulerf;
 using matrix::Quatf;
@@ -108,6 +109,7 @@ private:
 	uORB::Subscription _vehicle_status_sub{ORB_ID(vehicle_status)};
 	uORB::Subscription _vehicle_rates_sub{ORB_ID(vehicle_angular_velocity)};
 	uORB::Subscription _vehicle_attitude_sub{ORB_ID(vehicle_attitude)};
+	uORB::Subscription _depth_fusion_sub{ORB_ID(depth_fusion)};
 
 	uORB::Publication<vehicle_rates_setpoint_s>	_rate_sp_pub{ORB_ID(vehicle_rates_setpoint)};
 	uORB::Publication<vehicle_torque_setpoint_s>	_vehicle_torque_setpoint_pub{ORB_ID(vehicle_torque_setpoint)};
@@ -129,6 +131,7 @@ private:
 	vehicle_rates_setpoint_s		_rates_sp{};
 	vehicle_status_s			_vehicle_status{};
 	vehicle_attitude_s			_vehicle_attitude{};
+	depth_fusion_s				_depth_fusion{};
 
 	//水翼部分的setpoint
 	vehicle_thrust_setpoint_s		_hydro_thrust_setpoint{};
@@ -196,6 +199,7 @@ private:
 
 		(ParamFloat<px4::params::HY_D_P>) _param_hy_d_p,			//深度控制参数
 		(ParamFloat<px4::params::HY_D_FF>) _param_hy_d_ff,
+		(ParamFloat<px4::params::HY_D_SP>) _param_hy_d_sp,
 
 		(ParamFloat<px4::params::HY_RT_MAX_THRUST>) _param_hy_rt_max_thrust	//单个水下推进器最大推力
 	)

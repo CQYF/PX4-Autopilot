@@ -504,3 +504,13 @@ PARAM_DEFINE_FLOAT(HY_D_P, 0.1f);
  */
 PARAM_DEFINE_FLOAT(HY_D_FF, -20.f);
 //深度控制重力补偿，向下为正
+
+/**
+ * Depth control depth setpoint
+ *
+ * @unit m
+ * @decimal 3
+ * @group Hydro Depth Control
+ */
+PARAM_DEFINE_FLOAT(HY_D_SP, 0.05f);
+//深度控制深度设定点，向下为正，即水面为0，水下为正

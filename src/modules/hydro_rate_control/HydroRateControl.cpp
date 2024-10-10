@@ -289,10 +289,11 @@ void HydroRateControl::Run()
 			// 				euler_angles.theta(), -1.f, 1.f);
 			//（使用新的控制和分配逻辑时，不需要此补偿）
 
+			_depth_fusion_sub.update(&_depth_fusion);
 
-			// TODO 深度真值与设定值，PID和PID参数
-			float depth = 0;
-			float depth_setpoint = 0;
+			// TODO PID和PID参数
+			float depth = _depth_fusion.fudepth * 0.01f;//换算单位
+			float depth_setpoint = _param_hy_d_sp.get();
 
 			//! 注意，水翼的推力计算都用真值，单位是N，但力矩仍用归一化值
 			//水平推力，向前为正，和原来的推力一致，最大为水下推进器推力的2倍
