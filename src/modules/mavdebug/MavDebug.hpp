@@ -45,6 +45,7 @@
 #include <uORB/topics/debug_vect.h>
 #include <uORB/topics/vehicle_air_data.h>
 #include <uORB/topics/estimator_states.h>
+#include <uORB/topics/depth_fusion.h>
 
 #include <drivers/drv_hrt.h>
 
@@ -73,11 +74,15 @@ private:
 
 	uORB::SubscriptionInterval _parameter_update_sub{ORB_ID(parameter_update), 1_s};
 
-	uORB::SubscriptionCallbackWorkItem 	_vehicle_air_data_sub{this, ORB_ID(vehicle_air_data)};
-	uORB::SubscriptionCallbackWorkItem 	_estimator_states_sub{this, ORB_ID(estimator_states)};
+	// uORB::SubscriptionCallbackWorkItem 	_vehicle_air_data_sub{this, ORB_ID(vehicle_air_data)};
+	// uORB::SubscriptionCallbackWorkItem 	_estimator_states_sub{this, ORB_ID(estimator_states)};
 
-	vehicle_air_data_s			_vehicle_air_data_msg{0};
-	estimator_states_s			_estimator_states_msg{0};
+	// vehicle_air_data_s			_vehicle_air_data_msg{0};
+	// estimator_states_s			_estimator_states_msg{0};
+
+	uORB::SubscriptionCallbackWorkItem 	_depth_fusion_sub{this, ORB_ID(depth_fusion)};
+
+	depth_fusion_s				_depth_fusion{0};
 
 	uORB::Publication<debug_vect_s>		_debug_vect_pub{ORB_ID(debug_vect)};
 

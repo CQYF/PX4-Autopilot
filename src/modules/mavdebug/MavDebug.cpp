@@ -53,7 +53,8 @@ MavDebug::~MavDebug()
 bool
 MavDebug::init()
 {
-	if (!_vehicle_air_data_sub.registerCallback() || !_estimator_states_sub.registerCallback()) {
+	// if (!_vehicle_air_data_sub.registerCallback() || !_estimator_states_sub.registerCallback()) {
+	if (! _depth_fusion_sub.registerCallback()) {
 		PX4_ERR("callback registration failed");
 		return false;
 	}
@@ -78,21 +79,29 @@ MavDebug::parameters_update(bool force)
 void MavDebug::Run()
 {
 	if (should_exit()) {
-		_vehicle_air_data_sub.unregisterCallback();
-		_estimator_states_sub.unregisterCallback();
+		// _vehicle_air_data_sub.unregisterCallback();
+		// _estimator_states_sub.unregisterCallback();
+		_depth_fusion_sub.unregisterCallback();
 		exit_and_cleanup();
 		return;
 	}
 
 	perf_begin(_loop_perf);
 
-	if (_vehicle_air_data_sub.update(&_vehicle_air_data_msg))
+	// if (_vehicle_air_data_sub.update(&_vehicle_air_data_msg))
+	// {
+	// 	_debug_vect_msg.x = _vehicle_air_data_msg.baro_alt_meter;
+	// }
+	// if (_estimator_states_sub.update(&_estimator_states_msg))
+	// {
+	// 	_debug_vect_msg.y = - _estimator_states_msg.states[9];
+	// }
+
+	if (_depth_fusion_sub.update(&_depth_fusion))
 	{
-		_debug_vect_msg.x = _vehicle_air_data_msg.baro_alt_meter;
-	}
-	if (_estimator_states_sub.update(&_estimator_states_msg))
-	{
-		_debug_vect_msg.y = - _estimator_states_msg.states[9];
+		_debug_vect_msg.x = _depth_fusion.depth1_or;
+		_debug_vect_msg.y = _depth_fusion.depth2_or;
+		_debug_vect_msg.z = _depth_fusion.fudepth;
 	}
 
 	_debug_vect_msg.timestamp = hrt_absolute_time();
