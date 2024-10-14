@@ -38,7 +38,7 @@
 #include <lib/geo/geo.h>
 #include <lib/atmosphere/atmosphere.h>
 
-
+static float last_pressure;
 namespace sensors
 {
 
@@ -131,6 +131,14 @@ bool VehicleAirData::ParametersUpdate(bool force)
 	return false;
 }
 
+bool VehicleAirData::IfisValid(float read)
+{
+	const float lowerBound = 95000;
+	const float upperBound = 107200;
+	return (read >= lowerBound && read <= upperBound);
+}
+//满足区间条件输出true
+
 void VehicleAirData::Run()
 {
 	perf_begin(_cycle_perf);
@@ -199,7 +207,7 @@ void VehicleAirData::Run()
 
 					// pressure corrected with offset (if available)
 					_calibration[uorb_index].SensorCorrectionsUpdate();
-					const float pressure_corrected = _calibration[uorb_index].Correct(report.pressure);
+					float pressure_corrected = _calibration[uorb_index].Correct(report.pressure);
 					// sensor_data[uorb_index][sensor_sub_updates-1]=pressure_corrected;//添加进数组
 					const float pressure_sealevel_pa = _param_sens_baro_qnh.get() * 100.f;
 
@@ -208,6 +216,13 @@ void VehicleAirData::Run()
 					// PX4_INFO("report.temperature %f", (double)report.temperature); // report.temperature 25.559999
 
 					float data_array[3];
+					if (IfisValid(pressure_corrected)){
+						last_pressure = pressure_corrected;
+					}
+					else{
+						pressure_corrected = last_pressure;
+					}
+					//保证压强在区间之内才被记为有效值
 					if  (_param_sens_depth_medium.get() == Medium::Air){
 					// float data_array[3] {pressure_corrected, report.temperature, getAltitudeFromPressure(pressure_corrected, pressure_sealevel_pa)};
 						data_array[0]=pressure_corrected;

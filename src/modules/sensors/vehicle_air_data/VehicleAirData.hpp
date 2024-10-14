@@ -70,7 +70,7 @@ public:
 	void Stop();
 
 	void PrintStatus();
-
+	bool IfisValid(float read);
 private:
 	void Run() override;
 
