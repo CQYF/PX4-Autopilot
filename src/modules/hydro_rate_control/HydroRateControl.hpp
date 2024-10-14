@@ -70,6 +70,7 @@
 #include <uORB/topics/vehicle_torque_setpoint.h>
 #include <uORB/topics/vehicle_attitude.h>
 #include <uORB/topics/depth_fusion.h>
+#include <uORB/topics/debug_key_value.h>
 
 using matrix::Eulerf;
 using matrix::Quatf;
@@ -110,6 +111,7 @@ private:
 	uORB::Subscription _vehicle_rates_sub{ORB_ID(vehicle_angular_velocity)};
 	uORB::Subscription _vehicle_attitude_sub{ORB_ID(vehicle_attitude)};
 	uORB::Subscription _depth_fusion_sub{ORB_ID(depth_fusion)};
+	uORB::Subscription _debug_key_value_sub{ORB_ID(debug_key_value)};
 
 	uORB::Publication<vehicle_rates_setpoint_s>	_rate_sp_pub{ORB_ID(vehicle_rates_setpoint)};
 	uORB::Publication<vehicle_torque_setpoint_s>	_vehicle_torque_setpoint_pub{ORB_ID(vehicle_torque_setpoint)};
@@ -132,6 +134,7 @@ private:
 	vehicle_status_s			_vehicle_status{};
 	vehicle_attitude_s			_vehicle_attitude{};
 	depth_fusion_s				_depth_fusion{};
+	debug_key_value_s			_debug_key_value{};
 
 	//水翼部分的setpoint
 	vehicle_thrust_setpoint_s		_hydro_thrust_setpoint{};
