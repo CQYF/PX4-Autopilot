@@ -54,10 +54,19 @@ VehicleAirData::VehicleAirData() :
 	_vehicle_air_data_pub.advertise();
 
 	_voter.set_timeout(SENSOR_TIMEOUT);
+
+	for (int instance = 0; instance < MAX_SENSOR_COUNT; instance++) {
+		_depth_mid_filters[instance] = new MedianFilter<float, 9>();
+	}
+
+
 }
 
 VehicleAirData::~VehicleAirData()
 {
+	for (int instance = 0; instance < MAX_SENSOR_COUNT; instance++) {
+		delete _depth_mid_filters[instance];
+	}
 	Stop();
 	perf_free(_cycle_perf);
 }
@@ -249,7 +258,8 @@ void VehicleAirData::Run()
 					// PX4_INFO("uorb_index %i, report.error_count %li, _priority[%i] %i", uorb_index, report.error_count, uorb_index, _priority[uorb_index]);
 
 					_timestamp_sample_sum[uorb_index] += report.timestamp_sample; // 统计时间戳之和
-					_data_sum[uorb_index] += pressure_corrected;        // 统计压强之和
+					_depth_mid_filters[uorb_index]->insert(pressure_corrected);// 应用中值滤波
+					_data_sum[uorb_index] += pressure_corrected;        // 统计压强
 					_temperature_sum[uorb_index] += report.temperature; // 统计温度之和
 					_data_sum_count[uorb_index]++;
 					// PX4_INFO("_data_sum_count %i: %i", uorb_index, _data_sum_count[uorb_index]);
@@ -309,8 +319,9 @@ void VehicleAirData::Run()
 					}
 
 					if (publish) {
-						const float pressure_pa = _data_sum[instance] / _data_sum_count[instance];
-						const float temperature = _temperature_sum[instance] / _data_sum_count[instance];
+						// float pressure_pa = _data_sum[instance] / _data_sum_count[instance];
+						float pressure_pa = _depth_mid_filters[instance]->median();
+						float temperature = _temperature_sum[instance] / _data_sum_count[instance];
 
 						float altitude = 0.0f;
 

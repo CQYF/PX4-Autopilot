@@ -54,8 +54,10 @@
 #include <uORB/topics/sensor_baro.h>
 #include <uORB/topics/sensors_status.h>
 #include <uORB/topics/vehicle_air_data.h>
+#include <mathlib/math/filter/MedianFilter.hpp>
 
 using namespace time_literals;
+using namespace math;
 
 namespace sensors
 {
@@ -79,7 +81,7 @@ private:
 	bool ParametersUpdate(bool force = false);
 	void UpdateStatus();
 
-	static constexpr int MAX_SENSOR_COUNT = 4;
+	static constexpr int MAX_SENSOR_COUNT = 5;
 
 	uORB::Publication<sensors_status_s> _sensors_status_baro_pub{ORB_ID(sensors_status_baro)};
 
@@ -94,7 +96,9 @@ private:
 		{this, ORB_ID(sensor_baro), 1},
 		{this, ORB_ID(sensor_baro), 2},
 		{this, ORB_ID(sensor_baro), 3},
+		{this, ORB_ID(sensor_baro), 4},
 	};
+	MedianFilter<float, 9>* _depth_mid_filters[MAX_SENSOR_COUNT];
 
 	calibration::Barometer _calibration[MAX_SENSOR_COUNT];
 
