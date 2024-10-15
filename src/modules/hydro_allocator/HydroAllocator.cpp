@@ -244,6 +244,25 @@ void HydroAllocator::Run()
 	thrust_x[1] += delta_force_vector(2);
 	thrust_z[1] += delta_force_vector(3);
 
+	//避免thrust_x为负，因为这可能导致优化求解出问题
+	float sum_thrust_x = thrust_x[0] + thrust_x[1];
+	if(sum_thrust_x < 0)
+	{
+		sum_thrust_x *= 0.5f;
+		thrust_x[0] -= sum_thrust_x;
+		thrust_x[1] -= sum_thrust_x;
+	}
+	if(thrust_x[0] < 0)
+	{
+		thrust_x[1] += thrust_x[0];
+		thrust_x[0] = 0;
+	}
+	else if(thrust_x[1] < 0)
+	{
+		thrust_x[0] += thrust_x[1];
+		thrust_x[1] = 0;
+	}
+
 	//定义待优化求解的变量，第一行是左侧水翼，第二行是右侧水翼，第一列是攻角，第二列是推力
 	//攻角的初始值为0，推力初始值为x方向期望推力的一半
 	float x[2][2] = {
