@@ -39,8 +39,6 @@ void DepthFusion::Run()
 	_vehicle_attitude_sub.update(&attitude);
 
 	float depth1=vehicle_air_data.baro_alt_meter;
-	float cos_theta=QtoEuler(attitude.q);
-	depth1=depth1*cos_theta;
 	kf1.predict();
 	kf1.update(depth1);
 
@@ -55,7 +53,12 @@ void DepthFusion::Run()
 
 	depth_fusion_s out={};
 	out.timestamp=hrt_absolute_time();
-	out.fudepth=d1*0.7+d3*0.3;
+	if(d3<10.5){
+		out.fudepth=d1*0.7+d3*0.3;
+	}
+	else{
+		out.fudepth=d1;
+	}
 	out.depth1=d1;
 	out.depth2=d3;
 	out.depth1_or=depth1;
