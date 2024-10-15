@@ -291,10 +291,12 @@ void HydroRateControl::Run()
 
 			_depth_fusion_sub.update(&_depth_fusion);
 			_debug_key_value_sub.update(&_debug_key_value);
+			_vehicle_air_data_sub.update(&_vehicle_air_data);
 
 			// TODO PID和PID参数
 			//float depth = _depth_fusion.fudepth * 0.01f;//换算单位
-			float depth = - _debug_key_value.value;
+			//float depth = - _debug_key_value.value;
+			float depth = _vehicle_air_data.baro_alt_meter * 0.01f;
 			float depth_setpoint = _param_hy_d_sp.get();
 			//深度向下为正，越深越正
 
