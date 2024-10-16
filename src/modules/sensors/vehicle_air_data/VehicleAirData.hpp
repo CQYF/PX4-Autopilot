@@ -72,7 +72,6 @@ public:
 	void Stop();
 
 	void PrintStatus();
-	bool IfisValid(float read);
 private:
 	void Run() override;
 
@@ -99,6 +98,8 @@ private:
 		{this, ORB_ID(sensor_baro), 4},
 	};
 	MedianFilter<float, 9>* _depth_mid_filters[MAX_SENSOR_COUNT];
+
+	float _pressure_ema_filted[MAX_SENSOR_COUNT] {0};
 
 	calibration::Barometer _calibration[MAX_SENSOR_COUNT];
 
@@ -132,7 +133,10 @@ private:
 	DEFINE_PARAMETERS(
 		(ParamFloat<px4::params::SENS_BARO_QNH>) _param_sens_baro_qnh,
 		(ParamFloat<px4::params::SENS_BARO_RATE>) _param_sens_baro_rate,
-		(ParamInt<px4::params::SENS_DEP_MEDIUM>) _param_sens_depth_medium
+		(ParamInt<px4::params::SENS_DEP_MEDIUM>) _param_sens_depth_medium,
+		(ParamFloat<px4::params::HY_PRSR_UP>) _param_hy_prsr_up,
+		(ParamFloat<px4::params::HY_PRSR_LW>) _param_hy_prsr_lw,
+		(ParamFloat<px4::params::HY_PRSR_ALPHA>) _param_hy_prsr_alpha
 	)
 };
 }; // namespace sensors

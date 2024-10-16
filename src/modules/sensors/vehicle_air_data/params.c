@@ -65,3 +65,32 @@ PARAM_DEFINE_FLOAT(SENS_BARO_RATE, 200.0f);
  * @group Sensors
  */
 PARAM_DEFINE_INT32(SENS_DEP_MEDIUM,1);
+
+/**
+ * Upper limit of legal pressure value, in pascals
+ *
+ * @decimal 0
+ * @group Hydro Depth KF
+ */
+PARAM_DEFINE_FLOAT(HY_PRSR_UP, 108000.0f);
+//压强合法值上限
+
+/**
+ * Lower limit of legal pressure value, in pascals
+ *
+ * @decimal 0
+ * @group Hydro Depth KF
+ */
+PARAM_DEFINE_FLOAT(HY_PRSR_LW, 102000.0f);
+//压强合法值下限
+
+/**
+ * The filtering factor alpha of the EMA filter
+ *
+ * @min 0
+ * @max 1
+ * @decimal 3
+ * @group Hydro Depth KF
+ */
+PARAM_DEFINE_FLOAT(HY_PRSR_ALPHA, 0.0f);
+//EMA滤波器的因子，越靠近0，响应越快；越靠近1，响应越慢

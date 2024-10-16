@@ -38,7 +38,6 @@
 #include <lib/geo/geo.h>
 #include <lib/atmosphere/atmosphere.h>
 
-static float last_pressure;
 namespace sensors
 {
 
@@ -140,14 +139,6 @@ bool VehicleAirData::ParametersUpdate(bool force)
 	return false;
 }
 
-bool VehicleAirData::IfisValid(float read)
-{
-	const float lowerBound = 95000;
-	const float upperBound = 107200;
-	return (read >= lowerBound && read <= upperBound);
-}
-//满足区间条件输出true
-
 void VehicleAirData::Run()
 {
 	perf_begin(_cycle_perf);
@@ -225,13 +216,6 @@ void VehicleAirData::Run()
 					// PX4_INFO("report.temperature %f", (double)report.temperature); // report.temperature 25.559999
 
 					float data_array[3];
-					if (IfisValid(pressure_corrected)){
-						last_pressure = pressure_corrected;
-					}
-					else{
-						pressure_corrected = last_pressure;
-					}
-					//保证压强在区间之内才被记为有效值
 					if  (_param_sens_depth_medium.get() == Medium::Air){
 					// float data_array[3] {pressure_corrected, report.temperature, getAltitudeFromPressure(pressure_corrected, pressure_sealevel_pa)};
 						data_array[0]=pressure_corrected;
@@ -258,8 +242,16 @@ void VehicleAirData::Run()
 					// PX4_INFO("uorb_index %i, report.error_count %li, _priority[%i] %i", uorb_index, report.error_count, uorb_index, _priority[uorb_index]);
 
 					_timestamp_sample_sum[uorb_index] += report.timestamp_sample; // 统计时间戳之和
+
 					_depth_mid_filters[uorb_index]->insert(pressure_corrected);// 应用中值滤波
+
+					if(pressure_corrected < _param_hy_prsr_up.get() && pressure_corrected > _param_hy_prsr_lw.get())
+					{
+						_pressure_ema_filted[uorb_index] = _pressure_ema_filted[uorb_index] * _param_hy_prsr_alpha.get() + pressure_corrected * (1-_param_hy_prsr_alpha.get());//EMA滤波
+					}
+
 					_data_sum[uorb_index] += pressure_corrected;        // 统计压强
+
 					_temperature_sum[uorb_index] += report.temperature; // 统计温度之和
 					_data_sum_count[uorb_index]++;
 					// PX4_INFO("_data_sum_count %i: %i", uorb_index, _data_sum_count[uorb_index]);
@@ -319,8 +311,10 @@ void VehicleAirData::Run()
 					}
 
 					if (publish) {
-						// float pressure_pa = _data_sum[instance] / _data_sum_count[instance];
-						float pressure_pa = _depth_mid_filters[instance]->median();
+						// float pressure_pa = _data_sum[instance] / _data_sum_count[instance];		//使用均值滤波数据
+						// float pressure_pa = _depth_mid_filters[instance]->median();			//使用中值滤波数据
+						float pressure_pa = _pressure_ema_filted[instance];				//使用EMA滤波数据
+
 						float temperature = _temperature_sum[instance] / _data_sum_count[instance];
 
 						float altitude = 0.0f;
