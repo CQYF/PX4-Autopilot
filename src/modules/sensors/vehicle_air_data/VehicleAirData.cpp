@@ -105,7 +105,16 @@ void VehicleAirData::AirTemperatureUpdate()
 bool VehicleAirData::ParametersUpdate(bool force)
 {
 	// Check if parameters have changed
+	static int tmp_i = 0;
+	tmp_i++;
+	if(tmp_i > 1000)
+	{
+		PX4_INFO("VehicleAirData _parameter_update_sub advertised: %d", _parameter_update_sub.advertised());
+		tmp_i = 0;
+	}
+
 	if (_parameter_update_sub.updated() || force) {
+		PX4_INFO("VehicleAirData _parameter_update_sub received, force: %d", force);
 		// clear update
 		parameter_update_s param_update;
 		_parameter_update_sub.copy(&param_update);
