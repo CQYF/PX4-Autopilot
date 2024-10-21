@@ -48,6 +48,8 @@
         	"--volume=/dev:/dev",
 		"--volume=/home/nubot/.Xauthority:/.Xauthority",
 		//"--runtime=nvidia"
+		"--cpus=4",
+		"--memory=4g",
 	],
 	"remoteEnv": {
 		"DISPLAY": "${localEnv:DISPLAY}",
