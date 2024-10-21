@@ -115,17 +115,9 @@ void HydroRateControl::Run()
 
 		// only update parameters if they changed
 		bool params_updated = _parameter_update_sub.updated();
-		static int tmp_i = 0;
-		tmp_i++;
-		if(tmp_i > 1000)
-		{
-			PX4_INFO("HydroRateControl _parameter_update_sub advertised: %d", _parameter_update_sub.advertised());
-			tmp_i = 0;
-		}
 
 		// check for parameter updates
 		if (params_updated) {
-			PX4_INFO("HydroRateControl _parameter_update_sub received, force: %d", 0);
 			// clear update
 			parameter_update_s pupdate;
 			_parameter_update_sub.copy(&pupdate);
@@ -303,8 +295,8 @@ void HydroRateControl::Run()
 
 			// TODO PID和PID参数
 			//float depth = _depth_fusion.fudepth * 0.01f;//换算单位
-			float depth = - _debug_key_value.value;
-			//float depth = _vehicle_air_data.baro_alt_meter * 0.01f;
+			//float depth = - _debug_key_value.value;
+			float depth = _vehicle_air_data.baro_alt_meter * 0.01f;
 			float depth_setpoint = _param_hy_d_sp.get();
 			//深度向下为正，越深越正
 

@@ -365,7 +365,6 @@ void VehicleAngularVelocity::ParametersUpdate(bool force)
 {
 	// Check if parameters have changed
 	if (_parameter_update_sub.updated() || force) {
-		PX4_INFO("VehicleAngularVelocity _parameter_update_sub received, force: %d", force);
 		// clear update
 		parameter_update_s param_update;
 		_parameter_update_sub.copy(&param_update);

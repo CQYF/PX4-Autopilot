@@ -185,7 +185,6 @@ void FixedwingAttitudeControl::Run()
 
 		// check for parameter updates
 		if (params_updated) {
-			PX4_INFO("FixedwingAttitudeControl _parameter_update_sub received, force: %d", 0);
 			// clear update
 			parameter_update_s pupdate;
 			_parameter_update_sub.copy(&pupdate);
