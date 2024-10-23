@@ -72,6 +72,7 @@
 #include <uORB/topics/depth_fusion.h>
 #include <uORB/topics/debug_key_value.h>
 #include <uORB/topics/vehicle_air_data.h>
+#include <uORB/topics/depth_estimated.h>
 
 using matrix::Eulerf;
 using matrix::Quatf;
@@ -114,6 +115,7 @@ private:
 	uORB::Subscription _depth_fusion_sub{ORB_ID(depth_fusion)};
 	uORB::Subscription _debug_key_value_sub{ORB_ID(debug_key_value)};
 	uORB::Subscription _vehicle_air_data_sub{ORB_ID(vehicle_air_data)};
+	uORB::Subscription _depth_estimated_sub{ORB_ID(depth_estimated)};
 
 	uORB::Publication<vehicle_rates_setpoint_s>	_rate_sp_pub{ORB_ID(vehicle_rates_setpoint)};
 	uORB::Publication<vehicle_torque_setpoint_s>	_vehicle_torque_setpoint_pub{ORB_ID(vehicle_torque_setpoint)};
@@ -138,6 +140,7 @@ private:
 	depth_fusion_s				_depth_fusion{};
 	debug_key_value_s			_debug_key_value{};
 	vehicle_air_data_s 			_vehicle_air_data{};
+	depth_estimated_s			_depth_estimated{};
 
 	//水翼部分的setpoint
 	vehicle_thrust_setpoint_s		_hydro_thrust_setpoint{};
