@@ -207,7 +207,7 @@ void VehicleAirData::Run()
 
 					// pressure corrected with offset (if available)
 					_calibration[uorb_index].SensorCorrectionsUpdate();
-					float pressure_corrected = _calibration[uorb_index].Correct(report.pressure);
+					float pressure_corrected = _calibration[uorb_index].Correct(report.pressure * 10);
 					// sensor_data[uorb_index][sensor_sub_updates-1]=pressure_corrected;//添加进数组
 					const float pressure_sealevel_pa = _param_sens_baro_qnh.get() * 100.f;
 

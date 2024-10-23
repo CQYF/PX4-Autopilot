@@ -341,7 +341,7 @@ int MS5837::_collect()
 
 	} else {
 		/* pressure calculation, result in Pa */
-		int32_t P = ((((raw * _SENS) >> 21) - _OFF) >> 13) * 10;
+		int32_t P = ((((raw * _SENS) >> 21) - _OFF) >> 13);
 
 		// publish
 		sensor_baro_s sensor_baro{};
