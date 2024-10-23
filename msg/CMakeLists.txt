@@ -252,6 +252,7 @@ set(msg_files
 	Wind.msg
 	YawEstimatorStatus.msg
 	DepthFusion.msg
+	DepthEstimated.msg
 )
 list(SORT msg_files)
 
