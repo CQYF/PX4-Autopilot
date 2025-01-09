@@ -46,3 +46,5 @@ mavdebug start
 param set DEPTH_FUSION_ENABLE 1
 depth_fusion start
 depth_estimator start
+
+# ads1115 start -X

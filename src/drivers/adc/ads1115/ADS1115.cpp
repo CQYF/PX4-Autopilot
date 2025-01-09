@@ -43,8 +43,8 @@ int ADS1115::init()
 	}
 
 	uint8_t config[2] = {};
-	config[0] = CONFIG_HIGH_OS_NOACT | CONFIG_HIGH_MUX_P0NG | CONFIG_HIGH_PGA_6144 | CONFIG_HIGH_MODE_SS;
-	config[1] = CONFIG_LOW_DR_250SPS | CONFIG_LOW_COMP_MODE_TRADITIONAL | CONFIG_LOW_COMP_POL_RESET |
+	config[0] = CONFIG_HIGH_OS_NOACT | CONFIG_HIGH_MUX_P0NG | CONFIG_HIGH_PGA_6144 | CONFIG_HIGH_MODE_CC;
+	config[1] = CONFIG_LOW_DR_860SPS | CONFIG_LOW_COMP_MODE_TRADITIONAL | CONFIG_LOW_COMP_POL_RESET |
 		    CONFIG_LOW_COMP_LAT_NONE | CONFIG_LOW_COMP_QU_DISABLE;
 	ret = writeReg(ADDRESSPOINTER_REG_CONFIG, config, 2);
 
@@ -55,7 +55,7 @@ int ADS1115::init()
 
 	setChannel(ADS1115::A0);  // prepare for the first measure.
 
-	ScheduleOnInterval(SAMPLE_INTERVAL / 4, SAMPLE_INTERVAL / 4);
+	ScheduleOnInterval(SAMPLE_INTERVAL, SAMPLE_INTERVAL);
 
 	return PX4_OK;
 }
@@ -105,8 +105,8 @@ int ADS1115::setChannel(ADS1115::ChannelSelection ch)
 		break;
 	}
 
-	buf[0] = CONFIG_HIGH_OS_START_SINGLE | next_mux_reg | CONFIG_HIGH_PGA_6144 | CONFIG_HIGH_MODE_SS;
-	buf[1] = CONFIG_LOW_DR_250SPS | CONFIG_LOW_COMP_MODE_TRADITIONAL | CONFIG_LOW_COMP_POL_RESET |
+	buf[0] = CONFIG_HIGH_OS_START_SINGLE | next_mux_reg | CONFIG_HIGH_PGA_6144 | CONFIG_HIGH_MODE_CC;
+	buf[1] = CONFIG_LOW_DR_860SPS | CONFIG_LOW_COMP_MODE_TRADITIONAL | CONFIG_LOW_COMP_POL_RESET |
 		 CONFIG_LOW_COMP_LAT_NONE | CONFIG_LOW_COMP_QU_DISABLE;
 	return writeReg(ADDRESSPOINTER_REG_CONFIG, buf, 2);    // must write whole register to take effect
 }
@@ -164,34 +164,34 @@ ADS1115::ChannelSelection ADS1115::getMeasurement(int16_t *value)
 ADS1115::ChannelSelection ADS1115::cycleMeasure(int16_t *value)
 {
 	uint8_t buf[2] = {0x00};
-	readReg(ADDRESSPOINTER_REG_CONFIG, buf, 1); // Pull config register
-	ChannelSelection channel;
-	uint8_t next_mux_reg = CONFIG_HIGH_MUX_P0NG;
+	// readReg(ADDRESSPOINTER_REG_CONFIG, buf, 1); // Pull config register
+	ChannelSelection channel = A0;
+	// uint8_t next_mux_reg = CONFIG_HIGH_MUX_P0NG;
 
-	switch ((buf[0] & (uint8_t) 0x70) >> 4) {
-	case 0x04:
-		channel = A0;
-		next_mux_reg = CONFIG_HIGH_MUX_P1NG;
-		break;
+	// switch ((buf[0] & (uint8_t) 0x70) >> 4) {
+	// case 0x04:
+	// 	channel = A0;
+	// 	next_mux_reg = CONFIG_HIGH_MUX_P1NG;
+	// 	break;
 
-	case 0x05:
-		channel = A1;
-		next_mux_reg = CONFIG_HIGH_MUX_P2NG;
-		break;
+	// case 0x05:
+	// 	channel = A1;
+	// 	next_mux_reg = CONFIG_HIGH_MUX_P2NG;
+	// 	break;
 
-	case 0x06:
-		channel = A2;
-		next_mux_reg = CONFIG_HIGH_MUX_P3NG;
-		break;
+	// case 0x06:
+	// 	channel = A2;
+	// 	next_mux_reg = CONFIG_HIGH_MUX_P3NG;
+	// 	break;
 
-	case 0x07:
-		channel = A3;
-		next_mux_reg = CONFIG_HIGH_MUX_P0NG;
-		break;
+	// case 0x07:
+	// 	channel = A3;
+	// 	next_mux_reg = CONFIG_HIGH_MUX_P0NG;
+	// 	break;
 
-	default:
-		return Invalid;
-	}
+	// default:
+	// 	return Invalid;
+	// }
 
 	readReg(ADDRESSPOINTER_REG_CONVERSATION, buf, 2);
 	uint16_t raw_adc_val = buf[0] * 256 + buf[1];
@@ -204,10 +204,10 @@ ADS1115::ChannelSelection ADS1115::cycleMeasure(int16_t *value)
 		*value = raw_adc_val;
 	}
 
-	buf[0] = CONFIG_HIGH_OS_START_SINGLE | next_mux_reg | CONFIG_HIGH_PGA_6144 | CONFIG_HIGH_MODE_SS;
-	buf[1] = CONFIG_LOW_DR_250SPS | CONFIG_LOW_COMP_MODE_TRADITIONAL | CONFIG_LOW_COMP_POL_RESET |
-		 CONFIG_LOW_COMP_LAT_NONE | CONFIG_LOW_COMP_QU_DISABLE;
-	writeReg(ADDRESSPOINTER_REG_CONFIG, buf, 2);    // must write whole register to take effect
+	// buf[0] = CONFIG_HIGH_OS_START_SINGLE | next_mux_reg | CONFIG_HIGH_PGA_6144 | CONFIG_HIGH_MODE_SS;
+	// buf[1] = CONFIG_LOW_DR_860SPS | CONFIG_LOW_COMP_MODE_TRADITIONAL | CONFIG_LOW_COMP_POL_RESET |
+	// 	 CONFIG_LOW_COMP_LAT_NONE | CONFIG_LOW_COMP_QU_DISABLE;
+	// writeReg(ADDRESSPOINTER_REG_CONFIG, buf, 2);    // must write whole register to take effect
 	return channel;
 }
 

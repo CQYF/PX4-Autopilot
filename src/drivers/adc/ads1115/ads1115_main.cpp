@@ -78,56 +78,67 @@ void ADS1115::RunImpl()
 	perf_begin(_cycle_perf);
 
 	_adc_report.timestamp = hrt_absolute_time();
+	static uint64_t last_time = _adc_report.timestamp;
+	_adc_report.raw_data[1] = (int32_t)(_adc_report.timestamp - last_time);
+	last_time = _adc_report.timestamp;
 
-	if (isSampleReady()) { // whether ADS1115 is ready to be read or not
-		if (!_reported_ready_last_cycle) {
-			PX4_INFO("ADS1115: reported ready");
-			_reported_ready_last_cycle = true;
-		}
+	int16_t buf;
+	cycleMeasure(&buf);
+	_adc_report.channel_id[0] = 0;
+	_adc_report.raw_data[0] = buf;
+	_to_adc_report.publish(_adc_report);
 
-		int16_t buf;
-		ADS1115::ChannelSelection ch = cycleMeasure(&buf);
-		++_channel_cycle_count;
 
-		switch (ch) {
-		case ADS1115::A0:
-			_adc_report.channel_id[0] = 0;
-			_adc_report.raw_data[0] = buf;
-			break;
 
-		case ADS1115::A1:
-			_adc_report.channel_id[1] = 1;
-			_adc_report.raw_data[1] = buf;
-			break;
+	// if (isSampleReady()) { // whether ADS1115 is ready to be read or not
+	// 	if (!_reported_ready_last_cycle) {
+	// 		PX4_INFO("ADS1115: reported ready");
+	// 		_reported_ready_last_cycle = true;
+	// 	}
 
-		case ADS1115::A2:
-			_adc_report.channel_id[2] = 2;
-			_adc_report.raw_data[2] = buf;
-			break;
+	// 	int16_t buf;
+	// 	ADS1115::ChannelSelection ch = cycleMeasure(&buf);
+	// 	++_channel_cycle_count;
 
-		case ADS1115::A3:
-			_adc_report.channel_id[3] = 3;
-			_adc_report.raw_data[3] = buf;
-			break;
+	// 	switch (ch) {
+	// 	case ADS1115::A0:
+	// 		_adc_report.channel_id[0] = 0;
+	// 		_adc_report.raw_data[0] = buf;
+	// 		break;
 
-		default:
-			PX4_DEBUG("ADS1115: undefined behaviour");
-			setChannel(ADS1115::A0);
-			--_channel_cycle_count;
-			break;
-		}
+	// 	case ADS1115::A1:
+	// 		_adc_report.channel_id[1] = 1;
+	// 		_adc_report.raw_data[1] = buf;
+	// 		break;
 
-		if (_channel_cycle_count == 4) { // ADS1115 has 4 channels
-			_channel_cycle_count = 0;
-			_to_adc_report.publish(_adc_report);
-		}
+	// 	case ADS1115::A2:
+	// 		_adc_report.channel_id[2] = 2;
+	// 		_adc_report.raw_data[2] = buf;
+	// 		break;
 
-	} else {
-		if (_reported_ready_last_cycle) {
-			_reported_ready_last_cycle = false;
-			PX4_ERR("ADS1115: not ready. Device lost?");
-		}
-	}
+	// 	case ADS1115::A3:
+	// 		_adc_report.channel_id[3] = 3;
+	// 		_adc_report.raw_data[3] = buf;
+	// 		break;
+
+	// 	default:
+	// 		PX4_DEBUG("ADS1115: undefined behaviour");
+	// 		setChannel(ADS1115::A0);
+	// 		--_channel_cycle_count;
+	// 		break;
+	// 	}
+
+	// 	if (_channel_cycle_count == 4) { // ADS1115 has 4 channels
+	// 		_channel_cycle_count = 0;
+	// 		_to_adc_report.publish(_adc_report);
+	// 	}
+
+	// } else {
+	// 	if (_reported_ready_last_cycle) {
+	// 		_reported_ready_last_cycle = false;
+	// 		PX4_ERR("ADS1115: not ready. Device lost?");
+	// 	}
+	// }
 
 	perf_end(_cycle_perf);
 }
@@ -151,7 +162,7 @@ parameter, and is disabled by default.
 If enabled, internal ADCs are not used.
 
 )DESCR_STR");
-	
+
 	PRINT_MODULE_USAGE_NAME("ads1115", "driver");
 	PRINT_MODULE_USAGE_COMMAND("start");
 	PRINT_MODULE_USAGE_PARAMS_I2C_SPI_DRIVER(true, false);
