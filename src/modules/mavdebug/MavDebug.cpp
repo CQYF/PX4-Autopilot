@@ -97,15 +97,15 @@ void MavDebug::Run()
 	// 	_debug_vect_msg.y = - _estimator_states_msg.states[9];
 	// }
 
-	if (_depth_fusion_sub.update(&_depth_fusion))
-	{
-		_debug_vect_msg.x = _depth_fusion.depth1_or;
-		_debug_vect_msg.y = _depth_fusion.depth2_or;
-		_debug_vect_msg.z = _depth_fusion.fudepth;
-	}
+	// if (_depth_fusion_sub.update(&_depth_fusion))
+	// {
+	// 	_debug_vect_msg.x = _depth_fusion.depth1_or;
+	// 	_debug_vect_msg.y = _depth_fusion.depth2_or;
+	// 	_debug_vect_msg.z = _depth_fusion.fudepth;
+	// }
 
-	_debug_vect_msg.timestamp = hrt_absolute_time();
-	_debug_vect_pub.publish(_debug_vect_msg);
+	// _debug_vect_msg.timestamp = hrt_absolute_time();
+	// _debug_vect_pub.publish(_debug_vect_msg);
 
 	parameters_update();
 
