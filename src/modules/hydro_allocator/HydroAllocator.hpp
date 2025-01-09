@@ -48,6 +48,7 @@
 #include <uORB/topics/actuator_servos.h>
 #include <uORB/topics/manual_control_setpoint.h>
 #include <uORB/topics/vehicle_attitude.h>
+#include <uORB/topics/debug_vect.h>
 
 #include <drivers/drv_hrt.h>
 
@@ -79,7 +80,7 @@ private:
 
 	struct NfParams {
 		float KL;
-		float v;
+		float v2; // v**2
 		float alpha0;
 		float Fx;
 		float Fz;
@@ -97,6 +98,7 @@ private:
 
 	uORB::Subscription _manual_control_setpoint_sub{ORB_ID(manual_control_setpoint)};
 	uORB::Subscription _vehicle_attitude_sub{ORB_ID(vehicle_attitude)};
+	uORB::Subscription _debug_vect_sub{ORB_ID(debug_vect)};
 
 	vehicle_torque_setpoint_s		_hydro_torque_setpoint_msg{0};
 	vehicle_thrust_setpoint_s		_hydro_thrust_setpoint_msg{0};

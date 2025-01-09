@@ -138,8 +138,8 @@ Vector2f HydroAllocator::func(Vector2f x, NfParams p)
 
 	Vector2f out;
 
-	out(0) = p.Fx - p.KL*p.v*p.v*(alpha+p.alpha0)*std::sin(p.alpha0) - T*std::cos(alpha);
-	out(1) = p.Fz + p.KL*p.v*p.v*(alpha+p.alpha0)*std::cos(p.alpha0) + T*std::sin(alpha);
+	out(0) = p.Fx - p.KL*p.v2*(alpha+p.alpha0)*std::sin(p.alpha0) - T*std::cos(alpha);
+	out(1) = p.Fz + p.KL*p.v2*(alpha+p.alpha0)*std::cos(p.alpha0) + T*std::sin(alpha);
 
 	return out;
 }
@@ -152,9 +152,9 @@ SquareMatrix<float, 2> HydroAllocator::J_func(Vector2f x, NfParams p)
 
 	SquareMatrix<float, 2> J;
 
-	J(0, 0) = -p.KL*p.v*p.v*std::sin(p.alpha0) + T*std::sin(alpha);
+	J(0, 0) = -p.KL*p.v2*std::sin(p.alpha0) + T*std::sin(alpha);
 	J(0, 1) = -std::cos(alpha);
-	J(1, 0) = p.KL*p.v*p.v*std::cos(p.alpha0) + T*std::cos(alpha);
+	J(1, 0) = p.KL*p.v2*std::cos(p.alpha0) + T*std::cos(alpha);
 	J(1, 1) = std::sin(alpha);
 
 	return J;
@@ -279,11 +279,18 @@ void HydroAllocator::Run()
 
 	if(_param_hy_speed_select.get() == 0)//使用替代速度
 	{
-		_nf_params.v = _param_hy_alt_speed.get();
+		_nf_params.v2 = _param_hy_alt_speed.get() * _param_hy_alt_speed.get();
 	}
-	else
+	else // 使用实际速度
 	{
-		_nf_params.v = _param_hy_alt_speed.get();//TODO 暂时不支持真实速度，都用替代速度
+		debug_vect_s debug_vect_msg;
+		if(_debug_vect_sub.update(&debug_vect_msg))
+		{
+			if(strncmp(debug_vect_msg.name, "v", 1) == 0)
+			{
+				_nf_params.v2 = debug_vect_msg.x * debug_vect_msg.x + debug_vect_msg.z * debug_vect_msg.z;
+			}
+		}
 	}
 
 	//代入虚拟执行器的期望力，并进行优化求解
