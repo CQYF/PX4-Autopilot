@@ -53,6 +53,7 @@ void LoggedTopics::add_default_topics()
 	add_topic("debug_key_value");
 	add_topic("debug_value");
 	add_topic("debug_vect");
+	add_topic("hydro_allocate_message");
 
 	// USER TOPIC END
 	add_topic("action_request");

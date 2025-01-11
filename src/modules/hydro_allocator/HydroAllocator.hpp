@@ -49,6 +49,7 @@
 #include <uORB/topics/manual_control_setpoint.h>
 #include <uORB/topics/vehicle_attitude.h>
 #include <uORB/topics/debug_vect.h>
+#include <uORB/topics/hydro_allocate_message.h>
 
 #include <drivers/drv_hrt.h>
 
@@ -108,6 +109,7 @@ private:
 
 	uORB::Publication<actuator_motors_s>	_hydro_motors_pub{ORB_ID(hydro_motors)};
 	uORB::Publication<actuator_servos_s>	_hydro_servos_pub{ORB_ID(hydro_servos)};
+	uORB::Publication<hydro_allocate_message_s>	_hydro_allocate_message_pub{ORB_ID(hydro_allocate_message)};
 
 	perf_counter_t _loop_perf;
 

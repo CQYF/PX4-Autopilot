@@ -71,6 +71,7 @@
 #include <uORB/topics/vehicle_attitude.h>
 #include <uORB/topics/depth_fusion.h>
 #include <uORB/topics/debug_key_value.h>
+#include <uORB/topics/debug_vect.h>
 #include <uORB/topics/vehicle_air_data.h>
 #include <uORB/topics/depth_estimated.h>
 
@@ -114,6 +115,7 @@ private:
 	uORB::Subscription _vehicle_attitude_sub{ORB_ID(vehicle_attitude)};
 	uORB::Subscription _depth_fusion_sub{ORB_ID(depth_fusion)};
 	uORB::Subscription _debug_key_value_sub{ORB_ID(debug_key_value)};
+	uORB::Subscription _debug_vect_sub{ORB_ID(debug_vect)};
 	uORB::Subscription _vehicle_air_data_sub{ORB_ID(vehicle_air_data)};
 	uORB::Subscription _depth_estimated_sub{ORB_ID(depth_estimated)};
 
@@ -141,6 +143,7 @@ private:
 	debug_key_value_s			_debug_key_value{};
 	vehicle_air_data_s 			_vehicle_air_data{};
 	depth_estimated_s			_depth_estimated{};
+	debug_vect_s				_debug_vect{};
 
 	//水翼部分的setpoint
 	vehicle_thrust_setpoint_s		_hydro_thrust_setpoint{};

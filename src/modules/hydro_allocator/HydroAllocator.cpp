@@ -215,6 +215,8 @@ void HydroAllocator::Run()
 	}
 	_manual_control_setpoint_sub.copy(&_manual_control_setpoint);
 
+	hydro_allocate_message_s hydro_allocate_message_msg{0};
+
 	//0是左边，1是右边
 	float thrust_x[2];
 	float thrust_z[2];
@@ -244,6 +246,11 @@ void HydroAllocator::Run()
 	thrust_x[1] += delta_force_vector(2);
 	thrust_z[1] += delta_force_vector(3);
 
+	hydro_allocate_message_msg.thrust_xz_control[0] = thrust_x[0];
+	hydro_allocate_message_msg.thrust_xz_control[1] = thrust_z[0];
+	hydro_allocate_message_msg.thrust_xz_control[2] = thrust_x[1];
+	hydro_allocate_message_msg.thrust_xz_control[3] = thrust_z[1];
+
 	//避免thrust_x为负，因为这可能导致优化求解出问题
 	float sum_thrust_x = thrust_x[0] + thrust_x[1];
 	if(sum_thrust_x < 0)
@@ -262,6 +269,11 @@ void HydroAllocator::Run()
 		thrust_x[0] += thrust_x[1];
 		thrust_x[1] = 0;
 	}
+
+	hydro_allocate_message_msg.thrust_xz_limited[0] = thrust_x[0];
+	hydro_allocate_message_msg.thrust_xz_limited[1] = thrust_z[0];
+	hydro_allocate_message_msg.thrust_xz_limited[2] = thrust_x[1];
+	hydro_allocate_message_msg.thrust_xz_limited[3] = thrust_z[1];
 
 	//定义待优化求解的变量，第一行是左侧水翼，第二行是右侧水翼，第一列是攻角，第二列是推力
 	//攻角的初始值为0，推力初始值为x方向期望推力的一半
@@ -286,10 +298,7 @@ void HydroAllocator::Run()
 		debug_vect_s debug_vect_msg;
 		if(_debug_vect_sub.update(&debug_vect_msg))
 		{
-			if(strncmp(debug_vect_msg.name, "v", 1) == 0)
-			{
-				_nf_params.v2 = debug_vect_msg.x * debug_vect_msg.x + debug_vect_msg.z * debug_vect_msg.z;
-			}
+			_nf_params.v2 = debug_vect_msg.z;
 		}
 	}
 
@@ -300,6 +309,11 @@ void HydroAllocator::Run()
 	_nf_params.Fx = thrust_x[1];
 	_nf_params.Fz = thrust_z[1];
 	optim(x[1], _nf_params);
+
+	hydro_allocate_message_msg.actuator_optimed[0] = x[0][0];
+	hydro_allocate_message_msg.actuator_optimed[1] = x[1][0];
+	hydro_allocate_message_msg.actuator_optimed[2] = x[0][1];
+	hydro_allocate_message_msg.actuator_optimed[3] = x[1][1];
 
 	//归一化，并再次限幅确保安全
 	x[0][0] = math::constrain(x[0][0] / _param_hy_wing_max_a.get(), -1.f, 1.f);
@@ -325,6 +339,9 @@ void HydroAllocator::Run()
 
 	_hydro_motors_pub.publish(hydro_motors_msg);
 	_hydro_servos_pub.publish(hydro_servos_msg);
+
+	hydro_allocate_message_msg.timestamp = hrt_absolute_time();
+	_hydro_allocate_message_pub.publish(hydro_allocate_message_msg);
 
 	parameters_update(true);// TODO 不加上true，则单实例参数修改无效，原因不明
 

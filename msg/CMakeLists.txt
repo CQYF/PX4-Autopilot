@@ -253,6 +253,7 @@ set(msg_files
 	YawEstimatorStatus.msg
 	DepthFusion.msg
 	DepthEstimated.msg
+	HydroAllocateMessage.msg
 )
 list(SORT msg_files)
 
