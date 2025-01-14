@@ -514,3 +514,35 @@ PARAM_DEFINE_FLOAT(HY_D_FF, -20.f);
  */
 PARAM_DEFINE_FLOAT(HY_D_SP, 0.05f);
 //深度控制深度设定点，向下为正，即水面为0，水下为正
+
+/**
+ * Depth control error normalization point
+ *
+ * @unit m
+ * @min 0.01
+ * @decimal 3
+ * @group Hydro Depth Control
+ */
+PARAM_DEFINE_FLOAT(HY_D_ERR_NORM, 0.1f);
+//深度控制深度误差归一化点，即这么多误差会被转化为1
+
+/**
+ * Depth control error nonlinear power
+ *
+ * @min 0.5
+ * @decimal 3
+ * @group Hydro Depth Control
+ */
+PARAM_DEFINE_FLOAT(HY_D_NL_POWER, 1.0f);
+//深度控制非线性反馈的幂次
+
+/**
+ * Depth control max throttle
+ *
+ * @min 0.0
+ * @max 1.0
+ * @decimal 3
+ * @group Hydro Depth Control
+ */
+PARAM_DEFINE_FLOAT(HY_D_MAX_THR, 1.0f);
+//深度控制最大推力比例

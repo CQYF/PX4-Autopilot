@@ -305,11 +305,42 @@ void HydroRateControl::Run()
 			float depth_setpoint = _param_hy_d_sp.get();
 			//深度向下为正，越深越正
 
+			// 非线性反馈
+			float depth_err = (depth_setpoint - depth) / _param_hy_d_err_norm.get();
+			float nl_depth_err;
+			if(depth_err > 0)
+			{
+				nl_depth_err = std::pow(depth_err, _param_hy_d_nl_power.get());
+			}
+			else if(depth_err < 0)
+			{
+				nl_depth_err = -std::pow(-depth_err, _param_hy_d_nl_power.get());
+			}
+			else
+			{
+				nl_depth_err = 0;
+			}
+
+			// 推力比例限幅
+			float thrust_limited;
+			if(_vehicle_thrust_setpoint.xyz[0] > _param_hy_d_max_thr.get())
+			{
+				thrust_limited = _param_hy_d_max_thr.get();
+			}
+			else if(_vehicle_thrust_setpoint.xyz[0] < -_param_hy_d_max_thr.get())
+			{
+				thrust_limited = -_param_hy_d_max_thr.get();
+			}
+			else
+			{
+				thrust_limited = _vehicle_thrust_setpoint.xyz[0];
+			}
+
 			//! 注意，水翼的推力计算都用真值，单位是N，但力矩仍用归一化值
 			//水平推力，向前为正，和原来的推力一致，最大为水下推进器推力的2倍
-			float hydro_horizontal_thrust_setpoint = _vehicle_thrust_setpoint.xyz[0] * 2 * _param_hy_rt_max_thrust.get();
+			float hydro_horizontal_thrust_setpoint = thrust_limited * 2 * _param_hy_rt_max_thrust.get();
 			//竖直推力，向!下!为正，等于深度控制的输出加上重力补偿
-			float hydro_vertical_thrust_setpoint = _param_hy_d_p.get() * (depth_setpoint - depth) + _param_hy_d_ff.get();
+			float hydro_vertical_thrust_setpoint = _param_hy_d_p.get() * nl_depth_err + _param_hy_d_ff.get();
 			//滑行时，机身的俯仰角近似为自然攻角，实际攻角等于翼面偏转角度加上自然攻角
 			float alpha0 = euler_angles.theta();
 

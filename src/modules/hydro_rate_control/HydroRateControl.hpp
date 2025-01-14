@@ -213,7 +213,11 @@ private:
 		(ParamFloat<px4::params::HY_D_FF>) _param_hy_d_ff,
 		(ParamFloat<px4::params::HY_D_SP>) _param_hy_d_sp,
 
-		(ParamFloat<px4::params::HY_RT_MAX_THRUST>) _param_hy_rt_max_thrust	//单个水下推进器最大推力
+		(ParamFloat<px4::params::HY_RT_MAX_THRUST>) _param_hy_rt_max_thrust,	//单个水下推进器最大推力
+
+		(ParamFloat<px4::params::HY_D_ERR_NORM>) _param_hy_d_err_norm,		//深度误差归一化点
+		(ParamFloat<px4::params::HY_D_NL_POWER>) _param_hy_d_nl_power,		//非线性反馈的幂次
+		(ParamFloat<px4::params::HY_D_MAX_THR>) _param_hy_d_max_thr		//最大推力比例
 	)
 
 	RateControl _rate_control; ///< class for rate control calculations
