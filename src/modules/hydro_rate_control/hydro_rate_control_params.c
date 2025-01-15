@@ -546,3 +546,27 @@ PARAM_DEFINE_FLOAT(HY_D_NL_POWER, 1.0f);
  */
 PARAM_DEFINE_FLOAT(HY_D_MAX_THR, 1.0f);
 //深度控制最大推力比例
+
+/**
+ * Depth control vertical force up limit
+ *
+ * @unit N
+ * @min 0.0
+ * @max 60.0
+ * @decimal 3
+ * @group Hydro Depth Control
+ */
+PARAM_DEFINE_FLOAT(HY_D_VF_UPLIM, 60.0f);
+//深度控制竖直力上限
+
+/**
+ * Depth control vertical force down limit
+ *
+ * @unit N
+ * @min -60.0
+ * @max 0.0
+ * @decimal 3
+ * @group Hydro Depth Control
+ */
+PARAM_DEFINE_FLOAT(HY_D_VF_DNLIM, -60.0f);
+//深度控制竖直力下限

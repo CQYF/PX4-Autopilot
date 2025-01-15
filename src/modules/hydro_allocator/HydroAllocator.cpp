@@ -298,7 +298,10 @@ void HydroAllocator::Run()
 		debug_vect_s debug_vect_msg;
 		if(_debug_vect_sub.update(&debug_vect_msg))
 		{
-			_nf_params.v2 = debug_vect_msg.z;
+			float real_v2 = debug_vect_msg.z;
+			if(real_v2 < 1.0f)
+				real_v2 = 1.0f;	// 小于1时按照1来处理
+			_nf_params.v2 = real_v2;
 		}
 	}
 

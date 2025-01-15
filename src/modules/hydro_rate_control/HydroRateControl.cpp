@@ -341,6 +341,14 @@ void HydroRateControl::Run()
 			float hydro_horizontal_thrust_setpoint = thrust_limited * 2 * _param_hy_rt_max_thrust.get();
 			//竖直推力，向!下!为正，等于深度控制的输出加上重力补偿
 			float hydro_vertical_thrust_setpoint = _param_hy_d_p.get() * nl_depth_err + _param_hy_d_ff.get();
+			if(hydro_vertical_thrust_setpoint > _param_hy_d_vf_uplim.get())
+			{
+				hydro_vertical_thrust_setpoint = _param_hy_d_vf_uplim.get();
+			}
+			else if(hydro_vertical_thrust_setpoint < _param_hy_d_vf_dnlim.get())
+			{
+				hydro_vertical_thrust_setpoint = _param_hy_d_vf_dnlim.get();
+			}
 			//滑行时，机身的俯仰角近似为自然攻角，实际攻角等于翼面偏转角度加上自然攻角
 			float alpha0 = euler_angles.theta();
 
