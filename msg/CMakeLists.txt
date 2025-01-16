@@ -254,6 +254,7 @@ set(msg_files
 	DepthFusion.msg
 	DepthEstimated.msg
 	HydroAllocateMessage.msg
+	HydroDepthControlMessage.msg
 )
 list(SORT msg_files)
 

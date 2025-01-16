@@ -496,6 +496,15 @@ PARAM_DEFINE_FLOAT(HY_D_P, 0.1f);
 //深度控制比例增益
 
 /**
+ * Depth control PID damp gain
+ *
+ * @decimal 3
+ * @group Hydro Depth Control
+ */
+PARAM_DEFINE_FLOAT(HY_D_D, 0.0f);
+//深度控制阻尼增益
+
+/**
  * Depth control gravity feedforward
  *
  * @unit N

@@ -74,6 +74,7 @@
 #include <uORB/topics/debug_vect.h>
 #include <uORB/topics/vehicle_air_data.h>
 #include <uORB/topics/depth_estimated.h>
+#include <uORB/topics/hydro_depth_control_message.h>
 
 using matrix::Eulerf;
 using matrix::Quatf;
@@ -124,6 +125,7 @@ private:
 	uORB::Publication<vehicle_thrust_setpoint_s>	_vehicle_thrust_setpoint_pub{ORB_ID(vehicle_thrust_setpoint)};
 	uORB::Publication<vehicle_torque_setpoint_s>	_hydro_torque_setpoint_pub{ORB_ID(hydro_torque_setpoint)};
 	uORB::Publication<vehicle_thrust_setpoint_s>	_hydro_thrust_setpoint_pub{ORB_ID(hydro_thrust_setpoint)};
+	uORB::Publication<hydro_depth_control_message_s>	_hydro_depth_control_message_pub{ORB_ID(hydro_depth_control_message)};
 
 	//自定义模式下的控制状态
 	enum class HydroRunningState : int32_t {
@@ -144,6 +146,7 @@ private:
 	vehicle_air_data_s 			_vehicle_air_data{};
 	depth_estimated_s			_depth_estimated{};
 	debug_vect_s				_debug_vect{};
+	hydro_depth_control_message_s		_hydro_depth_control_message{};
 
 	//水翼部分的setpoint
 	vehicle_thrust_setpoint_s		_hydro_thrust_setpoint{};
@@ -210,6 +213,7 @@ private:
 		(ParamFloat<px4::params::HY_ATTACK_FF>) _param_attack_ff,		//机身攻角补偿
 
 		(ParamFloat<px4::params::HY_D_P>) _param_hy_d_p,			//深度控制参数
+		(ParamFloat<px4::params::HY_D_D>) _param_hy_d_d,
 		(ParamFloat<px4::params::HY_D_FF>) _param_hy_d_ff,
 		(ParamFloat<px4::params::HY_D_SP>) _param_hy_d_sp,
 

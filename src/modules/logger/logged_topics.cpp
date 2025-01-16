@@ -54,6 +54,9 @@ void LoggedTopics::add_default_topics()
 	add_topic("debug_value");
 	add_topic("debug_vect");
 	add_topic("hydro_allocate_message");
+	add_topic("hydro_torque_setpoint");
+	add_topic("hydro_thrust_setpoint");
+	add_topic("hydro_depth_control_message");
 
 	// USER TOPIC END
 	add_topic("action_request");

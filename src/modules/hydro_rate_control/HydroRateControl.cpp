@@ -301,9 +301,13 @@ void HydroRateControl::Run()
 			//float depth = _vehicle_air_data.baro_alt_meter * 0.01f;
 			// float depth = _depth_estimated.depth_estimated;
 			float depth = _debug_vect.x;
-			// float depth_rate = _debug_vect.y;
+			float depth_rate = _debug_vect.y;
 			float depth_setpoint = _param_hy_d_sp.get();
 			//深度向下为正，越深越正
+
+			_hydro_depth_control_message.depth = depth;
+			_hydro_depth_control_message.depth_rate = depth_rate;
+			_hydro_depth_control_message.depth_setpoint = depth_setpoint;
 
 			// 非线性反馈
 			float depth_err = (depth_setpoint - depth) / _param_hy_d_err_norm.get();
@@ -321,6 +325,10 @@ void HydroRateControl::Run()
 				nl_depth_err = 0;
 			}
 
+			_hydro_depth_control_message.depth_err = depth_setpoint - depth;
+			_hydro_depth_control_message.depth_err_norm = depth_err;
+			_hydro_depth_control_message.nl_depth_err = nl_depth_err;
+
 			// 推力比例限幅
 			float thrust_limited;
 			if(_vehicle_thrust_setpoint.xyz[0] > _param_hy_d_max_thr.get())
@@ -336,11 +344,23 @@ void HydroRateControl::Run()
 				thrust_limited = _vehicle_thrust_setpoint.xyz[0];
 			}
 
+			_hydro_depth_control_message.throttle_limited = thrust_limited;
+
 			//! 注意，水翼的推力计算都用真值，单位是N，但力矩仍用归一化值
 			//水平推力，向前为正，和原来的推力一致，最大为水下推进器推力的2倍
 			float hydro_horizontal_thrust_setpoint = thrust_limited * 2 * _param_hy_rt_max_thrust.get();
+			_hydro_depth_control_message.horizontal_thrust = hydro_horizontal_thrust_setpoint;
 			//竖直推力，向!下!为正，等于深度控制的输出加上重力补偿
-			float hydro_vertical_thrust_setpoint = _param_hy_d_p.get() * nl_depth_err + _param_hy_d_ff.get();
+			float proportion = _param_hy_d_p.get() * nl_depth_err;
+			float damp = -_param_hy_d_d.get() * depth_rate;
+			float gravity_ff = _param_hy_d_ff.get();
+			_hydro_depth_control_message.proportion = proportion;
+			_hydro_depth_control_message.damp = damp;
+			_hydro_depth_control_message.gravity_ff = gravity_ff;
+
+			float hydro_vertical_thrust_setpoint = proportion + damp + gravity_ff;
+			_hydro_depth_control_message.vertical_thrust = hydro_vertical_thrust_setpoint;
+
 			if(hydro_vertical_thrust_setpoint > _param_hy_d_vf_uplim.get())
 			{
 				hydro_vertical_thrust_setpoint = _param_hy_d_vf_uplim.get();
@@ -349,6 +369,7 @@ void HydroRateControl::Run()
 			{
 				hydro_vertical_thrust_setpoint = _param_hy_d_vf_dnlim.get();
 			}
+			_hydro_depth_control_message.vertical_thrust_limited = hydro_vertical_thrust_setpoint;
 			//滑行时，机身的俯仰角近似为自然攻角，实际攻角等于翼面偏转角度加上自然攻角
 			float alpha0 = euler_angles.theta();
 
@@ -361,6 +382,9 @@ void HydroRateControl::Run()
 
 			//力矩和原来保持一致
 			_hydro_torque_setpoint = _vehicle_torque_setpoint;
+
+			_hydro_depth_control_message.timestamp = hrt_absolute_time();
+			_hydro_depth_control_message_pub.publish(_hydro_depth_control_message);
 		}
 
 		//根据遥控器上某个辅助通道的状态，判断当前的运行模式
