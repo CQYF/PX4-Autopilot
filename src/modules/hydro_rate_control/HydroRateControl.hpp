@@ -33,6 +33,9 @@
 
 #pragma once
 
+// #include <lib/tinympc/tinympc/src/tinympc/tiny_api.hpp>
+#include <etl/etl/vector.h>
+
 #include <lib/rate_control/rate_control.hpp>
 
 #include <drivers/drv_hrt.h>
@@ -127,6 +130,8 @@ private:
 	float _airspeed_scaling{1.0f};
 
 	float _battery_scale{1.0f};
+
+	etl::vector<int, 10> aaaaa;
 
 	DEFINE_PARAMETERS(
 		(ParamFloat<px4::params::HY_AIRSPD_MAX>) _param_hy_airspd_max,		//最大空速
