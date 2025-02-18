@@ -112,3 +112,6 @@ log/
 
 mavros/
 ulog/
+
+params/
+tmp/
