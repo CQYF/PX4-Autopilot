@@ -57,18 +57,19 @@
 
 #include <uORB/topics/sensor_baro.h>
 #include <uORB/topics/adc_report.h>
-#include <uORB/topics/slide_estimated.h>
+#include <uORB/topics/vehicle_acceleration.h>
+#include <uORB/topics/vehicle_attitude.h>
+#include <uORB/topics/vehicle_angular_velocity.h>
 
 #include <lib/mathlib/math/filter/MedianFilter.hpp>
 #include <lib/mathlib/mathlib.h>
-
-// using matrix::Eulerf;
-// using matrix::Quatf;
+#include <matrix/matrix/math.hpp>
 
 // using uORB::SubscriptionData;
 
 using namespace time_literals;
 using namespace math;
+using namespace matrix;
 
 class SlideEstimator final : public ModuleBase<SlideEstimator>, public ModuleParams,
 	public px4::ScheduledWorkItem
@@ -95,30 +96,65 @@ private:
 
 	uORB::SubscriptionCallbackWorkItem _sensor_baro_sub{this, ORB_ID(sensor_baro)};
 	uORB::SubscriptionCallbackWorkItem _adc_report_sub{this, ORB_ID(adc_report)};
+	uORB::SubscriptionCallbackWorkItem _vehicle_attitude_sub{this, ORB_ID(vehicle_attitude)};
+	uORB::SubscriptionCallbackWorkItem _vehicle_angular_velocity_sub{this, ORB_ID(vehicle_angular_velocity)};
+	uORB::SubscriptionCallbackWorkItem _vehicle_acceleration_sub{this, ORB_ID(vehicle_acceleration)};
 
 	uORB::Publication<slide_estimated_s>		_slide_estimated_pub{ORB_ID(slide_estimated)};
 
-	struct SlideRawData
-	{
-		uint64_t timestamp_sample;
-		float    slide_origin;
-	};
-
-	float _slide_estimated{0};
-
-	MedianFilter<float, 15> _medfilter_slide_pr;
-
-	//这里数组的下标既代表type，又代表index，因为默认了每种传感器都只能有一个
-	SlideRawData 	_slide_raw_data[slide_estimated_s::DEPTH_TYPE_NUM];
-	bool		_has_slide_raw_data[slide_estimated_s::DEPTH_TYPE_NUM]{false};
-
-	bool get_slide_raw_data_pr(SlideRawData& raw_data);
-	bool get_slide_raw_data_lv(SlideRawData& raw_data);
-
-	void update_slide_pr(SlideRawData raw_data);
-	void update_slide_lv(SlideRawData raw_data);
-
 	perf_counter_t _loop_perf;
+
+	/**
+	 * pr:压强计  lv:水位计
+	 * 高度和深度是同一个东西，都是以水面为0，向下为正
+	 * b系是机体坐标系，e系是地球坐标系（世界坐标系）
+	 */
+
+	// 用于检查深度计合法性的中值滤波器
+	MedianFilter<float, 15> _medfilter_pr_depth;
+
+	// 记录姿态，由于计算位置和速度都需要姿态数据，因此在这里存一份，当没有新数据时就用这份数据
+	Quatf _q;
+
+	// 记录角速度，计算速度需要角速度数据，因此在这里存一份，当没有新数据时就用这份数据
+	Vector3f _w;
+
+	// 水位计浸水长度
+	float _lv_immersion;
+	// 水位计饱和程度
+	float _lv_satuation;
+	// 水位计测量得到的高度
+	float _lv_height;
+
+	// 根据水位计读数计算浸水长度
+	void calc_lv_immersion();
+	// 根据浸水长度计算水位计饱和程度评估值
+	void calc_lv_saturation();
+	// 根据浸水长度、姿态和几何关系计算高度
+	void calc_lv_height();
+
+	// 根据压强计测得的深度测量值
+	float _pr_depth;
+	// 当前的和上一个合法的深度测量值与时间戳
+	float _pr_depth_legal;
+	uint64_t _pr_depth_legal_ts;
+	float _pr_depth_legal_last;
+	uint64_t _pr_depth_legal_ts_last;
+	// 深度的变化率
+	float _pr_depth_rate;
+	// 深度变化率加上转动引起的线速度得到高度变化率
+	float _pr_height_rate;
+
+	// 压强转换为深度
+	float pressure2depth(float pressure);
+	// 深度测量值的合法性检查
+	bool is_pr_depth_legal();
+	// 根据深度变化率和转动引起的线速度计算高度变化率
+	void calc_pr_height_rate();
+
+	// IMU测得的高度加速度
+	float _imu_height_acc;
+
 
 	DEFINE_PARAMETERS(
 		(ParamInt<px4::params::HY_DE_PR_CTRL>) _param_hy_de_pr_ctrl,
@@ -128,6 +164,8 @@ private:
 		(ParamFloat<px4::params::HY_DE_PR_G>) _param_hy_de_pr_g,
 		(ParamFloat<px4::params::HY_DE_PR_K>) _param_hy_de_pr_k,
 		(ParamFloat<px4::params::HY_DE_PR_MAXD>) _param_hy_de_pr_maxd
+
+
 	)
 
 };

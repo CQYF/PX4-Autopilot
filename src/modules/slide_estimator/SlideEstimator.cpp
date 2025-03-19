@@ -36,7 +36,6 @@
 #include <math.h>
 
 using namespace time_literals;
-using namespace matrix;
 
 SlideEstimator::SlideEstimator() :
 	ModuleParams(nullptr),
@@ -55,7 +54,9 @@ SlideEstimator::~SlideEstimator()
 bool
 SlideEstimator::init()
 {
-	if (!_sensor_baro_sub.registerCallback() || !_adc_report_sub.registerCallback()) {
+	if (!_sensor_baro_sub.registerCallback() || !_adc_report_sub.registerCallback() ||\
+	!_vehicle_attitude_sub.registerCallback() || !_vehicle_angular_velocity_sub.registerCallback() ||\
+	!_vehicle_acceleration_sub.registerCallback() ) {
 		PX4_ERR("callback registration failed");
 		return false;
 	}
@@ -68,6 +69,9 @@ void SlideEstimator::Run()
 	if (should_exit()) {
 		_sensor_baro_sub.unregisterCallback();
 		_adc_report_sub.unregisterCallback();
+		_vehicle_attitude_sub.unregisterCallback();
+		_vehicle_angular_velocity_sub.unregisterCallback();
+		_vehicle_acceleration_sub.unregisterCallback();
 		exit_and_cleanup();
 		return;
 	}
@@ -87,134 +91,185 @@ void SlideEstimator::Run()
 		updateParams();
 	}
 
-	while(true)
+	// 读取四元数姿态并保存
+	if(_vehicle_attitude_sub.updated())
 	{
-		//如果缓存中没有原始数据，则尝试获取原始数据
-		for(int i=0; i<slide_estimated_s::DEPTH_TYPE_NUM; i++)
-		{
-			if(!_has_slide_raw_data[i])
-			{
-				if(i == slide_estimated_s::DEPTH_TYPE_PR && _param_hy_de_pr_ctrl.get())
-				{
-					_has_slide_raw_data[i] = get_slide_raw_data_pr(_slide_raw_data[i]);
-				}
-				else if(i == slide_estimated_s::DEPTH_TYPE_LV && _param_hy_de_lv_ctrl.get())
-				{
-					_has_slide_raw_data[i] = get_slide_raw_data_lv(_slide_raw_data[i]);
-				}
-			}
-		}
+		vehicle_attitude_s vehicle_attitude;
+		_vehicle_attitude_sub.copy(&vehicle_attitude);
+		Quatf q_new(vehicle_attitude.q);
+		_q = q_new;
+	}
 
-		//判断当前应该用哪个原始数据进行更新，如果原始数据已经用完，则break
-		uint8_t update_type;
-		if(_has_slide_raw_data[0] && _has_slide_raw_data[1])
-		{
-			if(_slide_raw_data[0].timestamp_sample < _slide_raw_data[1].timestamp_sample)
-			{
-				update_type = 0;
-			}
-			else
-			{
-				update_type = 1;
-			}
-		}
-		else if(_has_slide_raw_data[0])
-		{
-			update_type = 0;
-		}
-		else if(_has_slide_raw_data[1])
-		{
-			update_type = 1;
-		}
-		else
-		{
-			break;
-		}
+	// 读取角速度并保存
+	if(_vehicle_angular_velocity_sub.updated())
+	{
+		vehicle_angular_velocity_s vehicle_angular_velocity;
+		_vehicle_angular_velocity_sub.copy(&vehicle_angular_velocity);
+		Vector3f w_new(vehicle_angular_velocity.xyz);
+		_q = q_new;
+	}
 
-		//执行更新
-		if(update_type == slide_estimated_s::DEPTH_TYPE_PR)
+	if(_vehicle_acceleration_sub.updated())
+	{
+		vehicle_acceleration_s vehicle_acceleration;
+		_vehicle_acceleration_sub.copy(&vehicle_acceleration);
+
+		// 加速度矢量，在b系下表示。
+		Vector3f vb_a(vehicle_acceleration.xyz);
+
+		// 加速度矢量，在e系下表示。
+		Vector3f ve_a = _q.rotateVector(vb_a);
+
+		// 计算高度的加速度
+		_imu_height_acc = ve_a(2);
+
+		// 执行预测步骤
+	}
+
+	if(_sensor_baro_sub.updated())
+	{
+		sensor_baro_s sensor_baro;
+		_sensor_baro_sub.copy(&sensor_baro);
+
+		// 根据压强计读数计算深度测量值
+		_pr_depth = pressure2depth(sensor_baro.pressure);
+		// 如果深度测量值合法
+		if(is_pr_depth_legal())
 		{
-			update_slide_pr(_slide_raw_data[update_type]);
-			_has_slide_raw_data[update_type] = false;
-		}
-		else if(update_type == slide_estimated_s::DEPTH_TYPE_LV)
-		{
-			update_slide_lv(_slide_raw_data[update_type]);
-			_has_slide_raw_data[update_type] = false;
+			_pr_depth_legal = _pr_depth;
+			_pr_depth_legal_ts = sensor_baro.timestamp_sample;
+
+			// 如果时间戳差值没有超过阈值
+			uint64_t delta_ts = _pr_depth_legal_ts - _pr_depth_legal_ts_last;
+			if(delta_ts < 50000)
+			{
+				// 计算深度的变化率
+				_pr_depth_rate = (_pr_depth_legal - _pr_depth_legal_last) * 1000000 / (float)delta_ts;
+
+				calc_pr_height_rate();
+
+				// 执行速度更新步骤
+			}
+
+			// 保存数据
+			_pr_depth_legal_last = _pr_depth_legal;
+			_pr_depth_legal_ts_last = _pr_depth_legal_ts;
 		}
 	}
 
+	if(_adc_report_sub.updated())
+	{
+		adc_report_s adc_report;
+		_adc_report_sub.copy(&adc_report);
+
+		calc_lv_immersion();
+		calc_lv_saturation();
+		calc_lv_height();
+
+		// 执行位置更新步骤
+	}
+
 	// backup schedule
-	ScheduleDelayed(20_ms);
+	ScheduleDelayed(5_ms);
 
 	perf_end(_loop_perf);
 }
 
-bool SlideEstimator::get_slide_raw_data_pr(SlideRawData& raw_data)
+// 根据水位计读数计算浸水长度
+void SlideEstimator::calc_lv_immersion()
 {
-	sensor_baro_s sensor_baro;
-	if(_sensor_baro_sub.update(&sensor_baro))
-	{
-		raw_data.timestamp_sample = sensor_baro.timestamp_sample;
-		raw_data.slide_origin = (sensor_baro.pressure - _param_hy_de_pr_p0.get()) /\
+	_lv_immersion = 0;
+}
+
+// 根据浸水长度计算水位计饱和程度评估值
+void SlideEstimator::calc_lv_saturation()
+{
+	float uup = 1.0f;
+	float up = 0.9f;
+	float dn = 0.1f;
+	float ddn = 0.0f;
+
+	float x = _lv_immersion;
+	float sat;
+
+	if(x > uup)
+		sat = 1.0f;
+	else if(x > up)
+		sat = (x - up) / (uup - up);
+	else if(x > dn)
+		sat = 0.0f;
+	else if(x > ddn)
+		sat = (dn - x) / (dn - ddn);
+	else
+		sat = 1.0f;
+
+	_lv_satuation = sat;
+}
+
+// 根据浸水长度、姿态和几何关系计算高度
+void SlideEstimator::calc_lv_height()
+{
+	// 中心（加速度计安装位置为中心）到水位计顶部的矢量，在b系下表示。
+	Vector3f vb_c_lvtop(0.0f, 0.0f, 0.0f);
+	// 水位计顶部到水位线的矢量，在b系下表示
+	Vector3f vb_lvtop_waterline(0.0f, 0.0f, 0.0f);
+	// 中心到水位线的矢量，在b系下表示
+	Vector3f vb_c_waterline = vb_c_lvtop + vb_lvtop_waterline;
+
+	// 姿态四元数
+	Quatf q;
+
+	// 中心到水位线的矢量，在e系下表示
+	Vector3f ve_c_waterline = q.rotateVector(vb_c_waterline);
+
+	// 取矢量的最后一项的负值，即为高度（水面为0，出水为负）
+	_lv_height = - ve_c_waterline(2);
+}
+
+// 压强转换为深度
+float SlideEstimator::pressure2depth(float pressure)
+{
+	(sensor_baro.pressure - _param_hy_de_pr_p0.get()) /
 					(_param_hy_de_pr_rho.get() * _param_hy_de_pr_g.get());
+	return pressure;
+}
+
+// 深度测量值的合法性检查
+bool SlideEstimator::is_pr_depth_legal()
+{
+	float x = _pr_depth;
+	float med = _medfilter_pr_depth.apply(x);
+	float maxd = 5;
+
+	if(isInRange(x - med, -maxd, maxd))
+	{
 		return true;
-	}
-	return false;
-}
-
-bool SlideEstimator::get_slide_raw_data_lv(SlideRawData& raw_data)
-{
-	adc_report_s adc_report;
-	if(_adc_report_sub.update(&adc_report))
-	{
-		//水位计的原始数据获取暂不实现
-		return false;
-	}
-	return false;
-}
-
-void SlideEstimator::update_slide_pr(SlideRawData raw_data)
-{
-	slide_estimated_s de;
-
-	float med = _medfilter_slide_pr.apply(raw_data.slide_origin);
-	float maxd = _param_hy_de_pr_maxd.get();
-	float slide_origin = raw_data.slide_origin;
-
-	if(isInRange(slide_origin - med, -maxd, maxd))
-	{
-		_slide_estimated += _param_hy_de_pr_k.get()*(slide_origin - _slide_estimated);
-		de.slide_invalid_pr = NAN;
 	}
 	else
 	{
-		de.slide_invalid_pr = slide_origin;
+		return false;
 	}
-
-	de.type = slide_estimated_s::DEPTH_TYPE_PR;
-
-	de.timestamp_sample_pr = raw_data.timestamp_sample;
-	de.timestamp_sample_lv = 0;
-
-	de.slide_estimated = _slide_estimated;
-
-	de.slide_origin_pr = slide_origin;
-	de.slide_origin_lv = NAN;
-
-	de.slide_medfilted_pr = med;
-
-	de.slide_invalid_lv = NAN;
-
-	de.timestamp = hrt_absolute_time();
-
-	_slide_estimated_pub.publish(de);
 }
 
-void SlideEstimator::update_slide_lv(SlideRawData raw_data)
+// 根据深度变化率和转动引起的线速度计算高度变化率
+void SlideEstimator::calc_pr_height_rate()
 {
-	//水位计的更新暂不实现
-	return;
+	// 中心到压强计的矢量，在b系下表示。
+	Vector3f vb_c_pr(0.0f, 0.0f, 0.0f);
+	// 角速度矢量，在b系下表示。
+	Vector3f vb_w(0.0f, 0.0f, 0.0f);
+
+	// 角速度引起的速度矢量，在b系下表示。
+	Vector3f vb_dotpr = vb_w.cross(vb_c_pr);
+
+	// 姿态四元数
+	Quatf q;
+
+	// 角速度引起的速度矢量，在e系下表示。
+	Vector3f ve_dotpr = q.rotateVector(vb_dotpr);
+
+	// 计算高度变化率
+	_pr_height_rate = _pr_depth_rate + ve_dotpr(2);
 }
 
 int SlideEstimator::task_spawn(int argc, char *argv[])
