@@ -1,0 +1,5 @@
+menuconfig MODULES_SLIDE_ESTIMATOR
+	bool "slide_estimator"
+	default n
+	---help---
+		Enable support for slide_estimator
