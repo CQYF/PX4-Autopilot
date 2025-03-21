@@ -106,7 +106,7 @@ void SlideEstimator::Run()
 		vehicle_angular_velocity_s vehicle_angular_velocity;
 		_vehicle_angular_velocity_sub.copy(&vehicle_angular_velocity);
 		Vector3f w_new(vehicle_angular_velocity.xyz);
-		_q = q_new;
+		_w = w_new;
 	}
 
 	if(_vehicle_acceleration_sub.updated())
@@ -124,6 +124,7 @@ void SlideEstimator::Run()
 		_imu_height_acc = ve_a(2);
 
 		// 执行预测步骤
+		predict_acc();
 	}
 
 	if(_sensor_baro_sub.updated())
@@ -149,6 +150,7 @@ void SlideEstimator::Run()
 				calc_pr_height_rate();
 
 				// 执行速度更新步骤
+				update_vel();
 			}
 
 			// 保存数据
@@ -167,6 +169,7 @@ void SlideEstimator::Run()
 		calc_lv_height();
 
 		// 执行位置更新步骤
+		update_pos();
 	}
 
 	// backup schedule
@@ -175,7 +178,7 @@ void SlideEstimator::Run()
 	perf_end(_loop_perf);
 }
 
-// 根据水位计读数计算浸水长度
+// TODO 根据水位计读数计算浸水长度
 void SlideEstimator::calc_lv_immersion()
 {
 	_lv_immersion = 0;
@@ -184,10 +187,10 @@ void SlideEstimator::calc_lv_immersion()
 // 根据浸水长度计算水位计饱和程度评估值
 void SlideEstimator::calc_lv_saturation()
 {
-	float uup = 1.0f;
-	float up = 0.9f;
-	float dn = 0.1f;
-	float ddn = 0.0f;
+	float uup = _param_hy_se_lv_sat_uup.get();
+	float up = _param_hy_se_lv_sat_up.get();
+	float dn = _param_hy_se_lv_sat_dn.get();
+	float ddn = _param_hy_se_lv_sat_ddn.get();
 
 	float x = _lv_immersion;
 	float sat;
@@ -210,14 +213,14 @@ void SlideEstimator::calc_lv_saturation()
 void SlideEstimator::calc_lv_height()
 {
 	// 中心（加速度计安装位置为中心）到水位计顶部的矢量，在b系下表示。
-	Vector3f vb_c_lvtop(0.0f, 0.0f, 0.0f);
+	Vector3f vb_c_lvtop(_param_hy_se_c_lv_x.get(), _param_hy_se_c_lv_y.get(), _param_hy_se_c_lv_z.get());
 	// 水位计顶部到水位线的矢量，在b系下表示
-	Vector3f vb_lvtop_waterline(0.0f, 0.0f, 0.0f);
+	Vector3f vb_lvtop_waterline(0.0f, 0.0f, _param_hy_se_lv_len.get() - _lv_immersion);
 	// 中心到水位线的矢量，在b系下表示
 	Vector3f vb_c_waterline = vb_c_lvtop + vb_lvtop_waterline;
 
 	// 姿态四元数
-	Quatf q;
+	Quatf q = _q;
 
 	// 中心到水位线的矢量，在e系下表示
 	Vector3f ve_c_waterline = q.rotateVector(vb_c_waterline);
@@ -229,9 +232,8 @@ void SlideEstimator::calc_lv_height()
 // 压强转换为深度
 float SlideEstimator::pressure2depth(float pressure)
 {
-	(sensor_baro.pressure - _param_hy_de_pr_p0.get()) /
-					(_param_hy_de_pr_rho.get() * _param_hy_de_pr_g.get());
-	return pressure;
+	float depth = (pressure - _param_hy_se_pr_p0.get()) /	(_param_hy_se_pr_rho.get() * _param_hy_se_g.get());
+	return depth;
 }
 
 // 深度测量值的合法性检查
@@ -239,7 +241,7 @@ bool SlideEstimator::is_pr_depth_legal()
 {
 	float x = _pr_depth;
 	float med = _medfilter_pr_depth.apply(x);
-	float maxd = 5;
+	float maxd = _param_hy_se_pr_maxd.get();
 
 	if(isInRange(x - med, -maxd, maxd))
 	{
@@ -255,21 +257,51 @@ bool SlideEstimator::is_pr_depth_legal()
 void SlideEstimator::calc_pr_height_rate()
 {
 	// 中心到压强计的矢量，在b系下表示。
-	Vector3f vb_c_pr(0.0f, 0.0f, 0.0f);
+	Vector3f vb_c_pr(_param_hy_se_c_pr_x.get(), _param_hy_se_c_pr_y.get(), _param_hy_se_c_pr_z.get());
 	// 角速度矢量，在b系下表示。
-	Vector3f vb_w(0.0f, 0.0f, 0.0f);
+	Vector3f vb_w = _w;
 
 	// 角速度引起的速度矢量，在b系下表示。
 	Vector3f vb_dotpr = vb_w.cross(vb_c_pr);
 
 	// 姿态四元数
-	Quatf q;
+	Quatf q = _q;
 
 	// 角速度引起的速度矢量，在e系下表示。
 	Vector3f ve_dotpr = q.rotateVector(vb_dotpr);
 
 	// 计算高度变化率
 	_pr_height_rate = _pr_depth_rate + ve_dotpr(2);
+}
+
+// 预测
+void SlideEstimator::predict_acc()
+{
+	float ts = (float)(_param_hy_se_ts.get()) / 1000000.0f;
+	_hat_height += _hat_dot_height*ts + _imu_height_acc*ts*ts/2.0f;
+	_hat_dot_height += _imu_height_acc*ts;
+}
+
+// 速度更新
+void SlideEstimator::update_vel()
+{
+	float ts = (float)(_param_hy_se_ts.get()) / 1000000.0f;
+	float obs = _pr_height_rate;
+	float K = _param_hy_se_vel_k.get() * ts;
+	_hat_dot_height += (obs - _hat_dot_height) * K;
+}
+
+// 位置更新
+void SlideEstimator::update_pos()
+{
+	float ts = (float)(_param_hy_se_ts.get()) / 1000000.0f;
+	float obs = _lv_height;
+	float K = _param_hy_se_pos_k.get() * ts;
+	if(_param_hy_se_lv_is_sat.get()) // 这个功能在实物上估计不会好用
+	{
+		K *= 1 - _lv_satuation;
+	}
+	_hat_height += (obs - _hat_height) * K;
 }
 
 int SlideEstimator::task_spawn(int argc, char *argv[])

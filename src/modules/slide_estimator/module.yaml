@@ -7,7 +7,7 @@ parameters:
     HY_SE_TS:
       description:
         short: Module running interval
-      unit:us
+      unit: us
       type: int32
       min: 1000
       default: 1000
@@ -71,6 +71,15 @@ parameters:
         short: Should the position update gain adjusted based on the saturation
       type: boolean
       default: 0
+
+    #水位计长度
+    HY_SE_LV_LEN:
+      description:
+        short: Length of the water level gauge
+      type: float
+      unit: m
+      min: 0.0
+      default: 0.1
 
     #中心指向水位计顶部的位移矢量
     HY_SE_C_LV_X:

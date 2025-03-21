@@ -61,6 +61,8 @@
 #include <uORB/topics/vehicle_attitude.h>
 #include <uORB/topics/vehicle_angular_velocity.h>
 
+#include <uORB/topics/slide_estimated.h>
+
 #include <lib/mathlib/math/filter/MedianFilter.hpp>
 #include <lib/mathlib/mathlib.h>
 #include <matrix/matrix/math.hpp>
@@ -155,17 +157,41 @@ private:
 	// IMU测得的高度加速度
 	float _imu_height_acc;
 
+	// 估计得到的数据
+	float _hat_height;
+	float _hat_dot_height;
+
+	// 预测
+	void predict_acc();
+	// 更新
+	void update_vel();
+	void update_pos();
+
+
+	// 发布数据
+	slide_estimated_s _slide_estimated{0};
+
 
 	DEFINE_PARAMETERS(
-		(ParamInt<px4::params::HY_DE_PR_CTRL>) _param_hy_de_pr_ctrl,
-		(ParamInt<px4::params::HY_DE_LV_CTRL>) _param_hy_de_lv_ctrl,
-		(ParamFloat<px4::params::HY_DE_PR_P0>) _param_hy_de_pr_p0,
-		(ParamFloat<px4::params::HY_DE_PR_RHO>) _param_hy_de_pr_rho,
-		(ParamFloat<px4::params::HY_DE_PR_G>) _param_hy_de_pr_g,
-		(ParamFloat<px4::params::HY_DE_PR_K>) _param_hy_de_pr_k,
-		(ParamFloat<px4::params::HY_DE_PR_MAXD>) _param_hy_de_pr_maxd
-
-
+		(ParamInt<px4::params::HY_SE_TS>) _param_hy_se_ts,
+		(ParamFloat<px4::params::HY_SE_PR_P0>) _param_hy_se_pr_p0,
+		(ParamFloat<px4::params::HY_SE_PR_RHO>) _param_hy_se_pr_rho,
+		(ParamFloat<px4::params::HY_SE_G>) _param_hy_se_g,
+		(ParamFloat<px4::params::HY_SE_PR_MAXD>) _param_hy_se_pr_maxd,
+		(ParamFloat<px4::params::HY_SE_LV_SAT_UUP>) _param_hy_se_lv_sat_uup,
+		(ParamFloat<px4::params::HY_SE_LV_SAT_UP>) _param_hy_se_lv_sat_up,
+		(ParamFloat<px4::params::HY_SE_LV_SAT_DN>) _param_hy_se_lv_sat_dn,
+		(ParamFloat<px4::params::HY_SE_LV_SAT_DDN>) _param_hy_se_lv_sat_ddn,
+		(ParamInt<px4::params::HY_SE_LV_IS_SAT>) _param_hy_se_lv_is_sat,
+		(ParamFloat<px4::params::HY_SE_LV_LEN>) _param_hy_se_lv_len,
+		(ParamFloat<px4::params::HY_SE_C_LV_X>) _param_hy_se_c_lv_x,
+		(ParamFloat<px4::params::HY_SE_C_LV_Y>) _param_hy_se_c_lv_y,
+		(ParamFloat<px4::params::HY_SE_C_LV_Z>) _param_hy_se_c_lv_z,
+		(ParamFloat<px4::params::HY_SE_C_PR_X>) _param_hy_se_c_pr_x,
+		(ParamFloat<px4::params::HY_SE_C_PR_Y>) _param_hy_se_c_pr_y,
+		(ParamFloat<px4::params::HY_SE_C_PR_Z>) _param_hy_se_c_pr_z,
+		(ParamFloat<px4::params::HY_SE_POS_K>) _param_hy_se_pos_k,
+		(ParamFloat<px4::params::HY_SE_VEL_K>) _param_hy_se_vel_k
 	)
 
 };
