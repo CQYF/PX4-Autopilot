@@ -109,6 +109,7 @@ void SlideEstimator::Run()
 		_w = w_new;
 	}
 
+	// 收到加速度数据
 	if(_vehicle_acceleration_sub.updated())
 	{
 		vehicle_acceleration_s vehicle_acceleration;
@@ -127,6 +128,7 @@ void SlideEstimator::Run()
 		predict_acc();
 	}
 
+	// 收到压强计数据
 	if(_sensor_baro_sub.updated())
 	{
 		sensor_baro_s sensor_baro;
