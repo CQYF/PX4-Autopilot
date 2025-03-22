@@ -43,6 +43,119 @@ using math::constrain;
 using math::interpolate;
 using math::radians;
 
+
+ADRCController::ADRCController(
+        float _tau,
+        float _J0,
+        float _kp,
+        float _kd,
+        float _omega_o,
+        float _alpha
+) :
+        tau(_tau),
+        J0(_J0),
+        Jc_inv(1.0f / _J0),  // 计算转动惯量倒数
+        kp(_kp),
+        kd(_kd),
+        omega_o(_omega_o),
+        alpha(_alpha),
+        beta1(3 * _omega_o),  // 显式初始化 beta1
+        beta2(3 * _omega_o * _omega_o),  // 显式初始化 beta2
+        beta3(_omega_o * _omega_o * _omega_o),  // 显式初始化 beta3
+        nn(0),          // 计数器归零
+        Xe(0),          // 初始跟踪误差
+        Xe_pre(0),      // 前一时刻跟踪误差
+        Uc(0),          // 初始控制量
+        v(0)            // 其他状态变量
+{
+    // 初始化转动惯量相关参数
+    Jc_inv = 1.0f / J0;
+
+    // 初始化beta参数
+    updateBetaGains();
+
+    // 初始化矩阵
+    reset();
+}
+
+void ADRCController::reset() {
+    Delta2Xe_vec.setZero();
+    Uc_vec.setZero();
+    Uc_vec_using.setZero();
+    Gamma.setZero();
+    Z.setZero();
+    nn = 0;
+    Xe = 0;
+    Xe_pre = 0;
+    Uc = 0;
+    A.setZero();
+    A_inv.setZero();
+}
+
+void ADRCController::compute(float P, float P_star)
+{
+    ++nn;
+
+    Xe = P_star - P;
+
+    Matrix<float, 3, 3> Ap;
+    Ap(0, 0) = 0; Ap(0, 1) = 1; Ap(0, 2) = 0;
+    Ap(1, 0) = 0; Ap(1, 1) = 0; Ap(1, 2) = 1;
+    Ap(2, 0) = 0; Ap(2, 1) = 0; Ap(2, 2) = 0;
+
+    Matrix<float, 3, 1> Bp;
+    Bp(0, 0) = 0;
+    Bp(1, 0) = -J0;
+    Bp(2, 0) = 0;
+
+    Matrix<float, 1, 3> Cp;
+    Cp(0, 0) = 1; Cp(0, 1) = 0; Cp(0, 2) = 0;
+
+    static Matrix<float, 3, 1> Z_dot;
+    if (nn > 1) {
+        Z_dot = (Ap - Lc*Cp)*Z + Bp*Uc + Lc*Xe;
+    } else {
+        Z_dot = (Ap - Lc*Cp)*Z + Lc*Xe;
+    }
+
+    Z += tau * Z_dot;
+    float Z1 = Z(0,0);
+    float Z2 = Z(1,0);
+    float Z3 = Z(2,0);
+
+    Uc_vec.slice<1, m-1>(0, 0) = Uc_vec.slice<1, m-1>(0, 1);
+    Uc_vec(0, m-1) = Uc;
+
+    if (nn > m) {
+        Uc_vec_using = Uc_vec;
+        Delta2Xe_vec = -tau*tau * J0 * Uc_vec;
+        A = Delta2Xe_vec.transpose() * Delta2Xe_vec;
+        bool success = geninv(A, A_inv);
+        if (!success) {
+        //     cout << "A_inv error" << endl;
+        }
+        Gamma = -alpha * (A_inv * Delta2Xe_vec.transpose() * (2*Xe - Xe_pre));
+    }else{
+
+        Gamma.setZero();
+        Uc_vec_using.setZero();
+        Delta2Xe_vec.setZero();
+    }
+
+    if (alpha < 0.0000001f && alpha > -0.0000001f) {
+        Uc = Jc_inv * (kp*Z1 + kd*Z2 + Z3);
+    } else {
+        float Uc_ADRC = Jc_inv * (kp*(Z1 + (Delta2Xe_vec*Gamma)(0,0)) + (kd + tau*kp)*Z2 + Z3);
+        float Uc_IM = (Uc_vec_using * Gamma)(0,0);
+        Uc = Uc_ADRC + Uc_IM;
+    }
+
+    P = P + tau*v + (float)0.5*tau*tau*J0*Uc;
+    v = v + tau*J0*Uc;
+
+    Xe_pre = Xe;
+}
+
 HydroRateControl::HydroRateControl() :
 	ModuleParams(nullptr),
 	ScheduledWorkItem(MODULE_NAME, px4::wq_configurations::nav_and_controllers),

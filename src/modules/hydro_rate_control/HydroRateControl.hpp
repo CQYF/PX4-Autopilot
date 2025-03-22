@@ -83,6 +83,81 @@ using uORB::SubscriptionData;
 
 using namespace time_literals;
 
+
+class ADRCController {
+	private:
+	    // 控制器参数
+	    float tau;          // 采样时间
+	    float J0;
+	    float Jc_inv;
+	    float kp;
+	    float kd;
+	    float omega_o;
+	    float alpha;
+	    float beta1;
+	    float beta2;
+	    float beta3;
+
+	    int32_t nn;         // 迭代计数器
+	    static const int32_t m = 7;
+
+	    // 状态变量
+	    matrix::Matrix<float, 3, 1> Lc;
+	    matrix::Matrix<float, 3, 1> Z;
+	    matrix::Matrix<float, 1, m> Delta2Xe_vec;
+	    matrix::Matrix<float, 1, m> Uc_vec;
+	    matrix::Matrix<float, 1, m> Uc_vec_using;
+	    matrix::Matrix<float, m, 1> Gamma;
+	    float Xe;
+	    float Xe_pre;
+	    float Uc;
+	    float v;
+	    matrix::Matrix<float, m, m> A;
+	    matrix::Matrix<float, m, m> A_inv;
+
+	    // 更新beta参数
+	    void updateBetaGains() {
+		beta1 = 3 * omega_o;
+		beta2 = 3 * omega_o * omega_o;
+		beta3 = omega_o * omega_o * omega_o;
+		Lc(0,0) = beta1;
+		Lc(1,0) = beta2;
+		Lc(2,0) = beta3;
+	    }
+
+	public:
+	    // 构造函数
+	    ADRCController(
+		    float _tau = 0.05f,
+		    float _J0 = 10.1746f,
+		    float _kp = 20.0f,
+		    float _kd = 6.0f,
+		    float _omega_o = 10.0f,
+		    float _alpha = 0.2f
+	    );
+
+	    // 核心计算函数
+	    void compute(float P, float P_star);
+
+	    // 获取当前控制量 Uc
+	    float getUc() const { return Uc; }
+
+	    // 重置控制器状态
+	    void reset();
+
+	    // 参数设置接口
+	    void setGains(float new_kp, float new_kd) {
+		kp = new_kp;
+		kd = new_kd;
+	    }
+
+	    void setOmegaO(float new_omega_o) {
+		omega_o = new_omega_o;
+		updateBetaGains();  // 更新beta参数
+	    }
+};
+
+
 class HydroRateControl final : public ModuleBase<HydroRateControl>, public ModuleParams,
 	public px4::ScheduledWorkItem
 {
