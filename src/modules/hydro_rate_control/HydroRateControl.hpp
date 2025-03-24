@@ -76,6 +76,10 @@
 #include <uORB/topics/depth_estimated.h>
 #include <uORB/topics/hydro_depth_control_message.h>
 
+
+#include <uORB/topics/vehicle_attitude_setpoint.h>
+#include <uORB/topics/adrc_report.h>
+
 using matrix::Eulerf;
 using matrix::Quatf;
 
@@ -86,75 +90,64 @@ using namespace time_literals;
 
 class ADRCController {
 	private:
-	    // 控制器参数
-	    float tau;          // 采样时间
-	    float J0;
-	    float Jc_inv;
-	    float kp;
-	    float kd;
-	    float omega_o;
-	    float alpha;
-	    float beta1;
-	    float beta2;
-	    float beta3;
+		// 控制器参数
+		float tau;          // 采样时间
+		float J0;
+		float Jc_inv;
+		float kp;
+		float kd;
+		float omega_o;
+		float alpha;
+		float beta1;
+		float beta2;
+		float beta3;
 
-	    int32_t nn;         // 迭代计数器
-	    static const int32_t m = 7;
+		int32_t nn;         // 迭代计数器
+		static const int32_t m = 7;
 
-	    // 状态变量
-	    matrix::Matrix<float, 3, 1> Lc;
-	    matrix::Matrix<float, 3, 1> Z;
-	    matrix::Matrix<float, 1, m> Delta2Xe_vec;
-	    matrix::Matrix<float, 1, m> Uc_vec;
-	    matrix::Matrix<float, 1, m> Uc_vec_using;
-	    matrix::Matrix<float, m, 1> Gamma;
-	    float Xe;
-	    float Xe_pre;
-	    float Uc;
-	    float v;
-	    matrix::Matrix<float, m, m> A;
-	    matrix::Matrix<float, m, m> A_inv;
-
-	    // 更新beta参数
-	    void updateBetaGains() {
-		beta1 = 3 * omega_o;
-		beta2 = 3 * omega_o * omega_o;
-		beta3 = omega_o * omega_o * omega_o;
-		Lc(0,0) = beta1;
-		Lc(1,0) = beta2;
-		Lc(2,0) = beta3;
-	    }
+		// 状态变量
+		matrix::Matrix<float, 3, 1> Lc;
+		matrix::Matrix<float, 3, 1> Z;
+		matrix::Matrix<float, 1, m> Delta2Xe_vec;
+		matrix::Matrix<float, 1, m> Uc_vec;
+		matrix::Matrix<float, 1, m> Uc_vec_using;
+		matrix::Matrix<float, m, 1> Gamma;
+		float Xe;
+		float Xe_pre;
+		float Uc;
+		float v;
+		matrix::Matrix<float, m, m> A;
+		matrix::Matrix<float, m, m> A_inv;
 
 	public:
-	    // 构造函数
-	    ADRCController(
-		    float _tau = 0.05f,
-		    float _J0 = 10.1746f,
-		    float _kp = 20.0f,
-		    float _kd = 6.0f,
-		    float _omega_o = 10.0f,
-		    float _alpha = 0.2f
-	    );
+		// 构造函数
+		ADRCController(
+			float _tau = 0.05f,
+			float _J0 = 10.1746f,
+			float _kp = 20.0f,
+			float _kd = 6.0f,
+			float _omega_o = 10.0f,
+			float _alpha = 0.2f
+		);
 
-	    // 核心计算函数
-	    void compute(float P, float P_star);
+		// 核心计算函数
+		void compute(float P, float P_star);
 
-	    // 获取当前控制量 Uc
-	    float getUc() const { return Uc; }
+		// 获取当前控制量 Uc
+		float getUc() const { return Uc; }
 
-	    // 重置控制器状态
-	    void reset();
+		// 获取观测量
+		matrix::Matrix<float, 3, 1> getZ() {return Z;}
 
-	    // 参数设置接口
-	    void setGains(float new_kp, float new_kd) {
-		kp = new_kp;
-		kd = new_kd;
-	    }
-
-	    void setOmegaO(float new_omega_o) {
-		omega_o = new_omega_o;
-		updateBetaGains();  // 更新beta参数
-	    }
+		// 重置控制器状态
+		void reset(
+			float _tau,
+			float _J0,
+			float _kp,
+			float _kd,
+			float _omega_o,
+			float _alpha
+		);
 };
 
 
@@ -195,12 +188,15 @@ private:
 	uORB::Subscription _vehicle_air_data_sub{ORB_ID(vehicle_air_data)};
 	uORB::Subscription _depth_estimated_sub{ORB_ID(depth_estimated)};
 
+	uORB::Subscription _vehicle_attitude_setpoint_sub{ORB_ID(vehicle_attitude_setpoint)};
+
 	uORB::Publication<vehicle_rates_setpoint_s>	_rate_sp_pub{ORB_ID(vehicle_rates_setpoint)};
 	uORB::Publication<vehicle_torque_setpoint_s>	_vehicle_torque_setpoint_pub{ORB_ID(vehicle_torque_setpoint)};
 	uORB::Publication<vehicle_thrust_setpoint_s>	_vehicle_thrust_setpoint_pub{ORB_ID(vehicle_thrust_setpoint)};
 	uORB::Publication<vehicle_torque_setpoint_s>	_hydro_torque_setpoint_pub{ORB_ID(hydro_torque_setpoint)};
 	uORB::Publication<vehicle_thrust_setpoint_s>	_hydro_thrust_setpoint_pub{ORB_ID(hydro_thrust_setpoint)};
 	uORB::Publication<hydro_depth_control_message_s>	_hydro_depth_control_message_pub{ORB_ID(hydro_depth_control_message)};
+	uORB::Publication<adrc_report_s>	_adrc_report_pub{ORB_ID(adrc_report)};
 
 	//自定义模式下的控制状态
 	enum class HydroRunningState : int32_t {
@@ -209,6 +205,7 @@ private:
 		AirOnly
 	};
 	HydroRunningState _hydro_running_state{HydroRunningState::WaterOnly};
+	HydroRunningState _hydro_running_state_last{HydroRunningState::WaterOnly};
 
 	manual_control_setpoint_s		_manual_control_setpoint{0};
 	vehicle_thrust_setpoint_s		_vehicle_thrust_setpoint{};
@@ -223,9 +220,13 @@ private:
 	debug_vect_s				_debug_vect{};
 	hydro_depth_control_message_s		_hydro_depth_control_message{};
 
+	vehicle_attitude_setpoint_s		_vehicle_attitude_setpoint{};
+
 	//水翼部分的setpoint
 	vehicle_thrust_setpoint_s		_hydro_thrust_setpoint{};
 	vehicle_torque_setpoint_s		_hydro_torque_setpoint{};
+
+	Eulerf _euler_angles{};
 
 	perf_counter_t _loop_perf;
 
@@ -234,6 +235,9 @@ private:
 	float _airspeed_scaling{1.0f};
 
 	float _battery_scale{1.0f};
+
+	ADRCController adrc_pit;
+	ADRCController adrc_rol;
 
 	DEFINE_PARAMETERS(
 		(ParamFloat<px4::params::HY_AIRSPD_MAX>) _param_hy_airspd_max,		//最大空速
@@ -299,7 +303,31 @@ private:
 		(ParamFloat<px4::params::HY_D_MAX_THR>) _param_hy_d_max_thr,		//最大推力比例
 
 		(ParamFloat<px4::params::HY_D_VF_UPLIM>) _param_hy_d_vf_uplim,		//深度控制竖直力上限
-		(ParamFloat<px4::params::HY_D_VF_DNLIM>) _param_hy_d_vf_dnlim		//深度控制竖直力下限
+		(ParamFloat<px4::params::HY_D_VF_DNLIM>) _param_hy_d_vf_dnlim,		//深度控制竖直力下限
+
+
+
+
+
+
+
+
+		(ParamFloat<px4::params::ADRC_TAU>) _param_adrc_tau,
+
+		(ParamFloat<px4::params::ADRC_P_KP>) _param_adrc_p_kp,
+		(ParamFloat<px4::params::ADRC_P_KD>) _param_adrc_p_kd,
+		(ParamFloat<px4::params::ADRC_P_OMEGA_O>) _param_adrc_p_omega_o,
+		(ParamFloat<px4::params::ADRC_P_ALPHA>) _param_adrc_p_alpha,
+		(ParamFloat<px4::params::ADRC_P_J0>) _param_adrc_p_j0,
+		(ParamFloat<px4::params::ADRC_P_NORM>) _param_adrc_p_norm,
+
+		(ParamFloat<px4::params::ADRC_R_KP>) _param_adrc_r_kp,
+		(ParamFloat<px4::params::ADRC_R_KD>) _param_adrc_r_kd,
+		(ParamFloat<px4::params::ADRC_R_OMEGA_O>) _param_adrc_r_omega_o,
+		(ParamFloat<px4::params::ADRC_R_ALPHA>) _param_adrc_r_alpha,
+		(ParamFloat<px4::params::ADRC_R_J0>) _param_adrc_r_j0,
+		(ParamFloat<px4::params::ADRC_R_NORM>) _param_adrc_r_norm
+
 	)
 
 	RateControl _rate_control; ///< class for rate control calculations

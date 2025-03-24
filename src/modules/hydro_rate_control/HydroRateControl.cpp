@@ -51,45 +51,46 @@ ADRCController::ADRCController(
         float _kd,
         float _omega_o,
         float _alpha
-) :
-        tau(_tau),
-        J0(_J0),
-        Jc_inv(1.0f / _J0),  // 计算转动惯量倒数
-        kp(_kp),
-        kd(_kd),
-        omega_o(_omega_o),
-        alpha(_alpha),
-        beta1(3 * _omega_o),  // 显式初始化 beta1
-        beta2(3 * _omega_o * _omega_o),  // 显式初始化 beta2
-        beta3(_omega_o * _omega_o * _omega_o),  // 显式初始化 beta3
-        nn(0),          // 计数器归零
-        Xe(0),          // 初始跟踪误差
-        Xe_pre(0),      // 前一时刻跟踪误差
-        Uc(0),          // 初始控制量
-        v(0)            // 其他状态变量
-{
-    // 初始化转动惯量相关参数
-    Jc_inv = 1.0f / J0;
-
-    // 初始化beta参数
-    updateBetaGains();
-
-    // 初始化矩阵
-    reset();
+) {
+	reset(_tau, _J0, _kp, _kd, _omega_o, _alpha);
 }
 
-void ADRCController::reset() {
-    Delta2Xe_vec.setZero();
-    Uc_vec.setZero();
-    Uc_vec_using.setZero();
-    Gamma.setZero();
-    Z.setZero();
-    nn = 0;
-    Xe = 0;
-    Xe_pre = 0;
-    Uc = 0;
-    A.setZero();
-    A_inv.setZero();
+void ADRCController::reset(
+	float _tau,
+        float _J0,
+        float _kp,
+        float _kd,
+        float _omega_o,
+        float _alpha
+) {
+	tau = _tau;
+	J0 = _J0;
+	Jc_inv = 1.0f / J0;// 计算转动惯量倒数
+	kp = _kp;
+	kd = _kd;
+	omega_o = _omega_o;
+	alpha = _alpha;
+
+	beta1 = 3 * _omega_o;// 显式初始化 beta1
+	beta2 = 3 * _omega_o * _omega_o;// 显式初始化 beta2
+	beta3 = _omega_o * _omega_o * _omega_o;// 显式初始化 beta3
+	Lc(0,0) = beta1;
+	Lc(1,0) = beta2;
+	Lc(2,0) = beta3;
+
+	nn = 0;// 计数器归零
+	Xe = 0;// 初始跟踪误差
+	Xe_pre = 0;// 前一时刻跟踪误差
+	Uc = 0;// 初始控制量
+	v = 0;// 其他状态变量
+
+	Delta2Xe_vec.setZero();
+	Uc_vec.setZero();
+	Uc_vec_using.setZero();
+	Gamma.setZero();
+	Z.setZero();
+	A.setZero();
+	A_inv.setZero();
 }
 
 void ADRCController::compute(float P, float P_star)
@@ -159,7 +160,9 @@ void ADRCController::compute(float P, float P_star)
 HydroRateControl::HydroRateControl() :
 	ModuleParams(nullptr),
 	ScheduledWorkItem(MODULE_NAME, px4::wq_configurations::nav_and_controllers),
-	_loop_perf(perf_alloc(PC_ELAPSED, MODULE_NAME": cycle"))
+	_loop_perf(perf_alloc(PC_ELAPSED, MODULE_NAME": cycle")),
+	adrc_pit(),
+	adrc_rol()
 {
 	/* fetch initial parameter values */
 	parameters_update();
@@ -375,6 +378,9 @@ void HydroRateControl::Run()
 			_rate_control.resetIntegral();
 		}
 
+		//获取姿态
+		_vehicle_attitude_sub.update(&_vehicle_attitude);
+		_euler_angles = Eulerf(Quatf(_vehicle_attitude.q));
 		//在全部的自定义模式下，执行补偿操作和滑行深度控制
 		if (_vehicle_status.nav_state == HYDRO_MODE_STABILIZED || _vehicle_status.nav_state == HYDRO_MODE_AUTO_DIVE ||
 			_vehicle_status.nav_state == HYDRO_MODE_ACRO || _vehicle_status.nav_state == HYDRO_MODE_MANUAL)
@@ -388,9 +394,7 @@ void HydroRateControl::Run()
 			_vehicle_torque_setpoint.xyz[1] = math::constrain(_vehicle_torque_setpoint.xyz[1] + _param_thr_to_pit_ff.get() *
 							_vehicle_thrust_setpoint.xyz[0], -1.f, 1.f);
 
-			//获取姿态
-			_vehicle_attitude_sub.update(&_vehicle_attitude);
-			Eulerf euler_angles(Quatf(_vehicle_attitude.q));
+
 			//px4的算法忽略了机身的攻角对操纵面实际攻角的影响，认为操纵面的实际攻角始终等于操纵面相对于机身的角度，但这对于滑行控制而言是不可接受的，
 			//飞机在滑行时机身总是保持一定的正攻角，此时水翼的0控制量也就对应了这个正攻角，在高速滑行时，水翼只需要很小的实际攻角就可以实现控制，
 			//这个正攻角就会将实际平衡点向上大幅推移，并且一般会直接推移到平衡范围之外，也就出现了滑行中在水面上跳动的情况（当然这只是因素之一）
@@ -399,7 +403,7 @@ void HydroRateControl::Run()
 			//! 这项增益会在起飞后造成麻烦（大概），暂时只用于滑行，如果要起飞，应当将增益置0
 			//! 这项增益在手动模式下依然存在，调节增益系数的方法是在手动模式下俯仰飞机，直到在任何角度下水翼都保持水平
 			// _vehicle_torque_setpoint.xyz[1] = math::constrain(_vehicle_torque_setpoint.xyz[1] + _param_attack_ff.get() *
-			// 				euler_angles.theta(), -1.f, 1.f);
+			// 				_euler_angles.theta(), -1.f, 1.f);
 			//（使用新的控制和分配逻辑时，不需要此补偿）
 
 			_depth_fusion_sub.update(&_depth_fusion);
@@ -484,7 +488,7 @@ void HydroRateControl::Run()
 			}
 			_hydro_depth_control_message.vertical_thrust_limited = hydro_vertical_thrust_setpoint;
 			//滑行时，机身的俯仰角近似为自然攻角，实际攻角等于翼面偏转角度加上自然攻角
-			float alpha0 = euler_angles.theta();
+			float alpha0 = _euler_angles.theta();
 
 			//水平和竖直推力转换为机身坐标系下的推力，使用二维坐标转换
 			_hydro_thrust_setpoint.xyz[0] = hydro_horizontal_thrust_setpoint * std::cos(alpha0) - hydro_vertical_thrust_setpoint * std::sin(alpha0);
@@ -501,6 +505,7 @@ void HydroRateControl::Run()
 		}
 
 		//根据遥控器上某个辅助通道的状态，判断当前的运行模式
+		_hydro_running_state_last = _hydro_running_state;
 		if(_manual_control_setpoint.aux2 < -0.5f)
 		{
 			_hydro_running_state = HydroRunningState::WaterOnly;
@@ -513,6 +518,66 @@ void HydroRateControl::Run()
 		{
 			_hydro_running_state = HydroRunningState::WaterAir;
 		}
+
+		// 在这里复位adrc
+		if(_hydro_running_state == HydroRunningState::WaterOnly &&\
+		_hydro_running_state_last != HydroRunningState::WaterOnly)
+		{
+			adrc_pit.reset(	_param_adrc_tau.get(),
+					_param_adrc_p_j0.get(),
+					_param_adrc_p_kp.get(),
+					_param_adrc_p_kd.get(),
+					_param_adrc_p_omega_o.get(),
+					_param_adrc_p_alpha.get());
+
+			adrc_rol.reset(	_param_adrc_tau.get(),
+					_param_adrc_r_j0.get(),
+					_param_adrc_r_kp.get(),
+					_param_adrc_r_kd.get(),
+					_param_adrc_r_omega_o.get(),
+					_param_adrc_r_alpha.get());
+		}
+
+		// 在这里调用adrc代码，并同时覆盖_hydro_torque_setpoint和_vehicle_torque_setpoint
+		if (_vehicle_status.nav_state == HYDRO_MODE_STABILIZED)
+		{
+			adrc_report_s adrc_report;
+
+			_vehicle_attitude_setpoint_sub.update(&_vehicle_attitude_setpoint);
+
+			adrc_pit.compute(_euler_angles.theta(), _vehicle_attitude_setpoint.pitch_body);
+			adrc_rol.compute(_euler_angles.phi(), _vehicle_attitude_setpoint.roll_body);
+
+			float u_pit = adrc_pit.getUc() / _param_adrc_p_norm.get();
+			float u_rol = adrc_rol.getUc() / _param_adrc_r_norm.get();
+			matrix::Matrix<float, 3, 1> z_pit = adrc_pit.getZ();
+			matrix::Matrix<float, 3, 1> z_rol = adrc_rol.getZ();
+
+			// 覆盖
+			_hydro_torque_setpoint.xyz[0] = u_rol;
+			_hydro_torque_setpoint.xyz[1] = u_pit;
+			_vehicle_torque_setpoint.xyz[0] = u_rol;
+			_vehicle_torque_setpoint.xyz[1] = u_pit;
+
+			// 日志
+			adrc_report.x_pit = _euler_angles.theta();
+			adrc_report.xd_pit = _vehicle_attitude_setpoint.pitch_body;
+			adrc_report.u_pit = adrc_pit.getUc();
+			adrc_report.z_pit[0] = z_pit(0, 0);
+			adrc_report.z_pit[1] = z_pit(1, 0);
+			adrc_report.z_pit[2] = z_pit(2, 0);
+
+			adrc_report.x_rol = _euler_angles.phi();
+			adrc_report.xd_rol = _vehicle_attitude_setpoint.roll_body;
+			adrc_report.u_rol = adrc_rol.getUc();
+			adrc_report.z_rol[0] = z_rol(0, 0);
+			adrc_report.z_rol[1] = z_rol(1, 0);
+			adrc_report.z_rol[2] = z_rol(2, 0);
+
+			adrc_report.timestamp = hrt_absolute_time();
+			_adrc_report_pub.publish(adrc_report);
+		}
+
 
 		//在全部的自定义模式下，要发布vehicle的setpoint（其余模式下px4自带的模块会发布setpoint），但在仅水下部分运行时要发送0
 		if (_vehicle_status.nav_state == HYDRO_MODE_STABILIZED || _vehicle_status.nav_state == HYDRO_MODE_AUTO_DIVE ||

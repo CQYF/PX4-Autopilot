@@ -579,3 +579,106 @@ PARAM_DEFINE_FLOAT(HY_D_VF_UPLIM, 60.0f);
  */
 PARAM_DEFINE_FLOAT(HY_D_VF_DNLIM, -60.0f);
 //深度控制竖直力下限
+
+
+
+
+
+/**
+ * ADRC TAU
+ *
+ * @group ADRC
+ */
+PARAM_DEFINE_FLOAT(ADRC_TAU, 0.0025f);
+
+
+
+
+
+/**
+ * ADRC PIT KP
+ *
+ * @group ADRC
+ */
+PARAM_DEFINE_FLOAT(ADRC_P_KP, 0.0f);
+
+/**
+ * ADRC PIT KD
+ *
+ * @group ADRC
+ */
+PARAM_DEFINE_FLOAT(ADRC_P_KD, 0.0f);
+
+/**
+ * ADRC PIT OMEGA_O
+ *
+ * @group ADRC
+ */
+PARAM_DEFINE_FLOAT(ADRC_P_OMEGA_O, 0.0f);
+
+/**
+ * ADRC PIT ALPHA
+ *
+ * @group ADRC
+ */
+PARAM_DEFINE_FLOAT(ADRC_P_ALPHA, 0.0f);
+
+/**
+ * ADRC PIT J0
+ *
+ * @group ADRC
+ */
+PARAM_DEFINE_FLOAT(ADRC_P_J0, 1.0f);
+
+/**
+ * ADRC PIT NORM
+ *
+ * @group ADRC
+ */
+PARAM_DEFINE_FLOAT(ADRC_P_NORM, 1.0f);
+
+
+
+
+
+/**
+ * ADRC ROL KP
+ *
+ * @group ADRC
+ */
+PARAM_DEFINE_FLOAT(ADRC_R_KP, 0.0f);
+
+/**
+ * ADRC ROL KD
+ *
+ * @group ADRC
+ */
+PARAM_DEFINE_FLOAT(ADRC_R_KD, 0.0f);
+
+/**
+ * ADRC ROL OMEGA_O
+ *
+ * @group ADRC
+ */
+PARAM_DEFINE_FLOAT(ADRC_R_OMEGA_O, 0.0f);
+
+/**
+ * ADRC ROL ALPHA
+ *
+ * @group ADRC
+ */
+PARAM_DEFINE_FLOAT(ADRC_R_ALPHA, 0.0f);
+
+/**
+ * ADRC ROL J0
+ *
+ * @group ADRC
+ */
+PARAM_DEFINE_FLOAT(ADRC_R_J0, 1.0f);
+
+/**
+ * ADRC ROL NORM
+ *
+ * @group ADRC
+ */
+PARAM_DEFINE_FLOAT(ADRC_R_NORM, 1.0f);
