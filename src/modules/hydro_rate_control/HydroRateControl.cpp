@@ -112,7 +112,7 @@ void ADRCController::compute(float P, float P_star)
     Matrix<float, 1, 3> Cp;
     Cp(0, 0) = 1; Cp(0, 1) = 0; Cp(0, 2) = 0;
 
-    static Matrix<float, 3, 1> Z_dot;
+    Matrix<float, 3, 1> Z_dot;
     if (nn > 1) {
         Z_dot = (Ap - Lc*Cp)*Z + Bp*Uc + Lc*Xe;
     } else {
