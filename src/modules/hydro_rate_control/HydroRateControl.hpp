@@ -102,6 +102,9 @@ class ADRCController {
 		float beta2;
 		float beta3;
 
+		float z3max;
+		float z3min;
+
 		int32_t nn;         // 迭代计数器
 		static const int32_t m = 7;
 
@@ -127,7 +130,9 @@ class ADRCController {
 			float _kp = 20.0f,
 			float _kd = 6.0f,
 			float _omega_o = 10.0f,
-			float _alpha = 0.2f
+			float _alpha = 0.2f,
+			float _z3max = 10.0f,
+			float _z3min = -10.0f
 		);
 
 		// 核心计算函数
@@ -146,7 +151,9 @@ class ADRCController {
 			float _kp,
 			float _kd,
 			float _omega_o,
-			float _alpha
+			float _alpha,
+			float _z3max,
+			float _z3min
 		);
 };
 
@@ -320,13 +327,17 @@ private:
 		(ParamFloat<px4::params::ADRC_P_ALPHA>) _param_adrc_p_alpha,
 		(ParamFloat<px4::params::ADRC_P_J0>) _param_adrc_p_j0,
 		(ParamFloat<px4::params::ADRC_P_NORM>) _param_adrc_p_norm,
+		(ParamFloat<px4::params::ADRC_P_Z3MAX>) _param_adrc_p_z3max,
+		(ParamFloat<px4::params::ADRC_P_Z3MIN>) _param_adrc_p_z3min,
 
 		(ParamFloat<px4::params::ADRC_R_KP>) _param_adrc_r_kp,
 		(ParamFloat<px4::params::ADRC_R_KD>) _param_adrc_r_kd,
 		(ParamFloat<px4::params::ADRC_R_OMEGA_O>) _param_adrc_r_omega_o,
 		(ParamFloat<px4::params::ADRC_R_ALPHA>) _param_adrc_r_alpha,
 		(ParamFloat<px4::params::ADRC_R_J0>) _param_adrc_r_j0,
-		(ParamFloat<px4::params::ADRC_R_NORM>) _param_adrc_r_norm
+		(ParamFloat<px4::params::ADRC_R_NORM>) _param_adrc_r_norm,
+		(ParamFloat<px4::params::ADRC_R_Z3MAX>) _param_adrc_r_z3max,
+		(ParamFloat<px4::params::ADRC_R_Z3MIN>) _param_adrc_r_z3min
 
 	)
 

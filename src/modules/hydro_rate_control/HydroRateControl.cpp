@@ -50,9 +50,11 @@ ADRCController::ADRCController(
         float _kp,
         float _kd,
         float _omega_o,
-        float _alpha
+        float _alpha,
+	float _z3max,
+	float _z3min
 ) {
-	reset(_tau, _J0, _kp, _kd, _omega_o, _alpha);
+	reset(_tau, _J0, _kp, _kd, _omega_o, _alpha, _z3max, _z3min);
 }
 
 void ADRCController::reset(
@@ -61,7 +63,9 @@ void ADRCController::reset(
         float _kp,
         float _kd,
         float _omega_o,
-        float _alpha
+        float _alpha,
+	float _z3max,
+	float _z3min
 ) {
 	tau = _tau;
 	J0 = _J0;
@@ -70,6 +74,8 @@ void ADRCController::reset(
 	kd = _kd;
 	omega_o = _omega_o;
 	alpha = _alpha;
+	z3max = _z3max;
+	z3min = _z3min;
 
 	beta1 = 3 * _omega_o;// 显式初始化 beta1
 	beta2 = 3 * _omega_o * _omega_o;// 显式初始化 beta2
@@ -120,6 +126,7 @@ void ADRCController::compute(float P, float P_star)
     }
 
     Z += tau * Z_dot;
+    Z(2,0) = constrain(Z(2,0), z3min, z3max);
     float Z1 = Z(0,0);
     float Z2 = Z(1,0);
     float Z3 = Z(2,0);
@@ -131,10 +138,30 @@ void ADRCController::compute(float P, float P_star)
         Uc_vec_using = Uc_vec;
         Delta2Xe_vec = -tau*tau * J0 * Uc_vec;
         A = Delta2Xe_vec.transpose() * Delta2Xe_vec;
-        bool success = geninv(A, A_inv);
-        if (!success) {
-        //     cout << "A_inv error" << endl;
-        }
+
+	// A.print();
+
+	// SquareMatrix<float, 7> tA;
+	// tA.setOne();
+	// SquareMatrix<float, 7> tA_inv;
+	// inv(tA, tA_inv);
+	// UNUSED(tA_inv);
+
+
+	bool success = geninv(A, A_inv);//这里会报错
+	// SquareMatrix<float, 7> sA = A;
+	// SquareMatrix<float, 7> sA_inv;
+        // bool success = inv(sA, sA_inv);
+	// if(success)
+	// {
+	// 	A_inv = sA_inv;
+	// }
+	// else
+	// {
+	// 	geninv(A, A_inv);
+	// }
+	UNUSED(success);
+
         Gamma = -alpha * (A_inv * Delta2Xe_vec.transpose() * (2*Xe - Xe_pre));
     }else{
 
@@ -528,14 +555,18 @@ void HydroRateControl::Run()
 					_param_adrc_p_kp.get(),
 					_param_adrc_p_kd.get(),
 					_param_adrc_p_omega_o.get(),
-					_param_adrc_p_alpha.get());
+					_param_adrc_p_alpha.get(),
+					_param_adrc_p_z3max.get(),
+					_param_adrc_p_z3min.get());
 
 			adrc_rol.reset(	_param_adrc_tau.get(),
 					_param_adrc_r_j0.get(),
 					_param_adrc_r_kp.get(),
 					_param_adrc_r_kd.get(),
 					_param_adrc_r_omega_o.get(),
-					_param_adrc_r_alpha.get());
+					_param_adrc_r_alpha.get(),
+					_param_adrc_r_z3max.get(),
+					_param_adrc_r_z3min.get());
 		}
 
 		// 在这里调用adrc代码，并同时覆盖_hydro_torque_setpoint和_vehicle_torque_setpoint
