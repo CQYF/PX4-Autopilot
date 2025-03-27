@@ -83,9 +83,6 @@ HydroAllocator::HydroAllocator() :
 		snprintf(buffer, sizeof(buffer), "HY_VXRT%u_ROL_R", i);
 		_param_handles.hy_vxrt_rol_r[i] = param_find(buffer);
 	}
-
-
-	parameters_update(true);
 }
 
 HydroAllocator::~HydroAllocator()
@@ -204,6 +201,8 @@ void HydroAllocator::Run()
 	}
 
 	perf_begin(_loop_perf);
+
+	parameters_update();
 
 	if (_hydro_torque_setpoint_sub.update(&_hydro_torque_setpoint_msg))
 	{
@@ -345,8 +344,6 @@ void HydroAllocator::Run()
 
 	hydro_allocate_message_msg.timestamp = hrt_absolute_time();
 	_hydro_allocate_message_pub.publish(hydro_allocate_message_msg);
-
-	parameters_update(true);// TODO 不加上true，则单实例参数修改无效，原因不明
 
 	// backup schedule
 	ScheduleDelayed(100_ms);
