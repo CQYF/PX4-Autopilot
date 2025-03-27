@@ -152,6 +152,8 @@ private:
 	vehicle_thrust_setpoint_s		_hydro_thrust_setpoint{};
 	vehicle_torque_setpoint_s		_hydro_torque_setpoint{};
 
+	float _hsmc_x3{0}; //高阶滑模的积分项
+
 	perf_counter_t _loop_perf;
 
 	hrt_abstime _last_run{0};
@@ -212,19 +214,30 @@ private:
 		(ParamFloat<px4::params::HY_THR_TO_PIT_FF>) _param_thr_to_pit_ff,	//推力前馈到pit轴力矩上
 		(ParamFloat<px4::params::HY_ATTACK_FF>) _param_attack_ff,		//机身攻角补偿
 
-		(ParamFloat<px4::params::HY_D_P>) _param_hy_d_p,			//深度控制参数
-		(ParamFloat<px4::params::HY_D_D>) _param_hy_d_d,
-		(ParamFloat<px4::params::HY_D_FF>) _param_hy_d_ff,
-		(ParamFloat<px4::params::HY_D_SP>) _param_hy_d_sp,
+		//深度控制
+		(ParamInt<px4::params::HY_DC_MODE>) _param_hy_dc_mode,
+		(ParamFloat<px4::params::HY_DC_FF>) _param_hy_dc_ff,
+		(ParamFloat<px4::params::HY_DC_SP>) _param_hy_dc_sp,
+		(ParamFloat<px4::params::HY_DC_MAX_THR>) _param_hy_dc_max_thr,
 
-		(ParamFloat<px4::params::HY_RT_MAX_THRUST>) _param_hy_rt_max_thrust,	//单个水下推进器最大推力
+		//非光滑反馈
+		(ParamFloat<px4::params::HY_NSF_PT>) _param_hy_nsf_pt,
+		(ParamFloat<px4::params::HY_NSF_NORM>) _param_hy_nsf_norm,
+		(ParamFloat<px4::params::HY_NSF_POWER>) _param_hy_nsf_power,
+		(ParamFloat<px4::params::HY_NSF_KP>) _param_hy_nsf_kp,
+		(ParamFloat<px4::params::HY_NSF_UMAX>) _param_hy_nsf_umax,
+		(ParamFloat<px4::params::HY_NSF_UMIN>) _param_hy_nsf_umin,
 
-		(ParamFloat<px4::params::HY_D_ERR_NORM>) _param_hy_d_err_norm,		//深度误差归一化点
-		(ParamFloat<px4::params::HY_D_NL_POWER>) _param_hy_d_nl_power,		//非线性反馈的幂次
-		(ParamFloat<px4::params::HY_D_MAX_THR>) _param_hy_d_max_thr,		//最大推力比例
+		//高阶滑模
+		(ParamFloat<px4::params::HY_HSMC_ALPHA>) _param_hy_hsmc_alpha,
+		(ParamFloat<px4::params::HY_HSMC_ETA>) _param_hy_hsmc_eta,
+		(ParamFloat<px4::params::HY_HSMC_MASS>) _param_hy_hsmc_mass,
+		(ParamFloat<px4::params::HY_HSMC_TS>) _param_hy_hsmc_ts,
+		(ParamFloat<px4::params::HY_HSMC_IMAX>) _param_hy_hsmc_imax,
+		(ParamFloat<px4::params::HY_HSMC_IMIN>) _param_hy_hsmc_imin,
 
-		(ParamFloat<px4::params::HY_D_VF_UPLIM>) _param_hy_d_vf_uplim,		//深度控制竖直力上限
-		(ParamFloat<px4::params::HY_D_VF_DNLIM>) _param_hy_d_vf_dnlim		//深度控制竖直力下限
+		//引用外部参数
+		(ParamFloat<px4::params::HY_RT_MAX_THRUST>) _param_hy_rt_max_thrust	//单个水下推进器最大推力
 	)
 
 	RateControl _rate_control; ///< class for rate control calculations

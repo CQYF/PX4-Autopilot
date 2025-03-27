@@ -275,101 +275,94 @@ void HydroRateControl::Run()
 			_vehicle_torque_setpoint.xyz[1] = math::constrain(_vehicle_torque_setpoint.xyz[1] + _param_thr_to_pit_ff.get() *
 							_vehicle_thrust_setpoint.xyz[0], -1.f, 1.f);
 
-			//获取姿态
+			//读取消息
 			_vehicle_attitude_sub.update(&_vehicle_attitude);
 			Eulerf euler_angles(Quatf(_vehicle_attitude.q));
-			//px4的算法忽略了机身的攻角对操纵面实际攻角的影响，认为操纵面的实际攻角始终等于操纵面相对于机身的角度，但这对于滑行控制而言是不可接受的，
-			//飞机在滑行时机身总是保持一定的正攻角，此时水翼的0控制量也就对应了这个正攻角，在高速滑行时，水翼只需要很小的实际攻角就可以实现控制，
-			//这个正攻角就会将实际平衡点向上大幅推移，并且一般会直接推移到平衡范围之外，也就出现了滑行中在水面上跳动的情况（当然这只是因素之一）
-			//这项增益的目的是让水翼的攻角始终以水平面为0，实现原理是利用机身的实际pit角度（也就是机身的攻角）制造一个线性项，加到俯仰力矩当中
-			//这项增益在手动模式下依然有效，并且由于控制分配机制的存在，会对小平尾产生附带影响。
-			//! 这项增益会在起飞后造成麻烦（大概），暂时只用于滑行，如果要起飞，应当将增益置0
-			//! 这项增益在手动模式下依然存在，调节增益系数的方法是在手动模式下俯仰飞机，直到在任何角度下水翼都保持水平
-			// _vehicle_torque_setpoint.xyz[1] = math::constrain(_vehicle_torque_setpoint.xyz[1] + _param_attack_ff.get() *
-			// 				euler_angles.theta(), -1.f, 1.f);
-			//（使用新的控制和分配逻辑时，不需要此补偿）
-
 			_depth_fusion_sub.update(&_depth_fusion);
 			_debug_key_value_sub.update(&_debug_key_value);
 			_vehicle_air_data_sub.update(&_vehicle_air_data);
 			_depth_estimated_sub.update(&_depth_estimated);
 			_debug_vect_sub.update(&_debug_vect);
 
-			// TODO PID和PID参数
-			//float depth = _depth_fusion.fudepth * 0.01f;//换算单位
-			//float depth = - _debug_key_value.value;
-			//float depth = _vehicle_air_data.baro_alt_meter * 0.01f;
+			// 深度（高度）真值和设定值获取，//! 向下为正，越深越正
+			// float depth = _depth_fusion.fudepth * 0.01f;//换算单位
+			// float depth = - _debug_key_value.value;
+			// float depth = _vehicle_air_data.baro_alt_meter * 0.01f;
 			// float depth = _depth_estimated.depth_estimated;
 			float depth = _debug_vect.x;
 			float depth_rate = _debug_vect.y;
-			float depth_setpoint = _param_hy_d_sp.get();
-			//深度向下为正，越深越正
+			float depth_setpoint = _param_hy_dc_sp.get();
 
 			_hydro_depth_control_message.depth = depth;
 			_hydro_depth_control_message.depth_rate = depth_rate;
 			_hydro_depth_control_message.depth_setpoint = depth_setpoint;
 
-			// 非线性反馈
-			float depth_err = (depth_setpoint - depth) / _param_hy_d_err_norm.get();
-			float nl_depth_err;
-			if(depth_err > 0)
-			{
-				nl_depth_err = std::pow(depth_err, _param_hy_d_nl_power.get());
-			}
-			else if(depth_err < 0)
-			{
-				nl_depth_err = -std::pow(-depth_err, _param_hy_d_nl_power.get());
-			}
-			else
-			{
-				nl_depth_err = 0;
-			}
+			// 水平推力比例限幅，限制遥控器的最大命令
+			float throttle_limited;
+			throttle_limited = math::constrain(_vehicle_thrust_setpoint.xyz[0], -_param_hy_dc_max_thr.get(), _param_hy_dc_max_thr.get());
+			_hydro_depth_control_message.throttle_limited = throttle_limited;
 
-			_hydro_depth_control_message.depth_err = depth_setpoint - depth;
-			_hydro_depth_control_message.depth_err_norm = depth_err;
-			_hydro_depth_control_message.nl_depth_err = nl_depth_err;
-
-			// 推力比例限幅
-			float thrust_limited;
-			if(_vehicle_thrust_setpoint.xyz[0] > _param_hy_d_max_thr.get())
-			{
-				thrust_limited = _param_hy_d_max_thr.get();
-			}
-			else if(_vehicle_thrust_setpoint.xyz[0] < -_param_hy_d_max_thr.get())
-			{
-				thrust_limited = -_param_hy_d_max_thr.get();
-			}
-			else
-			{
-				thrust_limited = _vehicle_thrust_setpoint.xyz[0];
-			}
-
-			_hydro_depth_control_message.throttle_limited = thrust_limited;
-
+			//水平推力计算，向前为正，最大为水下推进器推力的2倍
 			//! 注意，水翼的推力计算都用真值，单位是N，但力矩仍用归一化值
-			//水平推力，向前为正，和原来的推力一致，最大为水下推进器推力的2倍
-			float hydro_horizontal_thrust_setpoint = thrust_limited * 2 * _param_hy_rt_max_thrust.get();
+			float hydro_horizontal_thrust_setpoint = throttle_limited * 2 * _param_hy_rt_max_thrust.get();
 			_hydro_depth_control_message.horizontal_thrust = hydro_horizontal_thrust_setpoint;
-			//竖直推力，向!下!为正，等于深度控制的输出加上重力补偿
-			float proportion = _param_hy_d_p.get() * nl_depth_err;
-			float damp = -_param_hy_d_d.get() * depth_rate;
-			float gravity_ff = _param_hy_d_ff.get();
-			_hydro_depth_control_message.proportion = proportion;
-			_hydro_depth_control_message.damp = damp;
-			_hydro_depth_control_message.gravity_ff = gravity_ff;
 
-			float hydro_vertical_thrust_setpoint = proportion + damp + gravity_ff;
-			_hydro_depth_control_message.vertical_thrust = hydro_vertical_thrust_setpoint;
+			/* 非光滑反馈 START */
+			//TODO 非光滑反馈还有一个对舵机角度进行反馈的项，但这个项目前得不到
+			// 非光滑反馈误差计算
+			float nsf_e1 = depth_setpoint - depth;
+			float nsf_e2 = - depth_rate;
+			float nsf_s = nsf_e1 + nsf_e2*_param_hy_nsf_pt.get();
+			float nsf_s_norm = nsf_s / _param_hy_nsf_norm.get();
+			float nsf_s_norm_power = std::pow(nsf_s_norm, _param_hy_nsf_power.get());
+			// 非光滑反馈控制量计算
+			float nsf_u = nsf_s_norm_power * _param_hy_nsf_kp.get();
+			// 非光滑反馈控制量限幅
+			float nsf_u_limited =\
+				math::constrain(nsf_u, _param_hy_nsf_umin.get(), _param_hy_nsf_umax.get());
+			// 记录
+			_hydro_depth_control_message.nsf_e1 = nsf_e1;
+			_hydro_depth_control_message.nsf_e2 = nsf_e2;
+			_hydro_depth_control_message.nsf_s = nsf_s;
+			_hydro_depth_control_message.nsf_s_norm = nsf_s_norm;
+			_hydro_depth_control_message.nsf_s_norm_power = nsf_s_norm_power;
+			_hydro_depth_control_message.nsf_u = nsf_u;
+			_hydro_depth_control_message.nsf_u_limited = nsf_u_limited;
+			/* 非光滑反馈 END */
 
-			if(hydro_vertical_thrust_setpoint > _param_hy_d_vf_uplim.get())
-			{
-				hydro_vertical_thrust_setpoint = _param_hy_d_vf_uplim.get();
-			}
-			else if(hydro_vertical_thrust_setpoint < _param_hy_d_vf_dnlim.get())
-			{
-				hydro_vertical_thrust_setpoint = _param_hy_d_vf_dnlim.get();
-			}
-			_hydro_depth_control_message.vertical_thrust_limited = hydro_vertical_thrust_setpoint;
+			/* 高阶滑模 START */
+			//控制量计算
+			float hsmc_x1 = depth - depth_setpoint;
+			float hsmc_x2 = depth_rate;
+			float hsmc_surface =\
+				_param_hy_hsmc_mass.get() * _param_hy_hsmc_alpha.get() * _param_hy_hsmc_alpha.get() * hsmc_x1 +\
+				_param_hy_hsmc_mass.get() * 2 * _param_hy_hsmc_alpha.get() * hsmc_x2 + _hsmc_x3;
+			float hsmc_u =\
+				- _param_hy_hsmc_mass.get() * _param_hy_hsmc_alpha.get() * _param_hy_hsmc_alpha.get() * hsmc_x2 -\
+				2 * _param_hy_hsmc_alpha.get() * _hsmc_x3 -\
+				_param_hy_hsmc_eta.get() * math::signNoZero(hsmc_surface);
+			//积分
+			_hsmc_x3 += hsmc_u * _param_hy_hsmc_ts.get();
+			_hsmc_x3 = math::constrain(_hsmc_x3, _param_hy_hsmc_imin.get(), _param_hy_hsmc_imax.get());
+			//记录
+			_hydro_depth_control_message.hsmc_x1 = hsmc_x1;
+			_hydro_depth_control_message.hsmc_x2 = hsmc_x2;
+			_hydro_depth_control_message.hsmc_x3 = _hsmc_x3;
+			_hydro_depth_control_message.hsmc_surface = hsmc_surface;
+			_hydro_depth_control_message.hsmc_u = hsmc_u;
+			/* 高阶滑模 END */
+
+			// 根据模式选择竖直推力，向下为正
+			float hydro_vertical_thrust_setpoint;
+			int32_t dc_mode = _param_hy_dc_mode.get();
+			if(dc_mode == 1)
+				hydro_vertical_thrust_setpoint = nsf_u_limited + _param_hy_dc_ff.get();
+			else if(dc_mode == 2)
+				hydro_vertical_thrust_setpoint = _hsmc_x3 + _param_hy_dc_ff.get();
+			else
+				hydro_vertical_thrust_setpoint = 0;
+
+
 			//滑行时，机身的俯仰角近似为自然攻角，实际攻角等于翼面偏转角度加上自然攻角
 			float alpha0 = euler_angles.theta();
 

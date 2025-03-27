@@ -486,23 +486,18 @@ PARAM_DEFINE_FLOAT(HY_AIRSPD_MIN, 10.0f); //最小空速
  */
 PARAM_DEFINE_FLOAT(HY_MAN_YR_MAX, 30.f);
 
-/**
- * Depth control PID proportional gain
- *
- * @decimal 3
- * @group Hydro Depth Control
- */
-PARAM_DEFINE_FLOAT(HY_D_P, 0.1f);
-//深度控制比例增益
+//深度控制通用参数
 
 /**
- * Depth control PID damp gain
+ * Depth control mode selection
  *
- * @decimal 3
  * @group Hydro Depth Control
+ * @value 0 Disabled
+ * @value 1 NSF
+ * @value 2 HSMC
  */
-PARAM_DEFINE_FLOAT(HY_D_D, 0.0f);
-//深度控制阻尼增益
+PARAM_DEFINE_INT32(HY_DC_MODE, 0);
+//深度控制模式选择
 
 /**
  * Depth control gravity feedforward
@@ -511,7 +506,7 @@ PARAM_DEFINE_FLOAT(HY_D_D, 0.0f);
  * @decimal 3
  * @group Hydro Depth Control
  */
-PARAM_DEFINE_FLOAT(HY_D_FF, -20.f);
+PARAM_DEFINE_FLOAT(HY_DC_FF, -20.f);
 //深度控制重力补偿，向下为正
 
 /**
@@ -521,29 +516,8 @@ PARAM_DEFINE_FLOAT(HY_D_FF, -20.f);
  * @decimal 3
  * @group Hydro Depth Control
  */
-PARAM_DEFINE_FLOAT(HY_D_SP, 0.05f);
+PARAM_DEFINE_FLOAT(HY_DC_SP, 0.05f);
 //深度控制深度设定点，向下为正，即水面为0，水下为正
-
-/**
- * Depth control error normalization point
- *
- * @unit m
- * @min 0.01
- * @decimal 3
- * @group Hydro Depth Control
- */
-PARAM_DEFINE_FLOAT(HY_D_ERR_NORM, 0.1f);
-//深度控制深度误差归一化点，即这么多误差会被转化为1
-
-/**
- * Depth control error nonlinear power
- *
- * @min 0.5
- * @decimal 3
- * @group Hydro Depth Control
- */
-PARAM_DEFINE_FLOAT(HY_D_NL_POWER, 1.0f);
-//深度控制非线性反馈的幂次
 
 /**
  * Depth control max throttle
@@ -553,11 +527,51 @@ PARAM_DEFINE_FLOAT(HY_D_NL_POWER, 1.0f);
  * @decimal 3
  * @group Hydro Depth Control
  */
-PARAM_DEFINE_FLOAT(HY_D_MAX_THR, 1.0f);
+PARAM_DEFINE_FLOAT(HY_DC_MAX_THR, 1.0f);
 //深度控制最大推力比例
 
+
+//非光滑反馈参数
+
 /**
- * Depth control vertical force up limit
+ * NSF predict time
+ *
+ * @decimal 3
+ * @group Hydro Depth Control
+ * @unit s
+ */
+PARAM_DEFINE_FLOAT(HY_NSF_PT, 0.2f);
+//非光滑反馈预测时间
+
+/**
+ * NSF err norm point
+ *
+ * @decimal 3
+ * @group Hydro Depth Control
+ */
+PARAM_DEFINE_FLOAT(HY_NSF_NORM, 0.025f);
+//非光滑反馈误差归一化点
+
+/**
+ * NSF err power
+ *
+ * @decimal 3
+ * @group Hydro Depth Control
+ */
+PARAM_DEFINE_FLOAT(HY_NSF_POWER, 1.0f);
+//非光滑反馈的误差幂次
+
+/**
+ * NSF kp
+ *
+ * @decimal 3
+ * @group Hydro Depth Control
+ */
+PARAM_DEFINE_FLOAT(HY_NSF_KP, 1.0f);
+//非光滑反馈的控制增益
+
+/**
+ * NSF u_max
  *
  * @unit N
  * @min 0.0
@@ -565,11 +579,11 @@ PARAM_DEFINE_FLOAT(HY_D_MAX_THR, 1.0f);
  * @decimal 3
  * @group Hydro Depth Control
  */
-PARAM_DEFINE_FLOAT(HY_D_VF_UPLIM, 60.0f);
-//深度控制竖直力上限
+PARAM_DEFINE_FLOAT(HY_NSF_UMAX, 60.0f);
+//非光滑反馈的输出上限
 
 /**
- * Depth control vertical force down limit
+ * NSF u_min
  *
  * @unit N
  * @min -60.0
@@ -577,5 +591,64 @@ PARAM_DEFINE_FLOAT(HY_D_VF_UPLIM, 60.0f);
  * @decimal 3
  * @group Hydro Depth Control
  */
-PARAM_DEFINE_FLOAT(HY_D_VF_DNLIM, -60.0f);
-//深度控制竖直力下限
+PARAM_DEFINE_FLOAT(HY_NSF_UMIN, -60.0f);
+//非光滑反馈的输出下限
+
+//高阶滑模参数
+
+/**
+ * HSMC alpha
+ *
+ * @decimal 3
+ * @group Hydro Depth Control
+ */
+PARAM_DEFINE_FLOAT(HY_HSMC_ALPHA, 5.0f);
+//alpha越大，滑模面越陡峭，收敛越快
+
+/**
+ * HSMC eta
+ *
+ * @decimal 3
+ * @group Hydro Depth Control
+ */
+PARAM_DEFINE_FLOAT(HY_HSMC_ETA, 60.0f);
+//eta越大，理论上鲁棒性越好，到达滑模面的速度越快
+
+/**
+ * HSMC mass
+ *
+ * @unit kg
+ * @decimal 4
+ * @group Hydro Depth Control
+ */
+PARAM_DEFINE_FLOAT(HY_HSMC_MASS, 2.0f);
+//高阶滑模的质量参数
+
+/**
+ * HSMC Ts
+ *
+ * @unit s
+ * @decimal 4
+ * @group Hydro Depth Control
+ */
+PARAM_DEFINE_FLOAT(HY_HSMC_TS, 0.0025f);
+//高阶滑模的积分时间长度
+
+/**
+ * HSMC integrater max
+ *
+ * @decimal 3
+ * @group Hydro Depth Control
+ */
+PARAM_DEFINE_FLOAT(HY_HSMC_IMAX, 20.0f);
+//高阶滑模的积分上限
+
+/**
+ * HSMC integrater min
+ *
+ * @decimal 3
+ * @group Hydro Depth Control
+ */
+PARAM_DEFINE_FLOAT(HY_HSMC_IMIN, -20.0f);
+//高阶滑模的积分下限
+
