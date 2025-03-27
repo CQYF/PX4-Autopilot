@@ -38,6 +38,11 @@
 using namespace time_literals;
 using namespace matrix;
 
+float tmp_param_hy_alt_speed{0};
+float tmp_param_hy_vzrt_yaw_r{0};
+uint64_t tmp_last_update{0};
+uint32_t tmp_interval{0};
+
 HydroAllocator::HydroAllocator() :
 	ModuleParams(nullptr),
 	ScheduledWorkItem(MODULE_NAME, px4::wq_configurations::rate_ctrl),
@@ -85,7 +90,7 @@ HydroAllocator::HydroAllocator() :
 	}
 
 
-	parameters_update(true);
+	// parameters_update(true);//感觉问题是出在这里了
 }
 
 HydroAllocator::~HydroAllocator()
@@ -109,6 +114,7 @@ HydroAllocator::parameters_update(bool force)
 {
 	// check for parameter updates
 	if (_parameter_update_sub.updated() || force) {
+		PX4_INFO("Allocator updated, %llu, %lu", _parameter_update_sub.get_last_update(), _parameter_update_sub.get_interval_us());
 		// clear update
 		parameter_update_s update;
 		_parameter_update_sub.copy(&update);
@@ -204,6 +210,8 @@ void HydroAllocator::Run()
 	}
 
 	perf_begin(_loop_perf);
+
+	parameters_update();// TODO 不加上true，则单实例参数修改无效，原因不明
 
 	if (_hydro_torque_setpoint_sub.update(&_hydro_torque_setpoint_msg))
 	{
@@ -346,7 +354,10 @@ void HydroAllocator::Run()
 	hydro_allocate_message_msg.timestamp = hrt_absolute_time();
 	_hydro_allocate_message_pub.publish(hydro_allocate_message_msg);
 
-	parameters_update(true);// TODO 不加上true，则单实例参数修改无效，原因不明
+	tmp_param_hy_alt_speed = _param_hy_alt_speed.get();
+	tmp_param_hy_vzrt_yaw_r = _params.hy_vzrt_yaw_r[1];
+	tmp_last_update = _parameter_update_sub.get_last_update();
+	tmp_interval = _parameter_update_sub.get_interval_us();
 
 	// backup schedule
 	ScheduleDelayed(100_ms);
@@ -379,6 +390,12 @@ int HydroAllocator::task_spawn(int argc, char *argv[])
 
 int HydroAllocator::custom_command(int argc, char *argv[])
 {
+	if (!strcmp(argv[0], "show")) {
+		PX4_INFO("HY_ALT_SPEED: %f", static_cast<double>(tmp_param_hy_alt_speed));
+		PX4_INFO("HY_VZRT1_YAW_R: %f", static_cast<double>(tmp_param_hy_vzrt_yaw_r));
+		PX4_INFO("Allocator sub, %llu, %lu", tmp_last_update, tmp_interval);
+		return 0;
+	}
 	return print_usage("unknown command");
 }
 

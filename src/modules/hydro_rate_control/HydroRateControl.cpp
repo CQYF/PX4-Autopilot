@@ -118,6 +118,7 @@ void HydroRateControl::Run()
 
 		// check for parameter updates
 		if (params_updated) {
+			PX4_INFO("Rate updated");
 			// clear update
 			parameter_update_s pupdate;
 			_parameter_update_sub.copy(&pupdate);

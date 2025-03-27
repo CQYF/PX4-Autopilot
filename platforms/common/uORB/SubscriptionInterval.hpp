@@ -137,6 +137,7 @@ public:
 
 	uint8_t		get_instance() const { return _subscription.get_instance(); }
 	uint32_t        get_interval_us() const { return _interval_us; }
+	uint64_t	get_last_update() const { return _last_update; }
 	unsigned	get_last_generation() const { return _subscription.get_last_generation(); }
 	orb_id_t	get_topic() const { return _subscription.get_topic(); }
 

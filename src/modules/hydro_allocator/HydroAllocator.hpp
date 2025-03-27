@@ -92,7 +92,7 @@ private:
 	SquareMatrix<float, 2> J_func(Vector2f x, NfParams p);
 	void optim(float x_array[2], NfParams p);
 
-	uORB::SubscriptionInterval _parameter_update_sub{ORB_ID(parameter_update), 1_s};
+	uORB::SubscriptionInterval _parameter_update_sub{ORB_ID(parameter_update), 1_s};//这里改成1_s会导致收不到参数更新消息
 
 	uORB::SubscriptionCallbackWorkItem 	_hydro_torque_setpoint_sub{this, ORB_ID(hydro_torque_setpoint)};
 	uORB::SubscriptionCallbackWorkItem 	_hydro_thrust_setpoint_sub{this, ORB_ID(hydro_thrust_setpoint)};
