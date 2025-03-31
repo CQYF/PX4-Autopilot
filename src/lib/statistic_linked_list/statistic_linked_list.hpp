@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include <stdint.h>
+
 // 禁止直接访问空闲节点和虚拟节点
 
 template <typename T, uint8_t DataCapacity>
@@ -145,7 +147,7 @@ public:
 	}
 
 	// 插入某节点之后
-	bool insert_next(uint8_t target, const T& value, uint8_t& new_node) const {
+	bool insert_next(uint8_t target, const T& value, uint8_t& new_node) {
 		if(is_data_node(target)) {
 			if(PopFreeNode(new_node))
 			{
@@ -158,7 +160,7 @@ public:
 	}
 
 	// 插入某节点之前
-	bool insert_prev(uint8_t target, const T& value, uint8_t& new_node) const {
+	bool insert_prev(uint8_t target, const T& value, uint8_t& new_node) {
 		if(is_data_node(target)) {
 			if(PopFreeNode(new_node))
 			{
