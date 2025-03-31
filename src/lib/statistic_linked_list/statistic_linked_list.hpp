@@ -172,7 +172,7 @@ public:
 
 	// 移除节点
 	bool remove(uint8_t node) {
-		if(is_data_node(target)) {
+		if(is_data_node(node)) {
 			UnlinkNode(node);
 			PushFreeNode(node);
 			return true;
@@ -208,13 +208,13 @@ public:
 
 	// 从头部移除
 	bool remove_front() {
-		if(remove(nodes_[kFreeVirtualNode].next)) return true;
+		if(remove(nodes_[kDataVirtualNode].next)) return true;
 		return false;
 	}
 
 	// 从尾部移除
 	bool remove_back() {
-		if(remove(nodes_[kFreeVirtualNode].prev)) return true;
+		if(remove(nodes_[kDataVirtualNode].prev)) return true;
 		return false;
 	}
 
@@ -251,14 +251,13 @@ private:
 		if(is_full()) return false;
 
 		index = nodes_[kFreeVirtualNode].next;
-		nodes_[kFreeVirtualNode].next == nodes_[index].next;
+		nodes_[kFreeVirtualNode].next = nodes_[index].next;
 		return true;
 	}
 
 	void PushFreeNode(uint8_t index) {
 		nodes_[index].next = nodes_[kFreeVirtualNode].next;
 		nodes_[index].prev = kFreeVirtualNode;
-		nodes_[kFreeVirtualNode].next == index;
-		return true;
+		nodes_[kFreeVirtualNode].next = index;
 	}
 };
