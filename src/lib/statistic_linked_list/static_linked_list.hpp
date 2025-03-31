@@ -73,6 +73,13 @@ public:
 		}
 		return false;
 	}
+	bool visit(uint8_t node, T* value) const {
+		if(is_data_node(node)) {
+			value = &(data_[node]);
+			return true;
+		}
+		return false;
+	}
 
 	// 获取头节点
 	bool get_head(uint8_t& node) const {
@@ -125,6 +132,13 @@ public:
 		}
 		return false;
 	}
+	bool get_next(uint8_t node, uint8_t& next, T* value) {
+		if(get_next(node, next)) {
+			value = &(data_[next]);
+			return true;
+		}
+		return false;
+	}
 
 	// 获取上一节点
 	bool get_prev(uint8_t node, uint8_t& prev) const {
@@ -141,6 +155,13 @@ public:
 	bool get_prev(uint8_t node, uint8_t& prev, T& value) const {
 		if(get_prev(node, prev)) {
 			value = data_[prev];
+			return true;
+		}
+		return false;
+	}
+	bool get_prev(uint8_t node, uint8_t& prev, T* value) const {
+		if(get_prev(node, prev)) {
+			value = &(data_[prev]);
 			return true;
 		}
 		return false;

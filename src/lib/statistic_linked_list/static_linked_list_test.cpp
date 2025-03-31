@@ -1,4 +1,4 @@
-#include "statistic_linked_list.hpp"
+#include "static_linked_list.hpp"
 #include <gtest/gtest.h>
 #include <vector>
 
