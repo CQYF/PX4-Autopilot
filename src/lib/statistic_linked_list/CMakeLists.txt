@@ -33,3 +33,5 @@
 
 add_library(StaticLinkedList INTERFACE)
 target_include_directories(StaticLinkedList INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+px4_add_unit_gtest(SRC statistic_linked_list_test.cpp LINKLIBS StaticLinkedList)
