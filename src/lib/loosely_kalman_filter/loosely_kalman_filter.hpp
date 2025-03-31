@@ -20,13 +20,14 @@ class LooselyKalmanFilter {
 private:
 	struct HistoryData {
 		uint64_t timestamp;			// 时间戳
-		Type z;					// 观测值
+		Matrix<Type, 1, 1> z;			// 观测值
 		Matrix<Type, 1, StateDim> H;		// 观测矩阵
-		Type R;					// 观测噪声
-		Vector<Type, StateDim> x;		// 状态
+		Matrix<Type, 1, 1> R;			// 观测噪声
+		Matrix<Type, StateDim, 1> x;		// 状态
 		Matrix<Type, StateDim, StateDim> P;	// 状态协方差
 
-		HistoryData(uint64_t _timestamp, Type _z, Matrix<Type, 1, StateDim> _H, Type _R) :
+		HistoryData(uint64_t _timestamp, Matrix<Type, 1, 1> _z,\
+			 Matrix<Type, 1, StateDim> _H, Matrix<Type, 1, 1> _R) :
 			timestamp(_timestamp),
 			z(_z),
 			H(_H),
@@ -47,6 +48,8 @@ private:
 	uint8_t need_update_node;
 	uint64_t need_update_timestamp;
 
+	std::function<void(Matrix<Type, StateDim, StateDim>&, uint64_t&)> calc_F;
+	std::function<void(Matrix<Type, StateDim, StateDim>&, uint64_t&)> calc_Q;
 
 
 public:
@@ -58,7 +61,7 @@ public:
 		lifespan(lifespan_) {}
 
 	// 插入新数据，新的数据在尾部
-	bool insert_data(uint64_t timestamp, Type z, Matrix<Type, 1, StateDim> H, Type R) {
+	bool insert_data(uint64_t timestamp, Matrix<Type, 1, 1> z, Matrix<Type, 1, StateDim> H, Matrix<Type, 1, 1> R) {
 		if(hrt_absolute_time() - timestamp > lifespan) return false;
 		if(history_list_.is_full()) return false;
 
@@ -135,13 +138,13 @@ public:
 		need_update = false;
 	}
 
-	bool update(Vector<Type, StateDim>& x_out, Matrix<Type, StateDim, StateDim>& P_out)
+	bool update(Matrix<Type, StateDim, 1>& x_out, Matrix<Type, StateDim, StateDim>& P_out)
 	{
 		HistoryData* data_1;
 		uint8_t node_1;
 		HistoryData* data_2;
 		uint8_t node_2;
-		Vector<Type, StateDim> x;
+		Matrix<Type, StateDim, 1> x;
 		Matrix<Type, StateDim, StateDim> P;
 
 		if(need_update) {
@@ -166,12 +169,15 @@ public:
 				x = F*x;
 				P = F*P*F.transpose() + Q;
 
-				Type z = data_2->z;
+				Matrix<Type, 1, 1> z = data_2->z;
 				Matrix<Type, 1, StateDim> H = data_2->H;
+				Matrix<Type, 1, 1> R = data_2->R;
 
 				// 更新
-				Type y = z - H*x;
-				Matrix<Type, StateDim, 1> K = P*H.transpose() / (H*P*H.transpose()+R);
+				Matrix<Type, 1, 1> y = z - H*x;
+				Matrix<Type, 1, 1> tmp_inv;
+				inv(H*P*H.transpose()+R, tmp_inv);
+				Matrix<Type, StateDim, 1> K = P*H.transpose() * tmp_inv;
 				x = x + K*y;
 				Matrix<Type, StateDim, StateDim> I;
 				I.setIdentity();
