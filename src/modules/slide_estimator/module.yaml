@@ -3,15 +3,6 @@ parameters:
 - group: SlideEstimator
   definitions:
 
-    #模块运行间隔
-    HY_SE_TS:
-      description:
-        short: Module running interval
-      unit: us
-      type: int32
-      min: 1000
-      default: 1000
-
     #根据水压计算深度的参数
     HY_SE_PR_P0:
       description:
@@ -65,13 +56,6 @@ parameters:
       type: float
       default: 0.0
 
-    #是否根据水位计饱和情况调整位置更新增益
-    HY_SE_LV_IS_SAT:
-      description:
-        short: Should the position update gain adjusted based on the saturation
-      type: boolean
-      default: 0
-
     #水位计长度
     HY_SE_LV_LEN:
       description:
@@ -115,22 +99,54 @@ parameters:
       type: float
       default: 0.0
 
-    #位置更新增益，实际增益等于该参数乘以时间间隔
-    HY_SE_POS_K:
+    #历史记录的过期时间
+    HY_SE_LIFESPAN:
       description:
-        short: Position update gain
-        long: Position update gain, the actual gain is equal to the parameter multiplied by the time interval
-      type: float
-      min: 0.0
-      default: 0.0
-    #速度更新增益，实际增益等于该参数乘以时间间隔
-    HY_SE_VEL_K:
-      description:
-        short: Velocity update gain
-        long: Velocity update gain, the actual gain is equal to the parameter multiplied by the time interval
-      type: float
-      min: 0.0
-      default: 0.0
+        short: The lifespan of historical records
+      type: int32
+      unit: us
+      min: 1000000
+      default: 100000000
 
+    #压强计数据求微分的最大时间间隔
+    HY_SE_PR_DT_MAX:
+      description:
+        short: The maximum time interval for differentiating pressure gauge data
+      type: int32
+      unit: us
+      min: 0
+      default: 20000000
+
+    #加速度项的测量噪声
+    HY_SE_R_ACC:
+      description:
+        short: Measurement noise of acceleration term
+      type: float
+      min: 0.0
+      default: 0.1
+
+    #速度项的测量噪声
+    HY_SE_R_VEL:
+      description:
+        short: Measurement noise of velocity term
+      type: float
+      min: 0.0
+      default: 3.0
+
+    #位置项的测量噪声
+    HY_SE_R_POS:
+      description:
+        short: Measurement noise of position term
+      type: float
+      min: 0.0
+      default: 2.0
+
+    #加速度项的过程噪声
+    HY_SE_Q_ACC:
+      description:
+        short: Process noise of acceleration term
+      type: float
+      min: 0.0
+      default: 1
 
 

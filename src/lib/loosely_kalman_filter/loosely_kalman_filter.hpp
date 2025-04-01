@@ -26,6 +26,8 @@ private:
 		Matrix<Type, StateDim, 1> x;		// 状态
 		Matrix<Type, StateDim, StateDim> P;	// 状态协方差
 
+		HistoryData() {}
+
 		HistoryData(uint64_t _timestamp, Matrix<Type, 1, 1> _z,\
 			 Matrix<Type, 1, StateDim> _H, Matrix<Type, 1, 1> _R) :
 			timestamp(_timestamp),
@@ -39,26 +41,27 @@ private:
 
 	StaticLinkedList<HistoryData, HistoryCapacity> history_list_;
 
-	static constexpr uint8_t kStateDim = StateDim;
-	static constexpr uint8_t kHistoryCapacity = HistoryCapacity;
-
 	uint64_t lifespan;
 
 	bool need_update{false};
 	uint8_t need_update_node;
 	uint64_t need_update_timestamp;
 
-	std::function<void(Matrix<Type, StateDim, StateDim>&, uint64_t&)> calc_F;
-	std::function<void(Matrix<Type, StateDim, StateDim>&, uint64_t&)> calc_Q;
+	using FuncPtr = void(*)(Matrix<Type, StateDim, StateDim>&, uint64_t&);
+
+	FuncPtr calc_F;
+	FuncPtr calc_Q;
 
 
 public:
-	LooselyKalmanFilter(std::function<void(Matrix<Type, StateDim, StateDim>&, uint64_t&)> calc_F_,\
-		std::function<void(Matrix<Type, StateDim, StateDim>&, uint64_t&)> calc_Q_,\
-		uint64_t lifespan_) :
+	LooselyKalmanFilter(FuncPtr calc_F_, FuncPtr calc_Q_, uint64_t lifespan_) :
+		lifespan(lifespan_),
 		calc_F(calc_F_),
-		calc_Q(calc_Q_),
-		lifespan(lifespan_) {}
+		calc_Q(calc_Q_) {}
+
+	void set_lifespan(uint64_t new_lifespan) {
+		lifespan = new_lifespan;
+	}
 
 	// 插入新数据，新的数据在尾部
 	bool insert_data(uint64_t timestamp, Matrix<Type, 1, 1> z, Matrix<Type, 1, StateDim> H, Matrix<Type, 1, 1> R) {
@@ -66,7 +69,7 @@ public:
 		if(history_list_.is_full()) return false;
 
 		HistoryData new_data(timestamp, z, H, R);
-		uint8_t new_node;
+		uint8_t new_node = 0;
 		HistoryData prev_data;
 		uint8_t prev_node;
 
@@ -140,24 +143,25 @@ public:
 
 	bool update(Matrix<Type, StateDim, 1>& x_out, Matrix<Type, StateDim, StateDim>& P_out)
 	{
-		HistoryData* data_1;
+		HistoryData unused_data_0;// 防止报错
+		HistoryData* data_1 = &unused_data_0;
 		uint8_t node_1;
-		HistoryData* data_2;
+		HistoryData* data_2 = &unused_data_0;
 		uint8_t node_2;
 		Matrix<Type, StateDim, 1> x;
 		Matrix<Type, StateDim, StateDim> P;
 
 		if(need_update) {
 			// 如果需要更新的最早节点之前还有节点，则从之前的节点开始，否则从需要更新的最早节点开始
-			if( ! history_list_.get_prev(need_update_node, node_1, data_1))	{
+			if( ! history_list_.get_prev(need_update_node, node_1, &data_1)) {
 				node_1 = need_update_node;
-				history_list_.visit(node_1, data_1);
+				history_list_.visit(node_1, &data_1);
 			}
 
 			x = data_1->x;
 			P = data_1->P;
 
-			while(history_list_.get_next(node_1, node_2, data_2)) {
+			while(history_list_.get_next(node_1, node_2, &data_2)) {
 				// 计算状态转移矩阵和过程噪声矩阵
 				uint64_t dt = data_2->timestamp - data_1->timestamp;
 				Matrix<Type, StateDim, StateDim> F;
@@ -175,9 +179,12 @@ public:
 
 				// 更新
 				Matrix<Type, 1, 1> y = z - H*x;
-				Matrix<Type, 1, 1> tmp_inv;
-				inv(H*P*H.transpose()+R, tmp_inv);
-				Matrix<Type, StateDim, 1> K = P*H.transpose() * tmp_inv;
+				SquareMatrix<Type, 1> tmp_hph;
+				SquareMatrix<Type, 1> tmp_inv;
+				tmp_hph = H*P*H.transpose()+R;
+				inv(tmp_hph, tmp_inv);
+				Matrix<Type, 1, 1> tmp_inv_1(tmp_inv);
+				Matrix<Type, StateDim, 1> K = P*H.transpose() * tmp_inv_1;
 				x = x + K*y;
 				Matrix<Type, StateDim, StateDim> I;
 				I.setIdentity();
@@ -197,7 +204,7 @@ public:
 		}
 
 		// 预测到当前时间
-		if(history_list_.get_tail(need_update_node, node_1, data_1)) {
+		if(history_list_.get_tail(node_1, &data_1)) {
 			x = data_1->x;
 			P = data_1->P;
 			uint64_t dt = hrt_absolute_time() - data_1->timestamp;
@@ -207,7 +214,7 @@ public:
 			calc_Q(Q, dt);
 
 			x = F*x;
-			P = F*x*F.transpose() + Q;
+			P = F*P*F.transpose() + Q;
 
 			x_out = x;
 			P_out = P;

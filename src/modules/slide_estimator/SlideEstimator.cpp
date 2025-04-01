@@ -37,13 +37,39 @@
 
 using namespace time_literals;
 
+float SlideEstimator::hy_se_q_acc = 0.0f;
+
+void SlideEstimator::calc_F(Matrix<double, 3, 3>& F, uint64_t& dt)
+{
+	double t = (double)dt;
+	double t2 = t*t;
+
+	F.setZero();
+	F(0,0) = 1;
+	F(1,1) = 1;
+	F(2,2) = 1;
+	F(0,1) = t;
+	F(1,2) = t;
+	F(0,2) = t2/2;
+}
+
+void SlideEstimator::calc_Q(Matrix<double, 3, 3>& Q, uint64_t& dt)
+{
+	double t = (double)dt;
+	Q.setZero();
+	Q(2,2) = t * (double)hy_se_q_acc;
+}
+
 SlideEstimator::SlideEstimator() :
 	ModuleParams(nullptr),
 	ScheduledWorkItem(MODULE_NAME, px4::wq_configurations::nav_and_controllers),
-	_loop_perf(perf_alloc(PC_ELAPSED, MODULE_NAME": cycle"))
+	_loop_perf(perf_alloc(PC_ELAPSED, MODULE_NAME": cycle")),
+	_kf(calc_F, calc_Q, (uint64_t)100000000)
 {
 	/* fetch initial parameter values */
 	updateParams();
+	_kf.set_lifespan((uint64_t)_param_hy_se_lifespan.get());
+	hy_se_q_acc = _param_hy_se_q_acc.get();
 }
 
 SlideEstimator::~SlideEstimator()
@@ -89,32 +115,34 @@ void SlideEstimator::Run()
 
 		// update parameters from storage
 		updateParams();
+
+		_kf.set_lifespan((uint64_t)_param_hy_se_lifespan.get());
+		hy_se_q_acc = _param_hy_se_q_acc.get();
 	}
 
 	// 读取四元数姿态并保存
-	if(_vehicle_attitude_sub.updated())
+	vehicle_attitude_s vehicle_attitude;
+	while(_vehicle_attitude_sub.update(&vehicle_attitude))
 	{
-		vehicle_attitude_s vehicle_attitude;
-		_vehicle_attitude_sub.copy(&vehicle_attitude);
 		Quatf q_new(vehicle_attitude.q);
 		_q = q_new;
 	}
 
 	// 读取角速度并保存
-	if(_vehicle_angular_velocity_sub.updated())
+	vehicle_angular_velocity_s vehicle_angular_velocity;
+	while(_vehicle_angular_velocity_sub.update(&vehicle_angular_velocity))
 	{
-		vehicle_angular_velocity_s vehicle_angular_velocity;
-		_vehicle_angular_velocity_sub.copy(&vehicle_angular_velocity);
 		Vector3f w_new(vehicle_angular_velocity.xyz);
 		_w = w_new;
 	}
 
-	// 收到加速度数据
-	if(_vehicle_acceleration_sub.updated())
-	{
-		vehicle_acceleration_s vehicle_acceleration;
-		_vehicle_acceleration_sub.copy(&vehicle_acceleration);
+	// 清理过期数据
+	_kf.clear_outofdate_data();
 
+	// 收到加速度数据
+	vehicle_acceleration_s vehicle_acceleration;
+	while(_vehicle_acceleration_sub.update(&vehicle_acceleration))
+	{
 		// 加速度矢量，在b系下表示。
 		Vector3f vb_a(vehicle_acceleration.xyz);
 
@@ -124,16 +152,21 @@ void SlideEstimator::Run()
 		// 计算高度的加速度
 		_imu_height_acc = ve_a(2);
 
-		// 执行预测步骤
-		predict_acc();
+		// 调用kalman
+		uint64_t t = vehicle_acceleration.timestamp_sample;
+		double z_list[] = {_imu_height_acc};
+		double H_list[] = {0,0,1};
+		double R_list[] = {_param_hy_se_r_acc.get()};
+		Matrix<double, 1, 1> z(z_list);
+		Matrix<double, 1, 3> H(H_list);
+		Matrix<double, 1, 1> R(R_list);
+		_kf.insert_data(t, z, H, R);
 	}
 
 	// 收到压强计数据
-	if(_sensor_baro_sub.updated())
+	sensor_baro_s sensor_baro;
+	while(_sensor_baro_sub.update(&sensor_baro))
 	{
-		sensor_baro_s sensor_baro;
-		_sensor_baro_sub.copy(&sensor_baro);
-
 		// 根据压强计读数计算深度测量值
 		_pr_depth = pressure2depth(sensor_baro.pressure);
 		// 如果深度测量值合法
@@ -144,15 +177,22 @@ void SlideEstimator::Run()
 
 			// 如果时间戳差值没有超过阈值
 			uint64_t delta_ts = _pr_depth_legal_ts - _pr_depth_legal_ts_last;
-			if(delta_ts < 50000)
+			if(delta_ts < (uint64_t)_param_hy_se_pr_dt_max.get())
 			{
 				// 计算深度的变化率
 				_pr_depth_rate = (_pr_depth_legal - _pr_depth_legal_last) * 1000000 / (float)delta_ts;
 
 				calc_pr_height_rate();
 
-				// 执行速度更新步骤
-				update_vel();
+				// 调用kalman
+				uint64_t t = _pr_depth_legal_ts_last;
+				double z_list[] = {_pr_height_rate};
+				double H_list[] = {0,1,0};
+				double R_list[] = {_param_hy_se_r_vel.get()};
+				Matrix<double, 1, 1> z(z_list);
+				Matrix<double, 1, 3> H(H_list);
+				Matrix<double, 1, 1> R(R_list);
+				_kf.insert_data(t, z, H, R);
 			}
 
 			// 保存数据
@@ -161,17 +201,28 @@ void SlideEstimator::Run()
 		}
 	}
 
-	if(_adc_report_sub.updated())
+	// 收到水位计数据
+	adc_report_s adc_report;
+	while(_adc_report_sub.update(&adc_report))
 	{
-		adc_report_s adc_report;
-		_adc_report_sub.copy(&adc_report);
-
 		calc_lv_immersion();
 		calc_lv_saturation();
 		calc_lv_height();
 
-		// 执行位置更新步骤
-		update_pos();
+		// 调用kalman
+		uint64_t t = adc_report.timestamp;
+		double z_list[] = {_lv_height};
+		double H_list[] = {1,0,0};
+		double R_list[] = {_param_hy_se_r_pos.get()};
+		Matrix<double, 1, 1> z(z_list);
+		Matrix<double, 1, 3> H(H_list);
+		Matrix<double, 1, 1> R(R_list);
+		_kf.insert_data(t, z, H, R);
+	}
+
+	if(_kf.update(_x_out, _P_out))
+	{
+		;
 	}
 
 	// backup schedule
@@ -274,36 +325,6 @@ void SlideEstimator::calc_pr_height_rate()
 
 	// 计算高度变化率
 	_pr_height_rate = _pr_depth_rate + ve_dotpr(2);
-}
-
-// 预测
-void SlideEstimator::predict_acc()
-{
-	float ts = (float)(_param_hy_se_ts.get()) / 1000000.0f;
-	_hat_height += _hat_dot_height*ts + _imu_height_acc*ts*ts/2.0f;
-	_hat_dot_height += _imu_height_acc*ts;
-}
-
-// 速度更新
-void SlideEstimator::update_vel()
-{
-	float ts = (float)(_param_hy_se_ts.get()) / 1000000.0f;
-	float obs = _pr_height_rate;
-	float K = _param_hy_se_vel_k.get() * ts;
-	_hat_dot_height += (obs - _hat_dot_height) * K;
-}
-
-// 位置更新
-void SlideEstimator::update_pos()
-{
-	float ts = (float)(_param_hy_se_ts.get()) / 1000000.0f;
-	float obs = _lv_height;
-	float K = _param_hy_se_pos_k.get() * ts;
-	if(_param_hy_se_lv_is_sat.get()) // 这个功能在实物上估计不会好用
-	{
-		K *= 1 - _lv_satuation;
-	}
-	_hat_height += (obs - _hat_height) * K;
 }
 
 int SlideEstimator::task_spawn(int argc, char *argv[])

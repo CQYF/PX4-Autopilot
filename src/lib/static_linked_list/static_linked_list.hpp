@@ -73,9 +73,9 @@ public:
 		}
 		return false;
 	}
-	bool visit(uint8_t node, T* value) const {
+	bool visit(uint8_t node, T** value) {
 		if(is_data_node(node)) {
-			value = &(data_[node]);
+			*value = &(data_[node]);
 			return true;
 		}
 		return false;
@@ -96,6 +96,13 @@ public:
 		}
 		return false;
 	}
+	bool get_head(uint8_t& node, T** value) {
+		if(get_head(node)) {
+			*value = &(data_[node]);
+			return true;
+		}
+		return false;
+	}
 
 	//获取尾节点
 	bool get_tail(uint8_t& node) const {
@@ -108,6 +115,13 @@ public:
 	bool get_tail(uint8_t& node, T& value) const {
 		if(get_tail(node)) {
 			value = data_[node];
+			return true;
+		}
+		return false;
+	}
+	bool get_tail(uint8_t& node, T** value) {
+		if(get_tail(node)) {
+			*value = &(data_[node]);
 			return true;
 		}
 		return false;
@@ -132,9 +146,9 @@ public:
 		}
 		return false;
 	}
-	bool get_next(uint8_t node, uint8_t& next, T* value) {
+	bool get_next(uint8_t node, uint8_t& next, T** value) {
 		if(get_next(node, next)) {
-			value = &(data_[next]);
+			*value = &(data_[next]);
 			return true;
 		}
 		return false;
@@ -159,9 +173,9 @@ public:
 		}
 		return false;
 	}
-	bool get_prev(uint8_t node, uint8_t& prev, T* value) const {
+	bool get_prev(uint8_t node, uint8_t& prev, T** value) {
 		if(get_prev(node, prev)) {
-			value = &(data_[prev]);
+			*value = &(data_[prev]);
 			return true;
 		}
 		return false;
