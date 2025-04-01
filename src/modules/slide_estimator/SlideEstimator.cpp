@@ -44,6 +44,7 @@ uint32_t dbg_insert_data_num = 0;
 void SlideEstimator::calc_F(Matrix<double, 3, 3>& F, uint64_t& dt)
 {
 	double t = (double)dt;
+	t /= 1000000;
 	double t2 = t*t;
 
 	F.setZero();
@@ -58,6 +59,7 @@ void SlideEstimator::calc_F(Matrix<double, 3, 3>& F, uint64_t& dt)
 void SlideEstimator::calc_Q(Matrix<double, 3, 3>& Q, uint64_t& dt)
 {
 	double t = (double)dt;
+	t /= 1000000;
 	Q.setZero();
 	Q(2,2) = t * (double)hy_se_q_acc;
 }
@@ -66,7 +68,7 @@ SlideEstimator::SlideEstimator() :
 	ModuleParams(nullptr),
 	ScheduledWorkItem(MODULE_NAME, px4::wq_configurations::nav_and_controllers),
 	_loop_perf(perf_alloc(PC_ELAPSED, MODULE_NAME": cycle")),
-	_kf(calc_F, calc_Q, (uint64_t)100000000)
+	_kf(calc_F, calc_Q, (uint64_t)100000)
 {
 	/* fetch initial parameter values */
 	updateParams();
