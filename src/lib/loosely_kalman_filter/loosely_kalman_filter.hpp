@@ -74,6 +74,11 @@ public:
 			do {
 				cnt++;
 				PX4_INFO("%u %llu", cnt, data.timestamp);
+				data.z.print();
+				data.R.print();
+				data.H.print();
+				data.x.print();
+				data.P.print();
 			} while (history_list_.get_next(node, node, data));
 		}
 	}

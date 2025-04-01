@@ -152,7 +152,7 @@ void SlideEstimator::Run()
 		Vector3f ve_a = _q.rotateVector(vb_a);
 
 		// 计算高度的加速度
-		_imu_height_acc = ve_a(2);
+		_imu_height_acc = ve_a(2) + _param_hy_se_g.get();
 
 		// 调用kalman
 		uint64_t t = vehicle_acceleration.timestamp_sample;
@@ -164,6 +164,8 @@ void SlideEstimator::Run()
 		Matrix<double, 1, 1> R(R_list);
 		_kf.insert_data(t, z, H, R);
 		dbg_insert_data_num++;
+
+		_slide_estimated.x3_measure = _imu_height_acc;
 	}
 
 	// 收到压强计数据
@@ -197,6 +199,8 @@ void SlideEstimator::Run()
 				Matrix<double, 1, 1> R(R_list);
 				_kf.insert_data(t, z, H, R);
 				dbg_insert_data_num++;
+
+				_slide_estimated.x2_measure = _pr_depth_rate;
 			}
 
 			// 保存数据
@@ -223,11 +227,17 @@ void SlideEstimator::Run()
 		Matrix<double, 1, 1> R(R_list);
 		_kf.insert_data(t, z, H, R);
 		dbg_insert_data_num++;
+
+		_slide_estimated.x1_measure = _lv_height;
 	}
 
 	if(_kf.update(_x_out, _P_out))
 	{
-		;
+		_slide_estimated.x1_fusion = (float)_x_out(0, 0);
+		_slide_estimated.x2_fusion = (float)_x_out(1, 0);
+		_slide_estimated.x3_fusion = (float)_x_out(2, 0);
+		_slide_estimated.timestamp = hrt_absolute_time();
+		_slide_estimated_pub.publish(_slide_estimated);
 	}
 
 	if(run_info) {
@@ -362,8 +372,7 @@ int SlideEstimator::task_spawn(int argc, char *argv[])
 
 int SlideEstimator::custom_command(int argc, char *argv[])
 {
-	if (!strcmp(argv[0], "info")) {
-		PX4_WARN("here");
+	if (!strcmp(argv[0], "show")) {
 		PX4_INFO("%lu", dbg_insert_data_num);
 		run_info = true;
 		return 0;

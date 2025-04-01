@@ -105,8 +105,8 @@ parameters:
         short: The lifespan of historical records
       type: int32
       unit: us
-      min: 1000000
-      default: 100000000
+      min: 1000
+      default: 100000
 
     #压强计数据求微分的最大时间间隔
     HY_SE_PR_DT_MAX:
@@ -115,7 +115,7 @@ parameters:
       type: int32
       unit: us
       min: 0
-      default: 20000000
+      default: 20000
 
     #加速度项的测量噪声
     HY_SE_R_ACC:
