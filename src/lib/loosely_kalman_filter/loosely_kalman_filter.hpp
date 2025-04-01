@@ -8,6 +8,8 @@
 
 #pragma once
 
+// #define LKF_RECORD_K
+
 #include <stdint.h>
 #include <lib/static_linked_list/static_linked_list.hpp>
 #include <lib/matrix/matrix/math.hpp>
@@ -28,6 +30,10 @@ private:
 		Matrix<Type, StateDim, 1> x;		// 状态
 		Matrix<Type, StateDim, StateDim> P;	// 状态协方差
 
+		#ifdef LKF_RECORD_K
+		Matrix<Type, StateDim, 1> K;
+		#endif
+
 		HistoryData() {}
 
 		HistoryData(uint64_t _timestamp, Matrix<Type, 1, 1> _z,\
@@ -38,6 +44,9 @@ private:
 			R(_R) {
 				x.setZero();
 				P.setZero();
+				#ifdef LKF_RECORD_K
+				K.setZero();
+				#endif
 		}
 	};
 
@@ -79,6 +88,9 @@ public:
 				data.H.print();
 				data.x.print();
 				data.P.print();
+				#ifdef LKF_RECORD_K
+				data.K.print();
+				#endif
 			} while (history_list_.get_next(node, node, data));
 		}
 	}
@@ -215,6 +227,9 @@ public:
 
 				data_2->x = x;
 				data_2->P = P;
+				#ifdef LKF_RECORD_K
+				data_2->K = K;
+				#endif
 
 				node_1 = node_2;
 				data_1 = data_2;

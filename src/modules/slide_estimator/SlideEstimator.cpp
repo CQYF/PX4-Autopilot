@@ -39,7 +39,6 @@ using namespace time_literals;
 
 float SlideEstimator::hy_se_q_acc = 0.0f;
 bool SlideEstimator::run_info = false;
-uint32_t dbg_insert_data_num = 0;
 
 void SlideEstimator::calc_F(Matrix<double, 3, 3>& F, uint64_t& dt)
 {
@@ -165,7 +164,6 @@ void SlideEstimator::Run()
 		Matrix<double, 1, 3> H(H_list);
 		Matrix<double, 1, 1> R(R_list);
 		_kf.insert_data(t, z, H, R);
-		dbg_insert_data_num++;
 
 		_slide_estimated.x3_measure = _imu_height_acc;
 	}
@@ -200,7 +198,6 @@ void SlideEstimator::Run()
 				Matrix<double, 1, 3> H(H_list);
 				Matrix<double, 1, 1> R(R_list);
 				_kf.insert_data(t, z, H, R);
-				dbg_insert_data_num++;
 
 				_slide_estimated.x2_measure = _pr_depth_rate;
 			}
@@ -228,7 +225,6 @@ void SlideEstimator::Run()
 		Matrix<double, 1, 3> H(H_list);
 		Matrix<double, 1, 1> R(R_list);
 		_kf.insert_data(t, z, H, R);
-		dbg_insert_data_num++;
 
 		_slide_estimated.x1_measure = _lv_height;
 	}
@@ -375,7 +371,6 @@ int SlideEstimator::task_spawn(int argc, char *argv[])
 int SlideEstimator::custom_command(int argc, char *argv[])
 {
 	if (!strcmp(argv[0], "show")) {
-		PX4_INFO("%lu", dbg_insert_data_num);
 		run_info = true;
 		return 0;
 	}
