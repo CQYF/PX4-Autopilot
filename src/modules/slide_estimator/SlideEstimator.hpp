@@ -107,7 +107,7 @@ private:
 
 	perf_counter_t _loop_perf;
 
-	LooselyKalmanFilter<double, 50, 3> _kf;
+	LooselyKalmanFilter<double, 150, 3> _kf;
 
 	Matrix<double, 3, 1> _x_out;
 	Matrix<double, 3, 3> _P_out;
@@ -115,6 +115,8 @@ private:
 	static float hy_se_q_acc;
 	static void calc_F(Matrix<double, 3, 3>& F, uint64_t& dt);
 	static void calc_Q(Matrix<double, 3, 3>& Q, uint64_t& dt);
+
+	static bool run_info;
 
 	/**
 	 * pr:压强计  lv:水位计

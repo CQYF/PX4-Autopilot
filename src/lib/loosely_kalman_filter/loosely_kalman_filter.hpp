@@ -13,6 +13,8 @@
 #include <lib/matrix/matrix/math.hpp>
 #include <drivers/drv_hrt.h>
 
+#include <px4_platform_common/log.h>
+
 using namespace matrix;
 
 template <typename Type, uint8_t HistoryCapacity, uint8_t StateDim>
@@ -63,13 +65,26 @@ public:
 		lifespan = new_lifespan;
 	}
 
+	void info() {
+		HistoryData data;
+		uint8_t node;
+		uint8_t cnt = 0;
+		if(history_list_.get_head(node, data))
+		{
+			do {
+				cnt++;
+				PX4_INFO("%u %llu", cnt, data.timestamp);
+			} while (history_list_.get_next(node, node, data));
+		}
+	}
+
 	// 插入新数据，新的数据在尾部
 	bool insert_data(uint64_t timestamp, Matrix<Type, 1, 1> z, Matrix<Type, 1, StateDim> H, Matrix<Type, 1, 1> R) {
 		if(hrt_absolute_time() - timestamp > lifespan) return false;
 		if(history_list_.is_full()) return false;
 
 		HistoryData new_data(timestamp, z, H, R);
-		uint8_t new_node = 0;
+		uint8_t new_node = 0; // 避免报错
 		HistoryData prev_data;
 		uint8_t prev_node;
 

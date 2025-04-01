@@ -38,6 +38,8 @@
 using namespace time_literals;
 
 float SlideEstimator::hy_se_q_acc = 0.0f;
+bool SlideEstimator::run_info = false;
+uint32_t dbg_insert_data_num = 0;
 
 void SlideEstimator::calc_F(Matrix<double, 3, 3>& F, uint64_t& dt)
 {
@@ -161,6 +163,7 @@ void SlideEstimator::Run()
 		Matrix<double, 1, 3> H(H_list);
 		Matrix<double, 1, 1> R(R_list);
 		_kf.insert_data(t, z, H, R);
+		dbg_insert_data_num++;
 	}
 
 	// 收到压强计数据
@@ -193,6 +196,7 @@ void SlideEstimator::Run()
 				Matrix<double, 1, 3> H(H_list);
 				Matrix<double, 1, 1> R(R_list);
 				_kf.insert_data(t, z, H, R);
+				dbg_insert_data_num++;
 			}
 
 			// 保存数据
@@ -218,11 +222,17 @@ void SlideEstimator::Run()
 		Matrix<double, 1, 3> H(H_list);
 		Matrix<double, 1, 1> R(R_list);
 		_kf.insert_data(t, z, H, R);
+		dbg_insert_data_num++;
 	}
 
 	if(_kf.update(_x_out, _P_out))
 	{
 		;
+	}
+
+	if(run_info) {
+		_kf.info();
+		run_info = false;
 	}
 
 	// backup schedule
@@ -352,6 +362,12 @@ int SlideEstimator::task_spawn(int argc, char *argv[])
 
 int SlideEstimator::custom_command(int argc, char *argv[])
 {
+	if (!strcmp(argv[0], "info")) {
+		PX4_WARN("here");
+		PX4_INFO("%lu", dbg_insert_data_num);
+		run_info = true;
+		return 0;
+	}
 	return print_usage("unknown command");
 }
 
