@@ -55,7 +55,8 @@ int ADS1115::init()
 
 	setChannel(ADS1115::A0);  // prepare for the first measure.
 
-	ScheduleOnInterval(SAMPLE_INTERVAL / 4, SAMPLE_INTERVAL / 4);
+	// ScheduleOnInterval(SAMPLE_INTERVAL / 4, SAMPLE_INTERVAL / 4);
+	ScheduleOnInterval(SAMPLE_INTERVAL, SAMPLE_INTERVAL);
 
 	return PX4_OK;
 }
@@ -171,23 +172,24 @@ ADS1115::ChannelSelection ADS1115::cycleMeasure(int16_t *value)
 	switch ((buf[0] & (uint8_t) 0x70) >> 4) {
 	case 0x04:
 		channel = A0;
-		next_mux_reg = CONFIG_HIGH_MUX_P1NG;
-		break;
-
-	case 0x05:
-		channel = A1;
-		next_mux_reg = CONFIG_HIGH_MUX_P2NG;
-		break;
-
-	case 0x06:
-		channel = A2;
-		next_mux_reg = CONFIG_HIGH_MUX_P3NG;
-		break;
-
-	case 0x07:
-		channel = A3;
+		// next_mux_reg = CONFIG_HIGH_MUX_P1NG;
 		next_mux_reg = CONFIG_HIGH_MUX_P0NG;
 		break;
+
+	// case 0x05:
+	// 	channel = A1;
+	// 	next_mux_reg = CONFIG_HIGH_MUX_P2NG;
+	// 	break;
+
+	// case 0x06:
+	// 	channel = A2;
+	// 	next_mux_reg = CONFIG_HIGH_MUX_P3NG;
+	// 	break;
+
+	// case 0x07:
+	// 	channel = A3;
+	// 	next_mux_reg = CONFIG_HIGH_MUX_P0NG;
+	// 	break;
 
 	default:
 		return Invalid;

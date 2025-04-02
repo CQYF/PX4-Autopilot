@@ -117,7 +117,12 @@ void ADS1115::RunImpl()
 			break;
 		}
 
-		if (_channel_cycle_count == 4) { // ADS1115 has 4 channels
+		// if (_channel_cycle_count == 4) { // ADS1115 has 4 channels
+		// 	_channel_cycle_count = 0;
+		// 	_to_adc_report.publish(_adc_report);
+		// }
+
+		if (_channel_cycle_count == 1) { // 只读取通道0
 			_channel_cycle_count = 0;
 			_to_adc_report.publish(_adc_report);
 		}
@@ -151,7 +156,7 @@ parameter, and is disabled by default.
 If enabled, internal ADCs are not used.
 
 )DESCR_STR");
-	
+
 	PRINT_MODULE_USAGE_NAME("ads1115", "driver");
 	PRINT_MODULE_USAGE_COMMAND("start");
 	PRINT_MODULE_USAGE_PARAMS_I2C_SPI_DRIVER(true, false);

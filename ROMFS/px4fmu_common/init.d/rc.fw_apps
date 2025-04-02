@@ -28,6 +28,8 @@ fw_autotune_attitude_control start
 #
 land_detector start fixedwing
 
+ads1115 start -X
+
 #
 # Start Mode Control.
 #hu
