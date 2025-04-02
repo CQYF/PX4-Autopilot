@@ -39,7 +39,7 @@ mode_control start
 # Start attitude controller.
 #
 hydro_att_control start
-hydro_rate_control start
+# hydro_rate_control start
 hydro_allocator start
 
 vtrack start

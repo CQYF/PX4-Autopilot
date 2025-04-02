@@ -530,6 +530,15 @@ PARAM_DEFINE_FLOAT(HY_DC_SP, 0.05f);
 PARAM_DEFINE_FLOAT(HY_DC_MAX_THR, 1.0f);
 //深度控制最大推力比例
 
+/**
+ * Depth control mode selection
+ *
+ * @group Hydro Depth Control
+ * @value 0 motioncap
+ * @value 1 kf
+ */
+PARAM_DEFINE_INT32(HY_DC_DATA, 0);
+//深度控制数据来源
 
 //非光滑反馈参数
 
@@ -651,4 +660,5 @@ PARAM_DEFINE_FLOAT(HY_HSMC_IMAX, 20.0f);
  */
 PARAM_DEFINE_FLOAT(HY_HSMC_IMIN, -20.0f);
 //高阶滑模的积分下限
+
 

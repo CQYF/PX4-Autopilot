@@ -75,6 +75,7 @@
 #include <uORB/topics/vehicle_air_data.h>
 #include <uORB/topics/depth_estimated.h>
 #include <uORB/topics/hydro_depth_control_message.h>
+#include <uORB/topics/slide_estimated.h>
 
 using matrix::Eulerf;
 using matrix::Quatf;
@@ -119,6 +120,7 @@ private:
 	uORB::Subscription _debug_vect_sub{ORB_ID(debug_vect)};
 	uORB::Subscription _vehicle_air_data_sub{ORB_ID(vehicle_air_data)};
 	uORB::Subscription _depth_estimated_sub{ORB_ID(depth_estimated)};
+	uORB::Subscription _slide_estimated_sub{ORB_ID(slide_estimated)};
 
 	uORB::Publication<vehicle_rates_setpoint_s>	_rate_sp_pub{ORB_ID(vehicle_rates_setpoint)};
 	uORB::Publication<vehicle_torque_setpoint_s>	_vehicle_torque_setpoint_pub{ORB_ID(vehicle_torque_setpoint)};
@@ -147,6 +149,7 @@ private:
 	depth_estimated_s			_depth_estimated{};
 	debug_vect_s				_debug_vect{};
 	hydro_depth_control_message_s		_hydro_depth_control_message{};
+	slide_estimated_s			_slide_estimated{};
 
 	//水翼部分的setpoint
 	vehicle_thrust_setpoint_s		_hydro_thrust_setpoint{};
@@ -219,6 +222,7 @@ private:
 		(ParamFloat<px4::params::HY_DC_FF>) _param_hy_dc_ff,
 		(ParamFloat<px4::params::HY_DC_SP>) _param_hy_dc_sp,
 		(ParamFloat<px4::params::HY_DC_MAX_THR>) _param_hy_dc_max_thr,
+		(ParamInt<px4::params::HY_DC_DATA>) _param_hy_dc_data,
 
 		//非光滑反馈
 		(ParamFloat<px4::params::HY_NSF_PT>) _param_hy_nsf_pt,
