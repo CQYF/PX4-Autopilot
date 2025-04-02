@@ -212,7 +212,7 @@ void SlideEstimator::Run()
 	adc_report_s adc_report;
 	while(_adc_report_sub.update(&adc_report))
 	{
-		calc_lv_immersion();
+		calc_lv_immersion(adc_report.raw_data[0]);
 		calc_lv_saturation();
 		calc_lv_height();
 
@@ -250,9 +250,9 @@ void SlideEstimator::Run()
 }
 
 // TODO 根据水位计读数计算浸水长度
-void SlideEstimator::calc_lv_immersion()
+void SlideEstimator::calc_lv_immersion(int32_t raw)
 {
-	_lv_immersion = 0;
+	_lv_immersion=(float)(0.01*(-8.756*pow(10,4)*pow((double)raw,-1.108)+8.528+2.7));
 }
 
 // 根据浸水长度计算水位计饱和程度评估值

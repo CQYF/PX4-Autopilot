@@ -98,7 +98,7 @@ private:
 	uORB::SubscriptionInterval _parameter_update_sub{ORB_ID(parameter_update), 1_s};
 
 	uORB::SubscriptionCallbackWorkItem _sensor_baro_sub{this, ORB_ID(sensor_baro)};
-	uORB::SubscriptionCallbackWorkItem _adc_report_sub{this, ORB_ID(adc_report)};
+	uORB::SubscriptionCallbackWorkItem _adc_report_sub{this, ORB_ID(adc_report), 1};
 	uORB::SubscriptionCallbackWorkItem _vehicle_attitude_sub{this, ORB_ID(vehicle_attitude)};
 	uORB::SubscriptionCallbackWorkItem _vehicle_angular_velocity_sub{this, ORB_ID(vehicle_angular_velocity)};
 	uORB::SubscriptionCallbackWorkItem _vehicle_acceleration_sub{this, ORB_ID(vehicle_acceleration)};
@@ -141,7 +141,7 @@ private:
 	float _lv_height;
 
 	// 根据水位计读数计算浸水长度
-	void calc_lv_immersion();
+	void calc_lv_immersion(int32_t raw);
 	// 根据浸水长度计算水位计饱和程度评估值
 	void calc_lv_saturation();
 	// 根据浸水长度、姿态和几何关系计算高度
