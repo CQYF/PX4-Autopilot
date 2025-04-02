@@ -40,8 +40,6 @@ MavDebug::MavDebug() :
 	ScheduledWorkItem(MODULE_NAME, px4::wq_configurations::lp_default),
 	_loop_perf(perf_alloc(PC_ELAPSED, MODULE_NAME": cycle"))
 {
-	const char name[] = "alpha";
-	memcpy(_debug_vect_msg.name, name, sizeof(name));
 	parameters_update(true);
 }
 
@@ -53,8 +51,8 @@ MavDebug::~MavDebug()
 bool
 MavDebug::init()
 {
-	// if (!_vehicle_air_data_sub.registerCallback() || !_estimator_states_sub.registerCallback()) {
-	if (! _depth_fusion_sub.registerCallback()) {
+	if (! _slide_estimated_sub.registerCallback()) {
+		_slide_estimated_sub.unregisterCallback();
 		PX4_ERR("callback registration failed");
 		return false;
 	}
@@ -79,33 +77,28 @@ MavDebug::parameters_update(bool force)
 void MavDebug::Run()
 {
 	if (should_exit()) {
-		// _vehicle_air_data_sub.unregisterCallback();
-		// _estimator_states_sub.unregisterCallback();
-		_depth_fusion_sub.unregisterCallback();
+		_slide_estimated_sub.unregisterCallback();
 		exit_and_cleanup();
 		return;
 	}
 
 	perf_begin(_loop_perf);
 
-	// if (_vehicle_air_data_sub.update(&_vehicle_air_data_msg))
-	// {
-	// 	_debug_vect_msg.x = _vehicle_air_data_msg.baro_alt_meter;
-	// }
-	// if (_estimator_states_sub.update(&_estimator_states_msg))
-	// {
-	// 	_debug_vect_msg.y = - _estimator_states_msg.states[9];
-	// }
+	slide_estimated_s slide_estimated;
+	if (_slide_estimated_sub.update(&slide_estimated))
+	{
+		debug_array_s debug_array{};
+		debug_array.data[0] =  slide_estimated.x1_measure;
+		debug_array.data[1] =  slide_estimated.x2_measure;
+		debug_array.data[2] =  slide_estimated.x3_measure;
+		debug_array.data[3] =  slide_estimated.x1_fusion;
+		debug_array.data[4] =  slide_estimated.x2_fusion;
+		debug_array.data[5] =  slide_estimated.x3_fusion;
+		debug_array.id = 1;
+		debug_array.timestamp = hrt_absolute_time();
+		_debug_array_pub.publish(debug_array);
+	}
 
-	// if (_depth_fusion_sub.update(&_depth_fusion))
-	// {
-	// 	_debug_vect_msg.x = _depth_fusion.depth1_or;
-	// 	_debug_vect_msg.y = _depth_fusion.depth2_or;
-	// 	_debug_vect_msg.z = _depth_fusion.fudepth;
-	// }
-
-	// _debug_vect_msg.timestamp = hrt_absolute_time();
-	// _debug_vect_pub.publish(_debug_vect_msg);
 
 	parameters_update();
 
