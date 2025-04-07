@@ -495,6 +495,7 @@ PARAM_DEFINE_FLOAT(HY_MAN_YR_MAX, 30.f);
  * @value 0 Disabled
  * @value 1 NSF
  * @value 2 HSMC
+ * @value 3 Manual
  */
 PARAM_DEFINE_INT32(HY_DC_MODE, 0);
 //深度控制模式选择
@@ -660,5 +661,16 @@ PARAM_DEFINE_FLOAT(HY_HSMC_IMAX, 20.0f);
  */
 PARAM_DEFINE_FLOAT(HY_HSMC_IMIN, -20.0f);
 //高阶滑模的积分下限
+
+//手动控制参数
+
+/**
+ * Manual vertical force ratio
+ *
+ * @decimal 3
+ * @group Hydro Depth Control
+ */
+PARAM_DEFINE_FLOAT(HY_MAN_RATIO, 0.0f);
+//手动模式下纵向力的比率
 
 

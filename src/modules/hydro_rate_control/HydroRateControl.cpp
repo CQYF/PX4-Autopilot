@@ -374,6 +374,8 @@ void HydroRateControl::Run()
 				hydro_vertical_thrust_setpoint = nsf_u_limited + _param_hy_dc_ff.get();
 			else if(dc_mode == 2)
 				hydro_vertical_thrust_setpoint = _hsmc_x3 + _param_hy_dc_ff.get();
+			else if(dc_mode == 3)
+				hydro_vertical_thrust_setpoint = _manual_control_setpoint.pitch * _param_hy_man_ratio.get() + _param_hy_dc_ff.get();
 			else
 				hydro_vertical_thrust_setpoint = 0;
 
