@@ -240,6 +240,9 @@ private:
 		(ParamFloat<px4::params::HY_HSMC_IMAX>) _param_hy_hsmc_imax,
 		(ParamFloat<px4::params::HY_HSMC_IMIN>) _param_hy_hsmc_imin,
 
+		//手动
+		(ParamFloat<px4::params::HY_MAN_RATIO>) _param_hy_man_ratio,
+
 		//引用外部参数
 		(ParamFloat<px4::params::HY_RT_MAX_THRUST>) _param_hy_rt_max_thrust	//单个水下推进器最大推力
 	)
