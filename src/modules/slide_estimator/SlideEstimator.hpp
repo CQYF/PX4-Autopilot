@@ -177,7 +177,8 @@ private:
 	DEFINE_PARAMETERS(
 		(ParamFloat<px4::params::HY_SE_PR_P0>) _param_hy_se_pr_p0,
 		(ParamFloat<px4::params::HY_SE_PR_RHO>) _param_hy_se_pr_rho,
-		(ParamFloat<px4::params::HY_SE_G>) _param_hy_se_g,
+		(ParamFloat<px4::params::HY_SE_G_PR>) _param_hy_se_g_pr,
+		(ParamFloat<px4::params::HY_SE_G_ACC>) _param_hy_se_g_acc,
 		(ParamFloat<px4::params::HY_SE_PR_MAXD>) _param_hy_se_pr_maxd,
 		(ParamFloat<px4::params::HY_SE_LV_SAT_UUP>) _param_hy_se_lv_sat_uup,
 		(ParamFloat<px4::params::HY_SE_LV_SAT_UP>) _param_hy_se_lv_sat_up,

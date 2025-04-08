@@ -153,7 +153,7 @@ void SlideEstimator::Run()
 		Vector3f ve_a = _q.rotateVector(vb_a);
 
 		// 计算高度的加速度
-		_imu_height_acc = ve_a(2) + _param_hy_se_g.get();
+		_imu_height_acc = ve_a(2) + _param_hy_se_g_acc.get();
 
 		// 调用kalman
 		uint64_t t = vehicle_acceleration.timestamp_sample;
@@ -303,7 +303,7 @@ void SlideEstimator::calc_lv_height()
 // 压强转换为深度
 float SlideEstimator::pressure2depth(float pressure)
 {
-	float depth = (pressure - _param_hy_se_pr_p0.get()) /	(_param_hy_se_pr_rho.get() * _param_hy_se_g.get());
+	float depth = (pressure - _param_hy_se_pr_p0.get()) /	(_param_hy_se_pr_rho.get() * _param_hy_se_g_pr.get());
 	return depth;
 }
 

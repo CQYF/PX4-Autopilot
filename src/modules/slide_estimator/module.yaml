@@ -17,9 +17,18 @@ parameters:
       unit: kg/m^3
       min: 0.1
       default: 1000
-    HY_SE_G:
+    HY_SE_G_PR:
       description:
-        short: Gravitational acceleration
+        short: Gravitational acceleration for pr
+      type: float
+      unit: m/s^2
+      min: 0.1
+      default: 9.8
+
+    #加速度计校准参数，用于减去重力加速度
+    HY_SE_G_ACC:
+      description:
+        short: Gravitational acceleration for acc
       type: float
       unit: m/s^2
       min: 0.1
