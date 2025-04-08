@@ -199,7 +199,7 @@ void SlideEstimator::Run()
 				Matrix<double, 1, 1> R(R_list);
 				_kf.insert_data(t, z, H, R);
 
-				_slide_estimated.x2_measure = _pr_depth_rate;
+				_slide_estimated.x2_measure = _pr_height_rate;
 			}
 
 			// 保存数据
