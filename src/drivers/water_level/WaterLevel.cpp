@@ -38,12 +38,16 @@ int WaterLevel::init()
 {
 	int ret = I2C::init();
 
+	PX4_INFO("Here9 %d", ret);
+
 	if (ret != PX4_OK) {
 		return ret;
 	}
 
 	uint8_t fake_config[1] = {0};
 	ret = writeReg(FAKE_ADDR, fake_config, 1);
+
+	PX4_INFO("Here10 %d", ret);
 
 	if (ret != PX4_OK) {
 		PX4_ERR("writeReg failed (%i)", ret);
@@ -60,8 +64,14 @@ int WaterLevel::probe()
 	uint8_t buf[9] = {};
 	int ret = readReg(FAKE_ADDR, buf, 9);
 
+	buf[8] = 0;
+
+	PX4_INFO("%s", buf);
+
+	PX4_INFO("Here11 %d", ret);
+
 	if (ret != PX4_OK) {
-		DEVICE_DEBUG("readReg failed (%i)", ret);
+		PX4_INFO("readReg failed (%i)", ret);
 		return ret;
 	}
 

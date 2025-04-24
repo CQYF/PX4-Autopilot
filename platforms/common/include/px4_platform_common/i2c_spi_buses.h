@@ -367,6 +367,8 @@ private:
 	{
 		T *instance = new T(config);
 
+		PX4_INFO("Here12");
+
 		if (!instance) {
 			PX4_ERR("alloc failed");
 			return nullptr;

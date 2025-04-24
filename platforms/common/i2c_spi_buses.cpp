@@ -310,6 +310,7 @@ bool BusInstanceIterator::next()
 	int bus = -1;
 
 	if (busType() == BOARD_INVALID_BUS) {
+		PX4_INFO("Here2");
 		if (_current_instance == i2c_spi_module_instances.end()) { // either not initialized, or the first instance was removed
 			_current_instance = i2c_spi_module_instances.begin();
 
@@ -339,14 +340,17 @@ bool BusInstanceIterator::next()
 #if defined(CONFIG_I2C)
 
 	} else if (busType() == BOARD_I2C_BUS) {
+		PX4_INFO("Here3, %d, %d", _i2c_bus_iterator._bus, static_cast<int>(_i2c_bus_iterator._filter));
 		if (_i2c_bus_iterator.next()) {
 			bus = _i2c_bus_iterator.bus().bus;
+			PX4_INFO("Here5, %d", bus);
 		}
 
 #endif // CONFIG_I2C
 	}
 
 	if (bus != -1) {
+		PX4_INFO("Here4");
 		// find matching runtime instance
 #if defined(CONFIG_I2C)
 		bool is_i2c = busType() == BOARD_I2C_BUS;
@@ -611,7 +615,10 @@ int I2CSPIDriverBase::module_start(const BusCLIArguments &cli, BusInstanceIterat
 
 	bool started = false;
 
+	PX4_INFO("Here0");
+
 	while (iterator.next()) {
+		PX4_INFO("Here1");
 		if (iterator.instance()) {
 			PX4_WARN("Already running on bus %i", iterator.bus());
 			continue;
@@ -635,6 +642,8 @@ int I2CSPIDriverBase::module_start(const BusCLIArguments &cli, BusInstanceIterat
 		case BOARD_INVALID_BUS: device_id.devid_s.bus_type = device::Device::DeviceBusType_UNKNOWN; break;
 		}
 
+		PX4_INFO("Here6, %d", static_cast<int>(iterator.busType()));
+
 
 		const px4::wq_config_t &wq_config = px4::device_bus_to_wq(device_id.devid);
 		I2CSPIDriverConfig driver_config{cli, iterator, wq_config};
@@ -647,7 +656,8 @@ int I2CSPIDriverBase::module_start(const BusCLIArguments &cli, BusInstanceIterat
 		I2CSPIDriverBase *instance = initializer_data.instance;
 
 		if (!instance) {
-			PX4_DEBUG("instantiate failed (no device on bus %i (devid 0x%x)?)", iterator.bus(), iterator.devid());
+			PX4_INFO("instantiate failed (no device on bus %i (devid 0x%lx)?)", iterator.bus(), iterator.devid());
+			PX4_INFO("Here8");
 			continue;
 		}
 
@@ -661,6 +671,8 @@ int I2CSPIDriverBase::module_start(const BusCLIArguments &cli, BusInstanceIterat
 
 		iterator.addInstance(instance);
 		started = true;
+
+		PX4_INFO("Here7");
 
 		// print some info that we are running
 		switch (iterator.busType()) {

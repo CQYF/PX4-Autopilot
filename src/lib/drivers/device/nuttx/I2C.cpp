@@ -215,6 +215,8 @@ I2C::transfer(const uint8_t *send, const unsigned send_len, uint8_t *recv, const
 
 		int ret_transfer = I2C_TRANSFER(_dev, &msgv[0], msgs);
 
+		if(recv_len == 9) PX4_INFO("Here13 %d", ret_transfer);
+
 		if (ret_transfer != 0) {
 			DEVICE_DEBUG("I2C transfer failed, result %d", ret_transfer);
 			ret = PX4_ERROR;
