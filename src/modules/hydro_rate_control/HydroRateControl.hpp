@@ -228,7 +228,8 @@ private:
 		(ParamFloat<px4::params::HY_NSF_PT>) _param_hy_nsf_pt,
 		(ParamFloat<px4::params::HY_NSF_NORM>) _param_hy_nsf_norm,
 		(ParamFloat<px4::params::HY_NSF_POWER>) _param_hy_nsf_power,
-		(ParamFloat<px4::params::HY_NSF_KP>) _param_hy_nsf_kp,
+		(ParamFloat<px4::params::HY_NSF_KP_UP>) _param_hy_nsf_kp_up,
+		(ParamFloat<px4::params::HY_NSF_KP_DN>) _param_hy_nsf_kp_dn,
 		(ParamFloat<px4::params::HY_NSF_UMAX>) _param_hy_nsf_umax,
 		(ParamFloat<px4::params::HY_NSF_UMIN>) _param_hy_nsf_umin,
 

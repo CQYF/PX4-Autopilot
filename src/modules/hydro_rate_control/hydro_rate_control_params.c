@@ -572,12 +572,21 @@ PARAM_DEFINE_FLOAT(HY_NSF_POWER, 1.0f);
 //非光滑反馈的误差幂次
 
 /**
- * NSF kp
+ * NSF kp up
  *
  * @decimal 3
  * @group Hydro Depth Control
  */
-PARAM_DEFINE_FLOAT(HY_NSF_KP, 1.0f);
+PARAM_DEFINE_FLOAT(HY_NSF_KP_UP, 1.0f);
+//非光滑反馈的控制增益
+
+/**
+ * NSF kp dn
+ *
+ * @decimal 3
+ * @group Hydro Depth Control
+ */
+PARAM_DEFINE_FLOAT(HY_NSF_KP_DN, 1.0f);
 //非光滑反馈的控制增益
 
 /**

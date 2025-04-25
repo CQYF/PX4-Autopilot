@@ -331,7 +331,16 @@ void HydroRateControl::Run()
 			float nsf_s_norm = nsf_s / _param_hy_nsf_norm.get();
 			float nsf_s_norm_power = std::pow(nsf_s_norm, _param_hy_nsf_power.get());
 			// 非光滑反馈控制量计算
-			float nsf_u = nsf_s_norm_power * _param_hy_nsf_kp.get();
+			float nsf_kp;
+			if (nsf_s_norm > 0)
+			{
+				nsf_kp = _param_hy_nsf_kp_up.get();
+			}
+			else
+			{
+				nsf_kp = _param_hy_nsf_kp_dn.get();
+			}
+			float nsf_u = signbit(nsf_s_norm) * nsf_s_norm_power * nsf_kp;
 			// 非光滑反馈控制量限幅
 			float nsf_u_limited =\
 				math::constrain(nsf_u, _param_hy_nsf_umin.get(), _param_hy_nsf_umax.get());
