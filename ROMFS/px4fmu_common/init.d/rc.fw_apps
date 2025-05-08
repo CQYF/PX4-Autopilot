@@ -36,13 +36,13 @@ mode_control start
 #
 # Start attitude controller.
 #
-hydro_att_control start
-hydro_rate_control start
-hydro_allocator start
+# hydro_att_control start
+# hydro_rate_control start
+# hydro_allocator start
 
-vtrack start
-mavdebug start
+# vtrack start
+# mavdebug start
 
-param set DEPTH_FUSION_ENABLE 1
-depth_fusion start
-depth_estimator start
+# param set DEPTH_FUSION_ENABLE 1
+# depth_fusion start
+# depth_estimator start
