@@ -288,9 +288,10 @@ void HydroRateControl::Run()
 			// float depth = _depth_fusion.fudepth * 0.01f;//换算单位
 			// float depth = - _debug_key_value.value;
 			// float depth = _vehicle_air_data.baro_alt_meter * 0.01f;
-			// float depth = _depth_estimated.depth_estimated;
-			float depth = _debug_vect.x;
-			float depth_rate = _debug_vect.y;
+			float depth = _depth_estimated.depth_estimated;
+			float depth_rate = 0;
+			// float depth = _debug_vect.x;
+			// float depth_rate = _debug_vect.y;
 			float depth_setpoint = _param_hy_dc_sp.get();
 
 			_hydro_depth_control_message.depth = depth;
