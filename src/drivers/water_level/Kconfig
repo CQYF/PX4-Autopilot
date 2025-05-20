@@ -1,0 +1,5 @@
+menuconfig DRIVERS_WATER_LEVEL
+	bool "water_level"
+	default n
+	---help---
+		Enable support for water_level
