@@ -28,23 +28,34 @@ fw_autotune_attitude_control start
 #
 land_detector start fixedwing
 
-ads1115 start -X
+
+# !以下是自定义部分
+
+# 外部adc采样模块，用于第一版水位计
+# ads1115 start -X
+# 自制水位计
+# waterlevel start -X
 
 #
-# Start Mode Control.
-#hu
+# 模式管理器
 mode_control start
 
-#
-# Start attitude controller.
-#
+# 控制和控制分配
 hydro_att_control start
 # hydro_rate_control start
 hydro_allocator start
 
-vtrack start
+# 根据动捕的原始数据进行计算，这部分功能应该不会再被用到了
+# vtrack start
+
+# 向地面端发送调试用数据
 # mavdebug start
 
-param set DEPTH_FUSION_ENABLE 1
-depth_fusion start
-depth_estimator start
+# 永强的融合
+# param set DEPTH_FUSION_ENABLE 1
+# depth_fusion start
+
+# 曹越的第一版融合
+# depth_estimator start
+# 曹越的第二版融合
+# slide_estimator start
