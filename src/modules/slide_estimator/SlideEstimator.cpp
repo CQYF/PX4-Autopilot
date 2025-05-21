@@ -209,6 +209,10 @@ void SlideEstimator::Run()
 
 			_slide_estimated.pr_measure = _pr_height;
 		}
+		else
+		{
+			_slide_estimated.pr_measure = NAN;
+		}
 	}
 
 	// 收到水位计数据
@@ -285,7 +289,7 @@ void SlideEstimator::calc_lv_height()
 	// 中心（加速度计安装位置为中心）到水位计顶部的矢量，在b系下表示。
 	Vector3f vb_c_lvtop(_param_hy_se_c_lv_x.get(), _param_hy_se_c_lv_y.get(), _param_hy_se_c_lv_z.get());
 	// 水位计顶部到水位线的矢量，在b系下表示
-	Vector3f vb_lvtop_waterline(0.0f, 0.0f, - _param_hy_se_lv_len.get() + _lv_immersion);
+	Vector3f vb_lvtop_waterline(0.0f, 0.0f, _param_hy_se_lv_len.get() - _lv_immersion);
 	// 中心到水位线的矢量，在b系下表示
 	Vector3f vb_c_waterline = vb_c_lvtop + vb_lvtop_waterline;
 
