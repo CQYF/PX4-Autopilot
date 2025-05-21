@@ -37,23 +37,41 @@ parameters:
     #深度计数据与中值滤波结果之间的最大差值，超过的数据无效
     HY_SE_PR_MAXD:
       description:
-        short: The maximum difference between the slide data from pressure gauge and the median filtering result
+        short: The maximum difference between the depth data from pressure gauge and the median filtering result
       type: float
       unit: m
       default: 0.5
       min: 0.01
+
+    # 深度计测算出的自身深度的最大值，超过的数据无效
+    HY_SE_PR_MAXX:
+      description:
+        short: The maximum of the depth data from pressure gauge
+      type: float
+      unit: m
+      default: 0.3
+      max: 0.5
+
+    # 深度计测算出的自身深度的最小值，超过的数据无效
+    HY_SE_PR_MINX:
+      description:
+        short: The minimum of the depth data from pressure gauge
+      type: float
+      unit: m
+      default: 0
+      min: 0
 
     #水位计浸水深度饱和评估参数
     HY_SE_LV_SAT_UUP:
       description:
         short: Assessment parameters for saturation of water immersion
       type: float
-      default: 0.1
+      default: 0.09
     HY_SE_LV_SAT_UP:
       description:
         short: Assessment parameters for saturation of water immersion
       type: float
-      default: 0.09
+      default: 0.08
     HY_SE_LV_SAT_DN:
       description:
         short: Assessment parameters for saturation of water immersion
@@ -117,43 +135,50 @@ parameters:
       min: 1000
       default: 100000
 
-    #压强计数据求微分的最大时间间隔
-    HY_SE_PR_DT_MAX:
-      description:
-        short: The maximum time interval for differentiating pressure gauge data
-      type: int32
-      unit: us
-      min: 0
-      default: 20000
-
-    #加速度项的测量噪声
+    #加速度传感器的测量噪声
     HY_SE_R_ACC:
       description:
-        short: Measurement noise of acceleration term
+        short: Measurement noise of acceleration sensor
       type: float
       min: 0.0
       default: 0.1
 
-    #速度项的测量噪声
-    HY_SE_R_VEL:
+    #压强计的测量噪声
+    HY_SE_R_PR:
       description:
-        short: Measurement noise of velocity term
+        short: Measurement noise of pressure gauge
       type: float
       min: 0.0
       default: 3.0
 
-    #位置项的测量噪声
-    HY_SE_R_POS:
+    #水位计的测量噪声
+    HY_SE_R_LV:
       description:
-        short: Measurement noise of position term
+        short: easurement noise of water level gauge
       type: float
       min: 0.0
       default: 2.0
 
-    #加速度项的过程噪声
-    HY_SE_Q_ACC:
+    #水位计饱和时的最大额外测量噪声
+    HY_SE_R_LVSAT:
       description:
-        short: Process noise of acceleration term
+        short: Maximum additional measurement noise when the water level gauge is saturated
+      type: float
+      min: 0.0
+      default: 20.0
+
+    #高度部分的过程噪声
+    HY_SE_Q_HGT:
+      description:
+        short: Process noise in the height
+      type: float
+      min: 0.0
+      default: 1
+
+    #压强计累积误差的过程噪声
+    HY_SE_Q_ERR:
+      description:
+        short: Process noise of cumulative error of pressure gauge
       type: float
       min: 0.0
       default: 1

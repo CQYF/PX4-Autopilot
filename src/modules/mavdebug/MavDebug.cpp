@@ -88,12 +88,13 @@ void MavDebug::Run()
 	if (_slide_estimated_sub.update(&slide_estimated))
 	{
 		debug_array_s debug_array{};
-		debug_array.data[0] =  slide_estimated.x1_measure;
-		debug_array.data[1] =  slide_estimated.x2_measure;
-		debug_array.data[2] =  slide_estimated.x3_measure;
+		debug_array.data[0] =  slide_estimated.lv_measure;
+		debug_array.data[1] =  slide_estimated.pr_measure;
+		debug_array.data[2] =  slide_estimated.acc_measure;
 		debug_array.data[3] =  slide_estimated.x1_fusion;
 		debug_array.data[4] =  slide_estimated.x2_fusion;
 		debug_array.data[5] =  slide_estimated.x3_fusion;
+		debug_array.data[6] =  slide_estimated.x4_fusion;
 		debug_array.id = 1;
 		debug_array.timestamp = hrt_absolute_time();
 		_debug_array_pub.publish(debug_array);

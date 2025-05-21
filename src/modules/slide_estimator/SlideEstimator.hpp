@@ -56,7 +56,7 @@
 #include <uORB/topics/parameter_update.h>
 
 #include <uORB/topics/sensor_baro.h>
-#include <uORB/topics/adc_report.h>
+#include <uORB/topics/water_level.h>
 #include <uORB/topics/vehicle_acceleration.h>
 #include <uORB/topics/vehicle_attitude.h>
 #include <uORB/topics/vehicle_angular_velocity.h>
@@ -98,7 +98,7 @@ private:
 	uORB::SubscriptionInterval _parameter_update_sub{ORB_ID(parameter_update), 1_s};
 
 	uORB::SubscriptionCallbackWorkItem _sensor_baro_sub{this, ORB_ID(sensor_baro)};
-	uORB::SubscriptionCallbackWorkItem _adc_report_sub{this, ORB_ID(adc_report), 1};
+	uORB::SubscriptionCallbackWorkItem _water_level_sub{this, ORB_ID(water_level)};
 	uORB::SubscriptionCallbackWorkItem _vehicle_attitude_sub{this, ORB_ID(vehicle_attitude)};
 	uORB::SubscriptionCallbackWorkItem _vehicle_angular_velocity_sub{this, ORB_ID(vehicle_angular_velocity)};
 	uORB::SubscriptionCallbackWorkItem _vehicle_acceleration_sub{this, ORB_ID(vehicle_acceleration)};
@@ -107,14 +107,15 @@ private:
 
 	perf_counter_t _loop_perf;
 
-	LooselyKalmanFilter<double, 150, 3> _kf;
+	LooselyKalmanFilter<double, 150, 4> _kf;
 
-	Matrix<double, 3, 1> _x_out;
-	Matrix<double, 3, 3> _P_out;
+	Matrix<double, 4, 1> _x_out; //* 位置 速度 加速度 水位计累计误差
+	Matrix<double, 4, 4> _P_out;
 
-	static float hy_se_q_acc;
-	static void calc_F(Matrix<double, 3, 3>& F, uint64_t& dt);
-	static void calc_Q(Matrix<double, 3, 3>& Q, uint64_t& dt);
+	static float hy_se_q_hgt;
+	static float hy_se_q_err;
+	static void calc_F(Matrix<double, 4, 4>& F, uint64_t& dt);
+	static void calc_Q(Matrix<double, 4, 4>& Q, uint64_t& dt);
 
 	static bool run_info;
 
@@ -140,8 +141,6 @@ private:
 	// 水位计测量得到的高度
 	float _lv_height;
 
-	// 根据水位计读数计算浸水长度
-	void calc_lv_immersion(int32_t raw);
 	// 根据浸水长度计算水位计饱和程度评估值
 	void calc_lv_saturation();
 	// 根据浸水长度、姿态和几何关系计算高度
@@ -149,22 +148,16 @@ private:
 
 	// 根据压强计测得的深度测量值
 	float _pr_depth;
-	// 当前的和上一个合法的深度测量值与时间戳
-	float _pr_depth_legal;
-	uint64_t _pr_depth_legal_ts;
-	float _pr_depth_legal_last;
-	uint64_t _pr_depth_legal_ts_last;
-	// 深度的变化率
-	float _pr_depth_rate;
-	// 深度变化率加上转动引起的线速度得到高度变化率
-	float _pr_height_rate;
+	// 根据压强计算出的中心高度
+	float _pr_height;
 
 	// 压强转换为深度
 	float pressure2depth(float pressure);
 	// 深度测量值的合法性检查
 	bool is_pr_depth_legal();
-	// 根据深度变化率和转动引起的线速度计算高度变化率
-	void calc_pr_height_rate();
+	// 根据压强计深度、姿态和几何关系计算高度
+	void calc_pr_height();
+
 
 	// IMU测得的高度加速度
 	float _imu_height_acc;
@@ -180,6 +173,8 @@ private:
 		(ParamFloat<px4::params::HY_SE_G_PR>) _param_hy_se_g_pr,
 		(ParamFloat<px4::params::HY_SE_G_ACC>) _param_hy_se_g_acc,
 		(ParamFloat<px4::params::HY_SE_PR_MAXD>) _param_hy_se_pr_maxd,
+		(ParamFloat<px4::params::HY_SE_PR_MAXX>) _param_hy_se_pr_maxx,
+		(ParamFloat<px4::params::HY_SE_PR_MINX>) _param_hy_se_pr_minx,
 		(ParamFloat<px4::params::HY_SE_LV_SAT_UUP>) _param_hy_se_lv_sat_uup,
 		(ParamFloat<px4::params::HY_SE_LV_SAT_UP>) _param_hy_se_lv_sat_up,
 		(ParamFloat<px4::params::HY_SE_LV_SAT_DN>) _param_hy_se_lv_sat_dn,
@@ -192,10 +187,11 @@ private:
 		(ParamFloat<px4::params::HY_SE_C_PR_Y>) _param_hy_se_c_pr_y,
 		(ParamFloat<px4::params::HY_SE_C_PR_Z>) _param_hy_se_c_pr_z,
 		(ParamInt<px4::params::HY_SE_LIFESPAN>) _param_hy_se_lifespan,
-		(ParamInt<px4::params::HY_SE_PR_DT_MAX>) _param_hy_se_pr_dt_max,
 		(ParamFloat<px4::params::HY_SE_R_ACC>) _param_hy_se_r_acc,
-		(ParamFloat<px4::params::HY_SE_R_VEL>) _param_hy_se_r_vel,
-		(ParamFloat<px4::params::HY_SE_R_POS>) _param_hy_se_r_pos,
-		(ParamFloat<px4::params::HY_SE_Q_ACC>) _param_hy_se_q_acc
+		(ParamFloat<px4::params::HY_SE_R_PR>) _param_hy_se_r_pr,
+		(ParamFloat<px4::params::HY_SE_R_LV>) _param_hy_se_r_lv,
+		(ParamFloat<px4::params::HY_SE_R_LVSAT>) _param_hy_se_r_lvsat,
+		(ParamFloat<px4::params::HY_SE_Q_HGT>) _param_hy_se_q_hgt,
+		(ParamFloat<px4::params::HY_SE_Q_ERR>) _param_hy_se_q_err
 	)
 };

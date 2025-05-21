@@ -37,10 +37,11 @@
 
 using namespace time_literals;
 
-float SlideEstimator::hy_se_q_acc = 0.0f;
+float SlideEstimator::hy_se_q_hgt = 0.0f;
+float SlideEstimator::hy_se_q_err = 0.0f;
 bool SlideEstimator::run_info = false;
 
-void SlideEstimator::calc_F(Matrix<double, 3, 3>& F, uint64_t& dt)
+void SlideEstimator::calc_F(Matrix<double, 4, 4>& F, uint64_t& dt)
 {
 	double t = (double)dt;
 	t /= 1000000;
@@ -53,14 +54,29 @@ void SlideEstimator::calc_F(Matrix<double, 3, 3>& F, uint64_t& dt)
 	F(0,1) = t;
 	F(1,2) = t;
 	F(0,2) = t2/2;
+	F(3,3) = 1;
 }
 
-void SlideEstimator::calc_Q(Matrix<double, 3, 3>& Q, uint64_t& dt)
+void SlideEstimator::calc_Q(Matrix<double, 4, 4>& Q, uint64_t& dt)
 {
 	double t = (double)dt;
 	t /= 1000000;
+	double t2 = t*t;
+
+	Matrix<double, 4, 2> G;
+	G.setZero();
+	G(0,0) = t2/2;
+	G(1,0) = t;
+	G(2,0) = 1;
+	G(3,1) = 1;
+
+	Matrix<double, 2, 2> M;
+	M.setZero();
+	M(0,0) = t * (double)hy_se_q_hgt;
+	M(1,1) = t * (double)hy_se_q_err;
+
 	Q.setZero();
-	Q(2,2) = t * (double)hy_se_q_acc;
+	Q = G*M*G.transpose();
 }
 
 SlideEstimator::SlideEstimator() :
@@ -72,7 +88,8 @@ SlideEstimator::SlideEstimator() :
 	/* fetch initial parameter values */
 	updateParams();
 	_kf.set_lifespan((uint64_t)_param_hy_se_lifespan.get());
-	hy_se_q_acc = _param_hy_se_q_acc.get();
+	hy_se_q_hgt = _param_hy_se_q_hgt.get();
+	hy_se_q_err = _param_hy_se_q_err.get();
 }
 
 SlideEstimator::~SlideEstimator()
@@ -83,7 +100,7 @@ SlideEstimator::~SlideEstimator()
 bool
 SlideEstimator::init()
 {
-	if (!_sensor_baro_sub.registerCallback() || !_adc_report_sub.registerCallback() ||\
+	if (!_sensor_baro_sub.registerCallback() || !_water_level_sub.registerCallback() ||\
 	!_vehicle_attitude_sub.registerCallback() || !_vehicle_angular_velocity_sub.registerCallback() ||\
 	!_vehicle_acceleration_sub.registerCallback() ) {
 		PX4_ERR("callback registration failed");
@@ -97,7 +114,7 @@ void SlideEstimator::Run()
 {
 	if (should_exit()) {
 		_sensor_baro_sub.unregisterCallback();
-		_adc_report_sub.unregisterCallback();
+		_water_level_sub.unregisterCallback();
 		_vehicle_attitude_sub.unregisterCallback();
 		_vehicle_angular_velocity_sub.unregisterCallback();
 		_vehicle_acceleration_sub.unregisterCallback();
@@ -120,7 +137,8 @@ void SlideEstimator::Run()
 		updateParams();
 
 		_kf.set_lifespan((uint64_t)_param_hy_se_lifespan.get());
-		hy_se_q_acc = _param_hy_se_q_acc.get();
+		hy_se_q_hgt = _param_hy_se_q_hgt.get();
+		hy_se_q_err = _param_hy_se_q_err.get();
 	}
 
 	// 读取四元数姿态并保存
@@ -149,23 +167,23 @@ void SlideEstimator::Run()
 		// 加速度矢量，在b系下表示。
 		Vector3f vb_a(vehicle_acceleration.xyz);
 
-		// 加速度矢量，在e系下表示。
-		Vector3f ve_a = _q.rotateVector(vb_a);
+		// 加速度矢量，在n系下表示。
+		Vector3f vn_a = _q.rotateVector(vb_a);
 
 		// 计算高度的加速度
-		_imu_height_acc = ve_a(2) + _param_hy_se_g_acc.get();
+		_imu_height_acc = vn_a(2) + _param_hy_se_g_acc.get();
 
 		// 调用kalman
 		uint64_t t = vehicle_acceleration.timestamp_sample;
 		double z_list[] = {_imu_height_acc};
-		double H_list[] = {0,0,1};
+		double H_list[] = {0,0,1,0};
 		double R_list[] = {_param_hy_se_r_acc.get()};
 		Matrix<double, 1, 1> z(z_list);
-		Matrix<double, 1, 3> H(H_list);
+		Matrix<double, 1, 4> H(H_list);
 		Matrix<double, 1, 1> R(R_list);
 		_kf.insert_data(t, z, H, R);
 
-		_slide_estimated.x3_measure = _imu_height_acc;
+		_slide_estimated.acc_measure = _imu_height_acc;
 	}
 
 	// 收到压强计数据
@@ -177,56 +195,42 @@ void SlideEstimator::Run()
 		// 如果深度测量值合法
 		if(is_pr_depth_legal())
 		{
-			_pr_depth_legal = _pr_depth;
-			_pr_depth_legal_ts = sensor_baro.timestamp_sample;
+			calc_pr_height();
 
-			// 如果时间戳差值没有超过阈值
-			uint64_t delta_ts = _pr_depth_legal_ts - _pr_depth_legal_ts_last;
-			if(delta_ts < (uint64_t)_param_hy_se_pr_dt_max.get())
-			{
-				// 计算深度的变化率
-				_pr_depth_rate = (_pr_depth_legal - _pr_depth_legal_last) * 1000000 / (float)delta_ts;
+			// 调用kalman
+			uint64_t t = sensor_baro.timestamp_sample;
+			double z_list[] = {_pr_height};
+			double H_list[] = {1,0,0,1};
+			double R_list[] = {_param_hy_se_r_pr.get()};
+			Matrix<double, 1, 1> z(z_list);
+			Matrix<double, 1, 4> H(H_list);
+			Matrix<double, 1, 1> R(R_list);
+			_kf.insert_data(t, z, H, R);
 
-				calc_pr_height_rate();
-
-				// 调用kalman
-				uint64_t t = _pr_depth_legal_ts_last;
-				double z_list[] = {_pr_height_rate};
-				double H_list[] = {0,1,0};
-				double R_list[] = {_param_hy_se_r_vel.get()};
-				Matrix<double, 1, 1> z(z_list);
-				Matrix<double, 1, 3> H(H_list);
-				Matrix<double, 1, 1> R(R_list);
-				_kf.insert_data(t, z, H, R);
-
-				_slide_estimated.x2_measure = _pr_height_rate;
-			}
-
-			// 保存数据
-			_pr_depth_legal_last = _pr_depth_legal;
-			_pr_depth_legal_ts_last = _pr_depth_legal_ts;
+			_slide_estimated.pr_measure = _pr_height;
 		}
 	}
 
 	// 收到水位计数据
-	adc_report_s adc_report;
-	while(_adc_report_sub.update(&adc_report))
+	water_level_s water_level;
+	while(_water_level_sub.update(&water_level))
 	{
-		calc_lv_immersion(adc_report.raw_data[0]);
+		_lv_immersion = water_level.lv;
 		calc_lv_saturation();
 		calc_lv_height();
 
 		// 调用kalman
-		uint64_t t = adc_report.timestamp;
+		uint64_t t = water_level.timestamp;
 		double z_list[] = {_lv_height};
-		double H_list[] = {1,0,0};
-		double R_list[] = {_param_hy_se_r_pos.get()};
+		double H_list[] = {1,0,0,0};
+		double R_list[] = {_param_hy_se_r_lv.get() + _param_hy_se_r_lvsat.get()*_lv_satuation};
 		Matrix<double, 1, 1> z(z_list);
-		Matrix<double, 1, 3> H(H_list);
+		Matrix<double, 1, 4> H(H_list);
 		Matrix<double, 1, 1> R(R_list);
 		_kf.insert_data(t, z, H, R);
 
-		_slide_estimated.x1_measure = _lv_height;
+		_slide_estimated.lv_satuation = _lv_satuation;
+		_slide_estimated.lv_measure = _lv_height;
 	}
 
 	if(_kf.update(_x_out, _P_out))
@@ -234,6 +238,7 @@ void SlideEstimator::Run()
 		_slide_estimated.x1_fusion = (float)_x_out(0, 0);
 		_slide_estimated.x2_fusion = (float)_x_out(1, 0);
 		_slide_estimated.x3_fusion = (float)_x_out(2, 0);
+		_slide_estimated.x4_fusion = (float)_x_out(3, 0);
 		_slide_estimated.timestamp = hrt_absolute_time();
 		_slide_estimated_pub.publish(_slide_estimated);
 	}
@@ -247,12 +252,6 @@ void SlideEstimator::Run()
 	ScheduleDelayed(5_ms);
 
 	perf_end(_loop_perf);
-}
-
-// TODO 根据水位计读数计算浸水长度
-void SlideEstimator::calc_lv_immersion(int32_t raw)
-{
-	_lv_immersion=(float)(0.01*(-8.756*pow(10,4)*pow((double)raw,-1.108)+8.528+2.7));
 }
 
 // 根据浸水长度计算水位计饱和程度评估值
@@ -286,18 +285,18 @@ void SlideEstimator::calc_lv_height()
 	// 中心（加速度计安装位置为中心）到水位计顶部的矢量，在b系下表示。
 	Vector3f vb_c_lvtop(_param_hy_se_c_lv_x.get(), _param_hy_se_c_lv_y.get(), _param_hy_se_c_lv_z.get());
 	// 水位计顶部到水位线的矢量，在b系下表示
-	Vector3f vb_lvtop_waterline(0.0f, 0.0f, _param_hy_se_lv_len.get() - _lv_immersion);
+	Vector3f vb_lvtop_waterline(0.0f, 0.0f, - _param_hy_se_lv_len.get() + _lv_immersion);
 	// 中心到水位线的矢量，在b系下表示
 	Vector3f vb_c_waterline = vb_c_lvtop + vb_lvtop_waterline;
 
 	// 姿态四元数
 	Quatf q = _q;
 
-	// 中心到水位线的矢量，在e系下表示
-	Vector3f ve_c_waterline = q.rotateVector(vb_c_waterline);
+	// 中心到水位线的矢量，在n系下表示
+	Vector3f vn_c_waterline = q.rotateVector(vb_c_waterline);
 
 	// 取矢量的最后一项的负值，即为高度（水面为0，出水为负）
-	_lv_height = - ve_c_waterline(2);
+	_lv_height = - vn_c_waterline(2);
 }
 
 // 压强转换为深度
@@ -314,7 +313,10 @@ bool SlideEstimator::is_pr_depth_legal()
 	float med = _medfilter_pr_depth.apply(x);
 	float maxd = _param_hy_se_pr_maxd.get();
 
-	if(isInRange(x - med, -maxd, maxd))
+	float x_max = _param_hy_se_pr_maxx.get();
+	float x_min = _param_hy_se_pr_minx.get();
+
+	if(isInRange(x - med, -maxd, maxd) && isInRange(x, x_min, x_max))
 	{
 		return true;
 	}
@@ -324,25 +326,26 @@ bool SlideEstimator::is_pr_depth_legal()
 	}
 }
 
-// 根据深度变化率和转动引起的线速度计算高度变化率
-void SlideEstimator::calc_pr_height_rate()
+// 根据压强计深度、姿态和几何关系计算高度
+void SlideEstimator::calc_pr_height()
 {
 	// 中心到压强计的矢量，在b系下表示。
 	Vector3f vb_c_pr(_param_hy_se_c_pr_x.get(), _param_hy_se_c_pr_y.get(), _param_hy_se_c_pr_z.get());
-	// 角速度矢量，在b系下表示。
-	Vector3f vb_w = _w;
-
-	// 角速度引起的速度矢量，在b系下表示。
-	Vector3f vb_dotpr = vb_w.cross(vb_c_pr);
 
 	// 姿态四元数
 	Quatf q = _q;
 
-	// 角速度引起的速度矢量，在e系下表示。
-	Vector3f ve_dotpr = q.rotateVector(vb_dotpr);
+	// 中心到压强计的矢量，在n系下表示。
+	Vector3f vn_c_pr = q.rotateVector(vb_c_pr);
 
-	// 计算高度变化率
-	_pr_height_rate = _pr_depth_rate + ve_dotpr(2);
+	// 压强计到水面的矢量，在n系下表示
+	Vector3f vn_pr_waterface(0.0f, 0.0f, - _pr_depth);
+
+	// 中心到水面的矢量，在n系下表示
+	Vector3f vn_c_waterface = vn_c_pr + vn_pr_waterface;
+
+	// 取矢量的最后一项的负值，即为高度（水面为0，出水为负）
+	_pr_height = - vn_c_waterface(2);
 }
 
 int SlideEstimator::task_spawn(int argc, char *argv[])
