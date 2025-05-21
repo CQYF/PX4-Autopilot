@@ -87,6 +87,56 @@ using uORB::SubscriptionData;
 
 using namespace time_literals;
 
+class A_ADRCController {
+private:
+	// 控制器参数
+	float tau;          // 采样时间
+	float J0;
+	float Jc_inv;
+	float kp;
+	float kd;
+	float omega_o;
+	float beta1;
+	float beta2;
+	float beta3;
+	float h;
+	float R;
+
+	int32_t nn;         // 迭代计数器
+
+	// 状态变量
+	matrix::Matrix<float, 3, 1> Lc;
+	matrix::Matrix<float, 3, 1> Z;
+	float Uc;
+	float v;
+	float v1;
+	float v2;
+
+public:
+	// 构造函数
+	A_ADRCController(
+		float tau = 0.05f,
+		float J0 = 30.438f,
+		float kp = 130.0f,
+		float kd = 2.0f,
+		float omega_o = 12.0f,
+		float h = 0.1,
+		float R = 20
+	);
+
+	// 核心计算函数
+	void compute(float P, float P_star);
+
+	// fhan函数
+	float fhan(float x1, float x2, float u) const;
+
+	// 获取当前控制量 Uc
+	float getUc() const { return Uc; }
+
+	// 重置控制器状态
+	void reset(float new_kp, float new_kd, float new_omega_o, float new_tau, float new_J0, float new_h, float new_R);
+};
+
 
 class ADRCController {
 	private:

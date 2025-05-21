@@ -44,6 +44,125 @@ using math::interpolate;
 using math::radians;
 
 
+A_ADRCController::A_ADRCController(
+        float _tau,      //采样时间间隔
+        float _J0,       //系统参数
+        float _kp,       // 控制器 Kp 参数
+        float _kd,       // 控制器 Kd 参数
+        float _omega_o,  // 观测器带宽
+        float _h,        // TD滤波因子
+        float _R         // TD带宽参数（速度因子）
+)
+        // tau(tau),           //采样时间间隔（实验中修改）
+        // J0(J0),             //系统参数（实验中修改）
+        // Jc_inv(1.0f / J0),  // 计算转动惯量倒数
+        // kp(kp),             // 控制器 Kp 参数（实验中修改）
+        // kd(kd),             // 控制器 Kd 参数（实验中修改）
+        // omega_o(omega_o),   // 观测器带宽（实验中修改）
+        // beta1(3 * omega_o),  // 初始化 beta1
+        // beta2(3 * omega_o * omega_o),  // 初始化 beta2
+        // beta3(omega_o * omega_o * omega_o),  // 初始化 beta3
+        // nn(0),          // 计数器归零
+        // Uc(0),          // 初始控制量（需日志记录，需要控制的是横滚以及俯仰力矩）
+        // v(0),            // 初始速度变量（需日志记录）
+        // h(h),
+        // R(R),
+        // v1(0),           //TD 给出曲线1
+        // v2(0)            //TD 给出曲线2
+        //后面的函数 compute 中的 P和 P_star也需要日志记录，如果可以的话也记录一下 Z1 Z2 Z3；
+        //在飞机切换模式后触发 reset函数
+{
+    	reset(_kp, _kd, _omega_o, _tau, _J0, _h, _R);
+}
+
+void A_ADRCController::reset(float new_kp, float new_kd, float new_omega_o, float new_tau, float new_J0, float new_h, float new_R) {
+	Z.setZero();
+	nn = 0;
+	Uc = 0;
+	v = 0;
+	v1 = 0;
+	v2 = 0;
+
+	kp = new_kp;
+	kd = new_kd;
+	omega_o = new_omega_o;
+
+	beta1 = 3 * omega_o;
+	beta2 = 3 * omega_o * omega_o;
+	beta3 = omega_o * omega_o * omega_o;
+	Lc(0,0) = beta1;
+	Lc(1,0) = beta2;
+	Lc(2,0) = beta3;
+
+	tau = new_tau;
+	J0 = new_J0;
+	Jc_inv = 1.0f / J0;
+}
+
+float A_ADRCController::fhan(float x1, float x2, float u) const {
+	float d = R * h;
+	float d0 = d * h;
+	float y = x1 - u + h * x2;
+	float a0 = sqrtf(d*d + 8.0f * R * fabsf(y));
+	float a;
+
+	if (fabsf(y) <= d0) {
+		a = x2 + y / h;
+	} else {
+		a = x2 + 0.5f * (a0 - d) * ((y > 0) ? 1.0f : -1.0f);
+	}
+
+	if (fabsf(a) <= d) {
+		return -R * a / d;
+	} else {
+		return -R * ((a > 0) ? 1.0f : -1.0f);
+	}
+}
+
+
+void A_ADRCController::compute(float P, float P_star)
+{
+	++nn;
+
+	// 1. 更新跟踪微分器（TD）
+	float dv1 = v2;
+	float dv2 = fhan(v1, v2, P_star);
+	v1 += tau * dv1;
+	v2 += tau * dv2;
+
+	Matrix<float, 3, 3> Ap;
+	Ap(0, 0) = 0; Ap(0, 1) = 1; Ap(0, 2) = 0;
+	Ap(1, 0) = 0; Ap(1, 1) = 0; Ap(1, 2) = 1;
+	Ap(2, 0) = 0; Ap(2, 1) = 0; Ap(2, 2) = 0;
+
+	Matrix<float, 3, 1> Bp;
+	Bp(0, 0) = 0;
+	Bp(1, 0) = J0;
+	Bp(2, 0) = 0;
+
+	Matrix<float, 1, 3> Cp;
+	Cp(0, 0) = 1; Cp(0, 1) = 0; Cp(0, 2) = 0;
+
+	static Matrix<float, 3, 1> Z_dot;
+	if (nn > 1) {
+		Z_dot = (Ap - Lc*Cp)*Z + Bp*Uc + Lc*P;
+	} else {
+		Z_dot = (Ap - Lc*Cp)*Z + Lc*P;
+	}
+
+	Z += tau * Z_dot;
+	float Z1 = Z(0,0);
+	float Z2 = Z(1,0);
+	float Z3 = Z(2,0);
+
+	Uc = Jc_inv * (kp*(v1 - Z1) + kd*(v2 - Z2) + Z3);
+
+	P = P + tau*v + (float)0.5*tau*tau*J0*Uc;
+	v = v + tau*J0*Uc;
+}
+
+
+
 ADRCController::ADRCController(
         float _tau,
         float _J0,
