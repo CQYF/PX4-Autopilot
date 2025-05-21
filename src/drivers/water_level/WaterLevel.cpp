@@ -83,6 +83,7 @@ void WaterLevel::measure(void)
 					(static_cast<uint32_t>(buf[6]) << 8) |
 					(static_cast<uint32_t>(buf[5]) << 0);
 		_water_level.lv = 0.002f * static_cast<float>(_water_level.h);
+		_water_level.timestamp = hrt_absolute_time();
 		_water_level_pub.publish(_water_level);
 	}
 	else {
