@@ -44,7 +44,7 @@ using math::interpolate;
 using math::radians;
 
 
-A_ADRCController::A_ADRCController(
+ADRC2ndController::ADRC2ndController(
         float _tau,      //采样时间间隔
         float _J0,       //系统参数
         float _kp,       // 控制器 Kp 参数
@@ -75,7 +75,7 @@ A_ADRCController::A_ADRCController(
     	reset(_kp, _kd, _omega_o, _tau, _J0, _h, _R);
 }
 
-void A_ADRCController::reset(float new_kp, float new_kd, float new_omega_o, float new_tau, float new_J0, float new_h, float new_R) {
+void ADRC2ndController::reset(float new_kp, float new_kd, float new_omega_o, float new_tau, float new_J0, float new_h, float new_R) {
 	Z.setZero();
 	nn = 0;
 	Uc = 0;
@@ -99,7 +99,7 @@ void A_ADRCController::reset(float new_kp, float new_kd, float new_omega_o, floa
 	Jc_inv = 1.0f / J0;
 }
 
-float A_ADRCController::fhan(float x1, float x2, float u) const {
+float ADRC2ndController::fhan(float x1, float x2, float u) const {
 	float d = R * h;
 	float d0 = d * h;
 	float y = x1 - u + h * x2;
@@ -120,7 +120,7 @@ float A_ADRCController::fhan(float x1, float x2, float u) const {
 }
 
 
-void A_ADRCController::compute(float P, float P_star)
+void ADRC2ndController::compute(float P, float P_star)
 {
 	++nn;
 

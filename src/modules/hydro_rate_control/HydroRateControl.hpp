@@ -87,7 +87,7 @@ using uORB::SubscriptionData;
 
 using namespace time_literals;
 
-class A_ADRCController {
+class ADRC2ndController {
 private:
 	// 控制器参数
 	float tau;          // 采样时间
@@ -114,7 +114,7 @@ private:
 
 public:
 	// 构造函数
-	A_ADRCController(
+	ADRC2ndController(
 		float tau = 0.05f,
 		float J0 = 30.438f,
 		float kp = 130.0f,
