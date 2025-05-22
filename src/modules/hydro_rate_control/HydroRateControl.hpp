@@ -79,6 +79,7 @@
 
 #include <uORB/topics/vehicle_attitude_setpoint.h>
 #include <uORB/topics/adrc_report.h>
+#include <uORB/topics/adrc2nd_report.h>
 
 using matrix::Eulerf;
 using matrix::Quatf;
@@ -133,8 +134,15 @@ public:
 	// 获取当前控制量 Uc
 	float getUc() const { return Uc; }
 
+	float getv() const {return v;}
+	float getv1() const {return v1;}
+	float getv2() const {return v2;}
+
+	matrix::Matrix<float, 3, 1> getZ() {return Z;}
+
 	// 重置控制器状态
 	void reset(float new_kp, float new_kd, float new_omega_o, float new_tau, float new_J0, float new_h, float new_R);
+	void reset(float new_kp, float new_kd, float new_omega_o, float new_tau, float new_J0);
 };
 
 
@@ -254,6 +262,7 @@ private:
 	uORB::Publication<vehicle_thrust_setpoint_s>	_hydro_thrust_setpoint_pub{ORB_ID(hydro_thrust_setpoint)};
 	uORB::Publication<hydro_depth_control_message_s>	_hydro_depth_control_message_pub{ORB_ID(hydro_depth_control_message)};
 	uORB::Publication<adrc_report_s>	_adrc_report_pub{ORB_ID(adrc_report)};
+	uORB::Publication<adrc2nd_report_s>	_adrc2nd_report_pub{ORB_ID(adrc2nd_report)};
 
 	//自定义模式下的控制状态
 	enum class HydroRunningState : int32_t {
@@ -295,6 +304,8 @@ private:
 
 	ADRCController adrc_pit;
 	ADRCController adrc_rol;
+	ADRC2ndController adrc2nd_pit;
+	ADRC2ndController adrc2nd_rol;
 
 	DEFINE_PARAMETERS(
 		(ParamFloat<px4::params::HY_AIRSPD_MAX>) _param_hy_airspd_max,		//最大空速
@@ -387,7 +398,25 @@ private:
 		(ParamFloat<px4::params::ADRC_R_J0>) _param_adrc_r_j0,
 		(ParamFloat<px4::params::ADRC_R_NORM>) _param_adrc_r_norm,
 		(ParamFloat<px4::params::ADRC_R_Z3MAX>) _param_adrc_r_z3max,
-		(ParamFloat<px4::params::ADRC_R_Z3MIN>) _param_adrc_r_z3min
+		(ParamFloat<px4::params::ADRC_R_Z3MIN>) _param_adrc_r_z3min,
+
+
+		(ParamInt<px4::params::ADRC_MODE>) _param_adrc_mode,
+
+
+		(ParamFloat<px4::params::ADRC2_TAU>) _param_adrc2_tau,
+
+		(ParamFloat<px4::params::ADRC2_P_KP>) _param_adrc2_p_kp,
+		(ParamFloat<px4::params::ADRC2_P_KD>) _param_adrc2_p_kd,
+		(ParamFloat<px4::params::ADRC2_P_OMEGA_O>) _param_adrc2_p_omega_o,
+		(ParamFloat<px4::params::ADRC2_P_J0>) _param_adrc2_p_j0,
+		(ParamFloat<px4::params::ADRC2_P_NORM>) _param_adrc2_p_norm,
+
+		(ParamFloat<px4::params::ADRC2_R_KP>) _param_adrc2_r_kp,
+		(ParamFloat<px4::params::ADRC2_R_KD>) _param_adrc2_r_kd,
+		(ParamFloat<px4::params::ADRC2_R_OMEGA_O>) _param_adrc2_r_omega_o,
+		(ParamFloat<px4::params::ADRC2_R_J0>) _param_adrc2_r_j0,
+		(ParamFloat<px4::params::ADRC2_R_NORM>) _param_adrc2_r_norm
 
 	)
 

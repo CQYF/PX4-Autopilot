@@ -76,6 +76,12 @@ ADRC2ndController::ADRC2ndController(
 }
 
 void ADRC2ndController::reset(float new_kp, float new_kd, float new_omega_o, float new_tau, float new_J0, float new_h, float new_R) {
+	reset(new_kp, new_kd, new_omega_o, new_tau, new_J0);
+
+	h = new_h;
+	R = new_R;
+}
+void ADRC2ndController::reset(float new_kp, float new_kd, float new_omega_o, float new_tau, float new_J0) {
 	Z.setZero();
 	nn = 0;
 	Uc = 0;
@@ -157,8 +163,8 @@ void ADRC2ndController::compute(float P, float P_star)
 
 	Uc = Jc_inv * (kp*(v1 - Z1) + kd*(v2 - Z2) + Z3);
 
-	P = P + tau*v + (float)0.5*tau*tau*J0*Uc;
-	v = v + tau*J0*Uc;
+	// P = P + tau*v + (float)0.5*tau*tau*J0*Uc;
+	// v = v + tau*J0*Uc;
 }
 
 
@@ -686,46 +692,114 @@ void HydroRateControl::Run()
 					_param_adrc_r_alpha.get(),
 					_param_adrc_r_z3max.get(),
 					_param_adrc_r_z3min.get());
+
+			adrc2nd_pit.reset(	_param_adrc2_p_kp.get(),
+						_param_adrc2_p_kd.get(),
+						_param_adrc2_p_omega_o.get(),
+						_param_adrc2_tau.get(),
+						_param_adrc2_p_j0.get());
+
+			adrc2nd_rol.reset(	_param_adrc2_r_kp.get(),
+						_param_adrc2_r_kd.get(),
+						_param_adrc2_r_omega_o.get(),
+						_param_adrc2_tau.get(),
+						_param_adrc2_r_j0.get());
 		}
 
 		// 在这里调用adrc代码，并同时覆盖_hydro_torque_setpoint和_vehicle_torque_setpoint
 		if (_vehicle_status.nav_state == HYDRO_MODE_STABILIZED)
 		{
-			adrc_report_s adrc_report;
+			int32_t adrc_mode = _param_adrc_mode.get();
 
-			_vehicle_attitude_setpoint_sub.update(&_vehicle_attitude_setpoint);
+			// 第一版adrc
+			if(adrc_mode == 1)
+			{
+				adrc_report_s adrc_report;
 
-			adrc_pit.compute(_euler_angles.theta(), _vehicle_attitude_setpoint.pitch_body);
-			adrc_rol.compute(_euler_angles.phi(), _vehicle_attitude_setpoint.roll_body);
+				_vehicle_attitude_setpoint_sub.update(&_vehicle_attitude_setpoint);
 
-			float u_pit = adrc_pit.getUc() / _param_adrc_p_norm.get();
-			float u_rol = adrc_rol.getUc() / _param_adrc_r_norm.get();
-			matrix::Matrix<float, 3, 1> z_pit = adrc_pit.getZ();
-			matrix::Matrix<float, 3, 1> z_rol = adrc_rol.getZ();
+				adrc_pit.compute(_euler_angles.theta(), _vehicle_attitude_setpoint.pitch_body);
+				adrc_rol.compute(_euler_angles.phi(), _vehicle_attitude_setpoint.roll_body);
 
-			// 覆盖
-			_hydro_torque_setpoint.xyz[0] = u_rol;
-			_hydro_torque_setpoint.xyz[1] = u_pit;
-			_vehicle_torque_setpoint.xyz[0] = u_rol;
-			_vehicle_torque_setpoint.xyz[1] = u_pit;
+				float u_pit = adrc_pit.getUc() / _param_adrc_p_norm.get();
+				float u_rol = adrc_rol.getUc() / _param_adrc_r_norm.get();
+				matrix::Matrix<float, 3, 1> z_pit = adrc_pit.getZ();
+				matrix::Matrix<float, 3, 1> z_rol = adrc_rol.getZ();
 
-			// 日志
-			adrc_report.x_pit = _euler_angles.theta();
-			adrc_report.xd_pit = _vehicle_attitude_setpoint.pitch_body;
-			adrc_report.u_pit = adrc_pit.getUc();
-			adrc_report.z_pit[0] = z_pit(0, 0);
-			adrc_report.z_pit[1] = z_pit(1, 0);
-			adrc_report.z_pit[2] = z_pit(2, 0);
+				// 覆盖
+				_hydro_torque_setpoint.xyz[0] = u_rol;
+				_hydro_torque_setpoint.xyz[1] = u_pit;
+				_vehicle_torque_setpoint.xyz[0] = u_rol;
+				_vehicle_torque_setpoint.xyz[1] = u_pit;
 
-			adrc_report.x_rol = _euler_angles.phi();
-			adrc_report.xd_rol = _vehicle_attitude_setpoint.roll_body;
-			adrc_report.u_rol = adrc_rol.getUc();
-			adrc_report.z_rol[0] = z_rol(0, 0);
-			adrc_report.z_rol[1] = z_rol(1, 0);
-			adrc_report.z_rol[2] = z_rol(2, 0);
+				// 日志
+				adrc_report.x_pit = _euler_angles.theta();
+				adrc_report.xd_pit = _vehicle_attitude_setpoint.pitch_body;
+				adrc_report.u_pit = adrc_pit.getUc();
+				adrc_report.z_pit[0] = z_pit(0, 0);
+				adrc_report.z_pit[1] = z_pit(1, 0);
+				adrc_report.z_pit[2] = z_pit(2, 0);
 
-			adrc_report.timestamp = hrt_absolute_time();
-			_adrc_report_pub.publish(adrc_report);
+				adrc_report.x_rol = _euler_angles.phi();
+				adrc_report.xd_rol = _vehicle_attitude_setpoint.roll_body;
+				adrc_report.u_rol = adrc_rol.getUc();
+				adrc_report.z_rol[0] = z_rol(0, 0);
+				adrc_report.z_rol[1] = z_rol(1, 0);
+				adrc_report.z_rol[2] = z_rol(2, 0);
+
+				adrc_report.timestamp = hrt_absolute_time();
+				_adrc_report_pub.publish(adrc_report);
+			}
+			// 第二版adrc
+			else if(adrc_mode == 2)
+			{
+				adrc2nd_report_s adrc2nd_report;
+
+				_vehicle_attitude_setpoint_sub.update(&_vehicle_attitude_setpoint);
+
+				adrc2nd_pit.compute(_euler_angles.theta(), _vehicle_attitude_setpoint.pitch_body);
+				adrc2nd_rol.compute(_euler_angles.phi(), _vehicle_attitude_setpoint.roll_body);
+
+				float u_pit = adrc2nd_pit.getUc() / _param_adrc2_p_norm.get();
+				float u_rol = adrc2nd_rol.getUc() / _param_adrc2_r_norm.get();
+				matrix::Matrix<float, 3, 1> z_pit = adrc2nd_pit.getZ();
+				matrix::Matrix<float, 3, 1> z_rol = adrc2nd_rol.getZ();
+
+				// 覆盖
+				_hydro_torque_setpoint.xyz[0] = u_rol;
+				_hydro_torque_setpoint.xyz[1] = u_pit;
+				_vehicle_torque_setpoint.xyz[0] = u_rol;
+				_vehicle_torque_setpoint.xyz[1] = u_pit;
+
+				// 日志
+				adrc2nd_report.x_pit = _euler_angles.theta();
+				adrc2nd_report.xd_pit = _vehicle_attitude_setpoint.pitch_body;
+				adrc2nd_report.u_pit = adrc2nd_pit.getUc();
+				adrc2nd_report.v_pit[0] = adrc2nd_pit.getv();
+				adrc2nd_report.v_pit[1] = adrc2nd_pit.getv1();
+				adrc2nd_report.v_pit[2] = adrc2nd_pit.getv2();
+				adrc2nd_report.z_pit[0] = z_pit(0, 0);
+				adrc2nd_report.z_pit[1] = z_pit(1, 0);
+				adrc2nd_report.z_pit[2] = z_pit(2, 0);
+
+				adrc2nd_report.x_rol = _euler_angles.phi();
+				adrc2nd_report.xd_rol = _vehicle_attitude_setpoint.roll_body;
+				adrc2nd_report.u_rol = adrc2nd_rol.getUc();
+				adrc2nd_report.v_rol[0] = adrc2nd_rol.getv();
+				adrc2nd_report.v_rol[1] = adrc2nd_rol.getv1();
+				adrc2nd_report.v_rol[2] = adrc2nd_rol.getv2();
+				adrc2nd_report.z_rol[0] = z_rol(0, 0);
+				adrc2nd_report.z_rol[1] = z_rol(1, 0);
+				adrc2nd_report.z_rol[2] = z_rol(2, 0);
+
+				adrc2nd_report.timestamp = hrt_absolute_time();
+				_adrc2nd_report_pub.publish(adrc2nd_report);
+			}
+			// 不使用adrc
+			else
+			{
+
+			}
 		}
 
 

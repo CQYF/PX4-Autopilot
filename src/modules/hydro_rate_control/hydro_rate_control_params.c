@@ -710,3 +710,94 @@ PARAM_DEFINE_FLOAT(ADRC_R_Z3MAX, 10.0f);
  * @group ADRC
  */
 PARAM_DEFINE_FLOAT(ADRC_R_Z3MIN, -10.0f);
+
+
+
+
+
+/**
+ * ADRC2
+ *
+ * @group ADRC2
+ * @value 0 No ADRC
+ * @value 1 ADRC1
+ * @value 2 ADRC2
+ */
+PARAM_DEFINE_INT32(ADRC_MODE, 0);
+
+/**
+ * ADRC2
+ *
+ * @group ADRC2
+ */
+PARAM_DEFINE_FLOAT(ADRC2_TAU, 0.0f);
+
+/**
+ * ADRC2
+ *
+ * @group ADRC2
+ */
+PARAM_DEFINE_FLOAT(ADRC2_P_KP, 0.0f);
+
+/**
+ * ADRC2
+ *
+ * @group ADRC2
+ */
+PARAM_DEFINE_FLOAT(ADRC2_P_KD, 0.0f);
+
+/**
+ * ADRC2
+ *
+ * @group ADRC2
+ */
+PARAM_DEFINE_FLOAT(ADRC2_P_OMEGA_O, 0.0f);
+
+/**
+ * ADRC2
+ *
+ * @group ADRC2
+ */
+PARAM_DEFINE_FLOAT(ADRC2_P_J0, 0.0f);
+
+/**
+ * ADRC2
+ *
+ * @group ADRC2
+ */
+PARAM_DEFINE_FLOAT(ADRC2_P_NORM, 0.0f);
+
+/**
+ * ADRC2
+ *
+ * @group ADRC2
+ */
+PARAM_DEFINE_FLOAT(ADRC2_R_KP, 0.0f);
+
+/**
+ * ADRC2
+ *
+ * @group ADRC2
+ */
+PARAM_DEFINE_FLOAT(ADRC2_R_KD, 0.0f);
+
+/**
+ * ADRC2
+ *
+ * @group ADRC2
+ */
+PARAM_DEFINE_FLOAT(ADRC2_R_OMEGA_O, 0.0f);
+
+/**
+ * ADRC2
+ *
+ * @group ADRC2
+ */
+PARAM_DEFINE_FLOAT(ADRC2_R_J0, 0.0f);
+
+/**
+ * ADRC2
+ *
+ * @group ADRC2
+ */
+PARAM_DEFINE_FLOAT(ADRC2_R_NORM, 0.0f);

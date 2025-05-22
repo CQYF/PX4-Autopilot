@@ -47,6 +47,7 @@ set(msg_files
 	ActuatorTest.msg
 	AdcReport.msg
 	AdrcReport.msg
+	Adrc2ndReport.msg
 	Airspeed.msg
 	AirspeedValidated.msg
 	AirspeedWind.msg
