@@ -58,6 +58,7 @@ void LoggedTopics::add_default_topics()
 	add_topic("hydro_thrust_setpoint");
 	add_topic("hydro_depth_control_message");
 	add_topic("slide_estimated");
+	add_topic("water_level");
 
 	// USER TOPIC END
 	add_topic("action_request");
