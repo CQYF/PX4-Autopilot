@@ -41,7 +41,7 @@ hydro_att_control start
 hydro_allocator start
 
 vtrack start
-mavdebug start
+# mavdebug start
 
 param set DEPTH_FUSION_ENABLE 1
 depth_fusion start
