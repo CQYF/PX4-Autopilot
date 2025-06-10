@@ -496,6 +496,7 @@ PARAM_DEFINE_FLOAT(HY_MAN_YR_MAX, 30.f);
  * @value 1 NSF
  * @value 2 HSMC
  * @value 3 Manual
+ * @value 4 GSC
  */
 PARAM_DEFINE_INT32(HY_DC_MODE, 0);
 //深度控制模式选择
@@ -682,4 +683,76 @@ PARAM_DEFINE_FLOAT(HY_HSMC_IMIN, -20.0f);
 PARAM_DEFINE_FLOAT(HY_MAN_RATIO, 0.0f);
 //手动模式下纵向力的比率
 
+//增益调度控制器参数
 
+/**
+ * GSC basic gain
+ *
+ * @decimal 3
+ * @group Hydro Depth Control
+ */
+PARAM_DEFINE_FLOAT(HY_GSC_GAIN_B, 0.0f);
+//增益调度控制器基本增益
+
+/**
+ * GSC v1 gain
+ *
+ * @decimal 3
+ * @group Hydro Depth Control
+ */
+PARAM_DEFINE_FLOAT(HY_GSC_GAIN_V1, 0.0f);
+//增益调度控制器速度一次方项增益
+
+/**
+ * GSC v2 gain
+ *
+ * @decimal 3
+ * @group Hydro Depth Control
+ */
+PARAM_DEFINE_FLOAT(HY_GSC_GAIN_V2, 0.0f);
+//增益调度控制器速度二次方项增益
+
+/**
+ * GSC throttle gain
+ *
+ * @decimal 3
+ * @group Hydro Depth Control
+ */
+PARAM_DEFINE_FLOAT(HY_GSC_GAIN_T, 0.0f);
+//增益调度控制器推力项增益
+
+/**
+ * GSC max gain
+ *
+ * @decimal 3
+ * @group Hydro Depth Control
+ */
+PARAM_DEFINE_FLOAT(HY_GSC_GAIN_MAX, 0.0f);
+//增益调度控制器增益上限
+
+/**
+ * GSC Td
+ *
+ * @decimal 3
+ * @group Hydro Depth Control
+ */
+PARAM_DEFINE_FLOAT(HY_GSC_TD, 0.0f);
+//增益调度控制器微分时间常数
+
+/**
+ * GSC umax
+ *
+ * @decimal 3
+ * @group Hydro Depth Control
+ */
+PARAM_DEFINE_FLOAT(HY_GSC_UMAX, 10.0f);
+//增益调度控制器控制量上限
+
+/**
+ * GSC umin
+ *
+ * @decimal 3
+ * @group Hydro Depth Control
+ */
+PARAM_DEFINE_FLOAT(HY_GSC_UMIN, -10.0f);
+//增益调度控制器控制量下限

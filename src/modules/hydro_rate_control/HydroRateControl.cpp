@@ -312,6 +312,8 @@ void HydroRateControl::Run()
 			_hydro_depth_control_message.depth_rate = depth_rate;
 			_hydro_depth_control_message.depth_setpoint = depth_setpoint;
 
+			float v2 = _debug_vect.z;
+
 			// 水平推力比例限幅，限制遥控器的最大命令
 			float throttle_limited;
 			throttle_limited = math::constrain(_vehicle_thrust_setpoint.xyz[0], -_param_hy_dc_max_thr.get(), _param_hy_dc_max_thr.get());
@@ -375,6 +377,28 @@ void HydroRateControl::Run()
 			_hydro_depth_control_message.hsmc_surface = hsmc_surface;
 			_hydro_depth_control_message.hsmc_u = hsmc_u;
 			/* 高阶滑模 END */
+
+			/* 增益调度控制 START */
+			float gsc_err = depth_setpoint - depth - depth_rate*_param_hy_gsc_td.get();
+			float gsc_gain_b = _param_hy_gsc_gain_b.get();
+			float gsc_gain_v1 = sqrtf(v2)*_param_hy_gsc_gain_v1.get();
+			float gsc_gain_v2 = v2*_param_hy_gsc_gain_v2.get();
+			float gsc_gain_t = throttle_limited*_param_hy_gsc_gain_t.get();
+			float gsc_gain = gsc_gain_b + gsc_gain_v1 + gsc_gain_v2 + gsc_gain_t;
+			float gsc_gain_limited = math::constrain(gsc_gain, 0.0f, _param_hy_gsc_gain_max.get());
+			float gsc_u = gsc_gain_limited * gsc_err;
+			float gsc_u_limited = math::constrain(gsc_u, _param_hy_gsc_umin.get(), _param_hy_gsc_umax.get());
+			//记录
+			_hydro_depth_control_message.gsc_err = gsc_err;
+			_hydro_depth_control_message.gsc_gain_b = gsc_gain_b;
+			_hydro_depth_control_message.gsc_gain_v1 = gsc_gain_v1;
+			_hydro_depth_control_message.gsc_gain_v2 = gsc_gain_v2;
+			_hydro_depth_control_message.gsc_gain_t = gsc_gain_t;
+			_hydro_depth_control_message.gsc_gain = gsc_gain;
+			_hydro_depth_control_message.gsc_gain_limited = gsc_gain_limited;
+			_hydro_depth_control_message.gsc_u = gsc_u;
+			_hydro_depth_control_message.gsc_u_limited = gsc_u_limited;
+			/* 增益调度控制 END */
 
 			// 根据模式选择竖直推力，向下为正
 			float hydro_vertical_thrust_setpoint;

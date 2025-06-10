@@ -244,6 +244,16 @@ private:
 		//手动
 		(ParamFloat<px4::params::HY_MAN_RATIO>) _param_hy_man_ratio,
 
+		//增益调度
+		(ParamFloat<px4::params::HY_GSC_GAIN_B>) _param_hy_gsc_gain_b,
+		(ParamFloat<px4::params::HY_GSC_GAIN_V1>) _param_hy_gsc_gain_v1,
+		(ParamFloat<px4::params::HY_GSC_GAIN_V2>) _param_hy_gsc_gain_v2,
+		(ParamFloat<px4::params::HY_GSC_GAIN_T>) _param_hy_gsc_gain_t,
+		(ParamFloat<px4::params::HY_GSC_GAIN_MAX>) _param_hy_gsc_gain_max,
+		(ParamFloat<px4::params::HY_GSC_TD>) _param_hy_gsc_td,
+		(ParamFloat<px4::params::HY_GSC_UMAX>) _param_hy_gsc_umax,
+		(ParamFloat<px4::params::HY_GSC_UMIN>) _param_hy_gsc_umin,
+
 		//引用外部参数
 		(ParamFloat<px4::params::HY_RT_MAX_THRUST>) _param_hy_rt_max_thrust	//单个水下推进器最大推力
 	)
