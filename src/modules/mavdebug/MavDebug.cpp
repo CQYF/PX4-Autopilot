@@ -100,42 +100,42 @@ void MavDebug::Run()
 	hydro_depth_control_message_s hydro_depth_control_message;
 	if (_hydro_depth_control_message_sub.update(&hydro_depth_control_message))
 	{
-		_debug_array.data[10] = depth;
-		_debug_array.data[11] = depth_rate;
-		_debug_array.data[12] = depth_setpoint;
-		_debug_array.data[13] = throttle_limited;
-		_debug_array.data[14] = horizontal_thrust;
+		_debug_array.data[10] = hydro_depth_control_message.depth;
+		_debug_array.data[11] = hydro_depth_control_message.depth_rate;
+		_debug_array.data[12] = hydro_depth_control_message.depth_setpoint;
+		_debug_array.data[13] = hydro_depth_control_message.throttle_limited;
+		_debug_array.data[14] = hydro_depth_control_message.horizontal_thrust;
 
 		//非光滑反馈
-		_debug_array.data[20] = nsf_e1;
-		_debug_array.data[21] = nsf_e2;
-		_debug_array.data[22] = nsf_s;
-		_debug_array.data[23] = nsf_s_norm;
-		_debug_array.data[24] = nsf_s_norm_power;
-		_debug_array.data[25] = nsf_u;
-		_debug_array.data[26] = nsf_u_limited;
+		_debug_array.data[20] = hydro_depth_control_message.nsf_e1;
+		_debug_array.data[21] = hydro_depth_control_message.nsf_e2;
+		_debug_array.data[22] = hydro_depth_control_message.nsf_s;
+		_debug_array.data[23] = hydro_depth_control_message.nsf_s_norm;
+		_debug_array.data[24] = hydro_depth_control_message.nsf_s_norm_power;
+		_debug_array.data[25] = hydro_depth_control_message.nsf_u;
+		_debug_array.data[26] = hydro_depth_control_message.nsf_u_limited;
 
 		//高阶滑模
-		_debug_array.data[30] = hsmc_x1;
-		_debug_array.data[31] = hsmc_x2;
-		_debug_array.data[32] = hsmc_x3;
-		_debug_array.data[33] = hsmc_surface;
-		_debug_array.data[34] = hsmc_u;
+		_debug_array.data[30] = hydro_depth_control_message.hsmc_x1;
+		_debug_array.data[31] = hydro_depth_control_message.hsmc_x2;
+		_debug_array.data[32] = hydro_depth_control_message.hsmc_x3;
+		_debug_array.data[33] = hydro_depth_control_message.hsmc_surface;
+		_debug_array.data[34] = hydro_depth_control_message.hsmc_u;
 
 		//增益调度控制
-		_debug_array.data[41] = gsc_err;
-		_debug_array.data[42] = gsc_gain_b;
-		_debug_array.data[43] = gsc_gain_v1;
-		_debug_array.data[44] = gsc_gain_v2;
-		_debug_array.data[45] = gsc_gain_t;
-		_debug_array.data[46] = gsc_gain;
-		_debug_array.data[47] = gsc_gain_limited;
-		_debug_array.data[48] = gsc_u;
-		_debug_array.data[49] = gsc_u_limited;
+		_debug_array.data[41] = hydro_depth_control_message.gsc_err;
+		_debug_array.data[42] = hydro_depth_control_message.gsc_gain_b;
+		_debug_array.data[43] = hydro_depth_control_message.gsc_gain_v1;
+		_debug_array.data[44] = hydro_depth_control_message.gsc_gain_v2;
+		_debug_array.data[45] = hydro_depth_control_message.gsc_gain_t;
+		_debug_array.data[46] = hydro_depth_control_message.gsc_gain;
+		_debug_array.data[47] = hydro_depth_control_message.gsc_gain_limited;
+		_debug_array.data[48] = hydro_depth_control_message.gsc_u;
+		_debug_array.data[49] = hydro_depth_control_message.gsc_u_limited;
 
 
-		_debug_array.data[50] = vertical_thrust;
-		_debug_array.data[51] = vertical_thrust_limited;
+		_debug_array.data[50] = hydro_depth_control_message.vertical_thrust;
+		_debug_array.data[51] = hydro_depth_control_message.vertical_thrust_limited;
 	}
 
 	_debug_array.id = 1;
