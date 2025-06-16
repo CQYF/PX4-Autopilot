@@ -45,6 +45,7 @@
 #include <uORB/topics/debug_vect.h>
 #include <uORB/topics/debug_array.h>
 #include <uORB/topics/slide_estimated.h>
+#include <uORB/topics/hydro_depth_control_message.h>
 
 #include <drivers/drv_hrt.h>
 
@@ -74,6 +75,7 @@ private:
 	uORB::SubscriptionInterval _parameter_update_sub{ORB_ID(parameter_update), 1_s};
 
 	uORB::SubscriptionCallbackWorkItem 	_slide_estimated_sub{this, ORB_ID(slide_estimated)};
+	uORB::SubscriptionCallbackWorkItem 	_hydro_depth_control_message_sub{this, ORB_ID(hydro_depth_control_message)};
 
 	uORB::Publication<debug_vect_s>		_debug_vect_pub{ORB_ID(debug_vect)};
 
@@ -81,7 +83,7 @@ private:
 
 	uORB::Publication<debug_array_s>	_debug_array_pub{ORB_ID(debug_array)};
 
-
+	debug_array_s _debug_array{0};
 
 
 	perf_counter_t _loop_perf;
