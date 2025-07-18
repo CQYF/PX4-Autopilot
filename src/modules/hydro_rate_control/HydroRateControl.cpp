@@ -300,10 +300,15 @@ void HydroRateControl::Run()
 				depth = _debug_vect.x;
 				depth_rate = _debug_vect.y;
 			}
-			else
+			else if(dc_data == 1)
 			{
 				depth = _slide_estimated.x1_fusion;
 				depth_rate = _slide_estimated.x2_fusion;
+			}
+			else
+			{
+				depth = _depth_estimated.depth_estimated;
+				depth_rate = 0;
 			}
 
 			float depth_setpoint = _param_hy_dc_sp.get();

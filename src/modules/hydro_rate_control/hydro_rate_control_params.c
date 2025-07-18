@@ -538,6 +538,7 @@ PARAM_DEFINE_FLOAT(HY_DC_MAX_THR, 1.0f);
  * @group Hydro Depth Control
  * @value 0 motioncap
  * @value 1 kf
+ * @value 2 old
  */
 PARAM_DEFINE_INT32(HY_DC_DATA, 0);
 //深度控制数据来源
