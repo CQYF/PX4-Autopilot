@@ -214,6 +214,38 @@ void HydroAllocator::Run()
 	}
 	_manual_control_setpoint_sub.copy(&_manual_control_setpoint);
 
+	// 机翼折叠功能
+	const hrt_abstime now = hrt_absolute_time();
+	const float dt = math::constrain(((now - _last_run) / 1e6f), 0.0002f, 0.02f);
+
+	float foldwing_delta = dt / _param_hy_fdw_ct.get();
+	float foldwing_sp_final;
+	if(_manual_control_setpoint.aux4 < 0.5f) {
+		foldwing_sp_final = 0;
+	}
+	else {
+		foldwing_sp_final = 1;
+	}
+
+	if(foldwing_sp_final > _foldwing_sp) {
+		if(foldwing_sp_final - _foldwing_sp > foldwing_delta)
+			_foldwing_sp += foldwing_delta;
+		else
+			_foldwing_sp = foldwing_sp_final;
+	}
+	else {
+		if(_foldwing_sp - foldwing_sp_final > foldwing_delta)
+			_foldwing_sp -= foldwing_delta;
+		else
+			_foldwing_sp = foldwing_sp_final;
+	}
+	_foldwing_sp = math::constrain(_foldwing_sp, 0.0f, 1.0f);
+
+	_last_run = now;
+
+
+
+
 	hydro_allocate_message_s hydro_allocate_message_msg{0};
 
 	//0是左边，1是右边
@@ -338,6 +370,10 @@ void HydroAllocator::Run()
 
 	hydro_servos_msg.control[_params.hy_sv_idx[0] - 1] = x[0][0];
 	hydro_servos_msg.control[_params.hy_sv_idx[1] - 1] = x[1][0];
+
+
+	//机翼的通道
+	hydro_servos_msg.control[_param_hy_fdw_idx.get() - 1] = _foldwing_sp;
 
 	_hydro_motors_pub.publish(hydro_motors_msg);
 	_hydro_servos_pub.publish(hydro_servos_msg);

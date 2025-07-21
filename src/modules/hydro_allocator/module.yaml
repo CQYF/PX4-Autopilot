@@ -126,3 +126,20 @@ parameters:
       default: 2.0
       min: 1.0
       decimal: 2
+
+    #折叠机翼做动时长
+    HY_FDW_CT:
+      description:
+        short: foldwing fold time
+      type: float
+      default: 2.0
+      min: 0.3
+      decimal: 2
+
+    HY_FDW_IDX:
+      description:
+        short: foldwing index
+      type: int32
+      default: 1
+      min: 1
+      max: 8
