@@ -42,7 +42,7 @@ mode_control start
 
 # 控制和控制分配
 hydro_att_control start
-hydro_rate_control start
+# hydro_rate_control start
 # hydro_allocator start
 
 # 根据动捕的原始数据进行计算，这部分功能应该不会再被用到了

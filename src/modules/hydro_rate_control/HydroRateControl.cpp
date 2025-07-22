@@ -416,6 +416,13 @@ void HydroRateControl::Run()
 			// 根据模式选择竖直推力，向下为正
 			float hydro_vertical_thrust_setpoint;
 			int32_t dc_mode = _param_hy_dc_mode.get();
+			if(_manual_control_setpoint.aux5 < 0.5f) {
+				dc_mode = 1;
+			}
+			else {
+				dc_mode = 3;
+			}
+
 			if(dc_mode == 1)
 				hydro_vertical_thrust_setpoint = nsf_u_limited + _param_hy_dc_ff.get();
 			else if(dc_mode == 2)
