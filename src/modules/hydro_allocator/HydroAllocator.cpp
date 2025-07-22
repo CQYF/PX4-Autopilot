@@ -220,11 +220,14 @@ void HydroAllocator::Run()
 
 	float foldwing_delta = dt / _param_hy_fdw_ct.get();
 	float foldwing_sp_final;
-	if(_manual_control_setpoint.aux4 < 0.5f) {
-		foldwing_sp_final = 0;
+	if(_manual_control_setpoint.aux4 < 0.4f) {
+		foldwing_sp_final = -1;
+	}
+	else if(_manual_control_setpoint.aux4 > 0.6f){
+		foldwing_sp_final = 1;
 	}
 	else {
-		foldwing_sp_final = 1;
+		foldwing_sp_final = 0;
 	}
 
 	if(foldwing_sp_final > _foldwing_sp) {
@@ -239,7 +242,7 @@ void HydroAllocator::Run()
 		else
 			_foldwing_sp = foldwing_sp_final;
 	}
-	_foldwing_sp = math::constrain(_foldwing_sp, 0.0f, 1.0f);
+	_foldwing_sp = math::constrain(_foldwing_sp, -1.0f, 1.0f);
 
 	_last_run = now;
 
