@@ -156,6 +156,10 @@ private:
 		(ParamInt<px4::params::HY_FDW_AUX>) _param_hy_fdw_aux,
 		(ParamFloat<px4::params::HY_FDW_UPTHR>) _param_hy_fdw_upthr,
 		(ParamFloat<px4::params::HY_FDW_DNTHR>) _param_hy_fdw_dnthr,
-		(ParamFloat<px4::params::HY_FDW_AUXGAIN>) _param_hy_fdw_auxgain
+		(ParamFloat<px4::params::HY_FDW_AUXGAIN>) _param_hy_fdw_auxgain,
+
+		(ParamInt<px4::params::HY_FOIL_AUX>) _param_hy_foil_aux,
+		(ParamFloat<px4::params::HY_FOIL_THR>) _param_hy_foil_thr,
+		(ParamFloat<px4::params::HY_FOIL_AUXGAIN>) _param_hy_foil_auxgain
 	)
 };

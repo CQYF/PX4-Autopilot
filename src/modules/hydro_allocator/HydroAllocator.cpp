@@ -406,12 +406,50 @@ void HydroAllocator::Run()
 	hydro_servos_msg.timestamp = hrt_absolute_time();
 	hydro_servos_msg.timestamp_sample = _hydro_torque_setpoint_msg.timestamp_sample;
 
-	hydro_motors_msg.control[_params.hy_rt_idx[0] - 1] = x[0][1];
-	hydro_motors_msg.control[_params.hy_rt_idx[1] - 1] = x[1][1];
+	//水翼启用与禁用功能
+	float foil_aux;
+	switch (_param_hy_foil_aux.get()) {
+		case 0:
+		foil_aux = 0;
+		break;
 
-	hydro_servos_msg.control[_params.hy_sv_idx[0] - 1] = x[0][0];
-	hydro_servos_msg.control[_params.hy_sv_idx[1] - 1] = x[1][0];
+		case 1:
+		foil_aux = _manual_control_setpoint.aux1;
+		break;
 
+		case 2:
+		foil_aux = _manual_control_setpoint.aux2;
+		break;
+
+		case 3:
+		foil_aux = _manual_control_setpoint.aux3;
+		break;
+
+		case 4:
+		foil_aux = _manual_control_setpoint.aux4;
+		break;
+
+		case 5:
+		foil_aux = _manual_control_setpoint.aux5;
+		break;
+
+		case 6:
+		foil_aux = _manual_control_setpoint.aux6;
+		break;
+
+		default:
+		foil_aux = 0;
+	}
+	foil_aux *= _param_hy_foil_auxgain.get();
+
+	if(foil_aux > _param_hy_foil_thr.get())
+	{
+		hydro_motors_msg.control[_params.hy_rt_idx[0] - 1] = x[0][1];
+		hydro_motors_msg.control[_params.hy_rt_idx[1] - 1] = x[1][1];
+
+		hydro_servos_msg.control[_params.hy_sv_idx[0] - 1] = x[0][0];
+		hydro_servos_msg.control[_params.hy_sv_idx[1] - 1] = x[1][0];
+	}
 
 	//机翼的通道
 	int32_t fdw_idx = _param_hy_fdw_idx.get();

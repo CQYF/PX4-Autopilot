@@ -187,3 +187,36 @@ parameters:
       type: float
       default: 1.0
       decimal: 2
+
+    #水翼启用禁用对应的遥控器通道
+    HY_FOIL_AUX:
+      description:
+        short: hydrofoil aux channel
+      type: enum
+      values:
+        0: Disable
+        1: Aux1
+        2: Aux2
+        3: Aux3
+        4: Aux4
+        5: Aux5
+        6: Aux6
+      default: 0
+
+    #水翼启用禁用对应的遥控器阈值
+    HY_FOIL_THR:
+      description:
+        short: hydrofoil threshold
+      type: float
+      default: 0.0
+      min: -1.0
+      max: 1.0
+      decimal: 2
+
+    #水翼启用禁用对应的遥控器通道的增益，可以用于反转通道功能
+    HY_FOIL_AUXGAIN:
+      description:
+        short: hydrofoil aux gain
+      type: float
+      default: 1.0
+      decimal: 2
