@@ -33,9 +33,7 @@ land_detector start fixedwing
 #hu
 mode_control start
 
-#
-# Start attitude controller.
-#
+# 控制和控制分配
 # hydro_att_control start
 # hydro_rate_control start
 # hydro_allocator start

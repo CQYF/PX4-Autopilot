@@ -214,6 +214,79 @@ void HydroAllocator::Run()
 	}
 	_manual_control_setpoint_sub.copy(&_manual_control_setpoint);
 
+	// 机翼折叠功能
+	const hrt_abstime now = hrt_absolute_time();
+	const float dt = math::constrain(((now - _last_run) / 1e6f), 0.0002f, 0.02f);
+
+	float foldwing_delta = dt / _param_hy_fdw_ct.get();
+	float foldwing_sp_final;
+
+	float fdw_aux;
+
+	switch (_param_hy_fdw_aux.get()) {
+		case 0:
+		fdw_aux = 0;
+		break;
+
+		case 1:
+		fdw_aux = _manual_control_setpoint.aux1;
+		break;
+
+		case 2:
+		fdw_aux = _manual_control_setpoint.aux2;
+		break;
+
+		case 3:
+		fdw_aux = _manual_control_setpoint.aux3;
+		break;
+
+		case 4:
+		fdw_aux = _manual_control_setpoint.aux4;
+		break;
+
+		case 5:
+		fdw_aux = _manual_control_setpoint.aux5;
+		break;
+
+		case 6:
+		fdw_aux = _manual_control_setpoint.aux6;
+		break;
+
+		default:
+		fdw_aux = 0;
+	}
+
+	fdw_aux *= _param_hy_fdw_auxgain.get();
+
+	if(fdw_aux < _param_hy_fdw_dnthr.get()) {
+		foldwing_sp_final = -1;
+	}
+	else if(fdw_aux > _param_hy_fdw_upthr.get()){
+		foldwing_sp_final = 1;
+	}
+	else {
+		foldwing_sp_final = 0;
+	}
+
+	if(foldwing_sp_final > _foldwing_sp) {
+		if(foldwing_sp_final - _foldwing_sp > foldwing_delta)
+			_foldwing_sp += foldwing_delta;
+		else
+			_foldwing_sp = foldwing_sp_final;
+	}
+	else {
+		if(_foldwing_sp - foldwing_sp_final > foldwing_delta)
+			_foldwing_sp -= foldwing_delta;
+		else
+			_foldwing_sp = foldwing_sp_final;
+	}
+	_foldwing_sp = math::constrain(_foldwing_sp, -1.0f, 1.0f);
+
+	_last_run = now;
+
+
+
+
 	hydro_allocate_message_s hydro_allocate_message_msg{0};
 
 	//0是左边，1是右边
@@ -338,6 +411,14 @@ void HydroAllocator::Run()
 
 	hydro_servos_msg.control[_params.hy_sv_idx[0] - 1] = x[0][0];
 	hydro_servos_msg.control[_params.hy_sv_idx[1] - 1] = x[1][0];
+
+
+	//机翼的通道
+	int32_t fdw_idx = _param_hy_fdw_idx.get();
+	if(fdw_idx >=1 && fdw_idx <= 8)
+	{
+		hydro_servos_msg.control[_param_hy_fdw_idx.get() - 1] = _foldwing_sp;
+	}
 
 	_hydro_motors_pub.publish(hydro_motors_msg);
 	_hydro_servos_pub.publish(hydro_servos_msg);

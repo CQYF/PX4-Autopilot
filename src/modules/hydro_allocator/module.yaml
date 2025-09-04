@@ -126,3 +126,64 @@ parameters:
       default: 2.0
       min: 1.0
       decimal: 2
+
+    #折叠机翼做动时长
+    HY_FDW_CT:
+      description:
+        short: foldwing fold time
+      type: float
+      default: 2.0
+      min: 0.3
+      decimal: 2
+
+    #折叠机翼对应的输出通道
+    HY_FDW_IDX:
+      description:
+        short: foldwing index, set 0 to disable output
+      type: int32
+      default: 0
+      min: 0
+      max: 8
+
+    #折叠机翼对应的遥控器通道
+    HY_FDW_AUX:
+      description:
+        short: foldwing aux channel
+      type: enum
+      values:
+        0: Disable
+        1: Aux1
+        2: Aux2
+        3: Aux3
+        4: Aux4
+        5: Aux5
+        6: Aux6
+      default: 0
+
+    #折叠机翼对应的遥控器阈值
+    HY_FDW_UPTHR:
+      description:
+        short: foldwing up threshold
+      type: float
+      default: 0.5
+      min: 0.0
+      max: 1.0
+      decimal: 2
+
+    #折叠机翼对应的遥控器阈值
+    HY_FDW_DNTHR:
+      description:
+        short: foldwing down threshold
+      type: float
+      default: -0.5
+      min: -1.0
+      max: 0.0
+      decimal: 2
+
+    #折叠机翼对应的遥控器通道的增益，可以用于反向
+    HY_FDW_AUXGAIN:
+      description:
+        short: foldwing aux gain
+      type: float
+      default: 1.0
+      decimal: 2

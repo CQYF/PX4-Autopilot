@@ -79,6 +79,9 @@ public:
 private:
 	void Run() override;
 
+	hrt_abstime _last_run{0};
+	float _foldwing_sp{0};
+
 	struct NfParams {
 		float KL;
 		float v2; // v**2
@@ -146,6 +149,13 @@ private:
 		(ParamFloat<px4::params::HY_RT_MAX_THRUST>) _param_hy_rt_max_thrust,
 		(ParamFloat<px4::params::HY_WING_KL>) _param_hy_wing_kl,
 		(ParamFloat<px4::params::HY_WING_MAX_A>) _param_hy_wing_max_a,
-		(ParamFloat<px4::params::HY_TH_MAX_GAIN>) _param_hy_th_max_gain
+		(ParamFloat<px4::params::HY_TH_MAX_GAIN>) _param_hy_th_max_gain,
+
+		(ParamFloat<px4::params::HY_FDW_CT>) _param_hy_fdw_ct,
+		(ParamInt<px4::params::HY_FDW_IDX>) _param_hy_fdw_idx,
+		(ParamInt<px4::params::HY_FDW_AUX>) _param_hy_fdw_aux,
+		(ParamFloat<px4::params::HY_FDW_UPTHR>) _param_hy_fdw_upthr,
+		(ParamFloat<px4::params::HY_FDW_DNTHR>) _param_hy_fdw_dnthr,
+		(ParamFloat<px4::params::HY_FDW_AUXGAIN>) _param_hy_fdw_auxgain
 	)
 };
