@@ -50,6 +50,7 @@
 #include <uORB/topics/vehicle_attitude.h>
 #include <uORB/topics/debug_vect.h>
 #include <uORB/topics/hydro_allocate_message.h>
+#include <uORB/topics/vehicle_status.h>
 
 #include <drivers/drv_hrt.h>
 
@@ -103,9 +104,12 @@ private:
 	uORB::Subscription _manual_control_setpoint_sub{ORB_ID(manual_control_setpoint)};
 	uORB::Subscription _vehicle_attitude_sub{ORB_ID(vehicle_attitude)};
 	uORB::Subscription _debug_vect_sub{ORB_ID(debug_vect)};
+	uORB::Subscription _vehicle_status_sub{ORB_ID(vehicle_status)};
 
 	vehicle_torque_setpoint_s		_hydro_torque_setpoint_msg{0};
 	vehicle_thrust_setpoint_s		_hydro_thrust_setpoint_msg{0};
+
+	vehicle_status_s			_vehicle_status{};
 
 	manual_control_setpoint_s		_manual_control_setpoint{0};
 	vehicle_attitude_s			_vehicle_attitude{0};

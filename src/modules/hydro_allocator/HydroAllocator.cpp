@@ -458,7 +458,9 @@ void HydroAllocator::Run()
 	}
 	foil_aux *= _param_hy_foil_auxgain.get();
 
-	if(foil_aux > _param_hy_foil_thr.get())
+	_vehicle_status_sub.update(&_vehicle_status);
+
+	if(foil_aux > _param_hy_foil_thr.get() && (_vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_STAB || _vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_ACRO || _vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_MANUAL))
 	{
 		hydro_motors_msg.control[_params.hy_rt_idx[0] - 1] = x[0][1];
 		hydro_motors_msg.control[_params.hy_rt_idx[1] - 1] = x[1][1];
