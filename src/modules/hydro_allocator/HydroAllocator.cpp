@@ -252,6 +252,14 @@ void HydroAllocator::Run()
 		fdw_aux = _manual_control_setpoint.aux6;
 		break;
 
+		case 7:
+		fdw_aux = -1.0f;
+		break;
+
+		case 8:
+		fdw_aux = 1.0f;
+		break;
+
 		default:
 		fdw_aux = 0;
 	}
@@ -435,6 +443,14 @@ void HydroAllocator::Run()
 
 		case 6:
 		foil_aux = _manual_control_setpoint.aux6;
+		break;
+
+		case 7:
+		foil_aux = -1.0f;
+		break;
+
+		case 8:
+		foil_aux = 1.0f;
 		break;
 
 		default:

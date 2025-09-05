@@ -151,13 +151,15 @@ parameters:
         short: foldwing aux channel
       type: enum
       values:
-        0: Disable
+        0: Always 0
         1: Aux1
         2: Aux2
         3: Aux3
         4: Aux4
         5: Aux5
         6: Aux6
+        7: Always -1
+        8: Always 1
       default: 0
 
     #折叠机翼对应的遥控器阈值
@@ -194,13 +196,15 @@ parameters:
         short: hydrofoil aux channel
       type: enum
       values:
-        0: Disable
+        0: Always 0
         1: Aux1
         2: Aux2
         3: Aux3
         4: Aux4
         5: Aux5
         6: Aux6
+        7: Always -1
+        8: Always 1
       default: 0
 
     #水翼启用禁用对应的遥控器阈值
