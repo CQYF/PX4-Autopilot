@@ -110,9 +110,8 @@ private:
 
 	uORB::Subscription _battery_status_sub{ORB_ID(battery_status)};
 	uORB::Subscription _manual_control_setpoint_sub{ORB_ID(manual_control_setpoint)};
-	uORB::Subscription _rates_sp_sub{ORB_ID(vehicle_rates_setpoint)};
+	uORB::Subscription _rates_sp_sub{ORB_ID(hydro_rates_setpoint)};
 	uORB::Subscription _vehicle_status_sub{ORB_ID(vehicle_status)};
-	uORB::Subscription _vehicle_rates_sub{ORB_ID(vehicle_angular_velocity)};
 	uORB::Subscription _vehicle_attitude_sub{ORB_ID(vehicle_attitude)};
 	uORB::Subscription _depth_fusion_sub{ORB_ID(depth_fusion)};
 	uORB::Subscription _debug_key_value_sub{ORB_ID(debug_key_value)};
@@ -120,24 +119,12 @@ private:
 	uORB::Subscription _vehicle_air_data_sub{ORB_ID(vehicle_air_data)};
 	uORB::Subscription _depth_estimated_sub{ORB_ID(depth_estimated)};
 
-	uORB::Publication<vehicle_rates_setpoint_s>	_rate_sp_pub{ORB_ID(vehicle_rates_setpoint)};
-	uORB::Publication<vehicle_torque_setpoint_s>	_vehicle_torque_setpoint_pub{ORB_ID(vehicle_torque_setpoint)};
-	uORB::Publication<vehicle_thrust_setpoint_s>	_vehicle_thrust_setpoint_pub{ORB_ID(vehicle_thrust_setpoint)};
+	uORB::Publication<vehicle_rates_setpoint_s>	_rate_sp_pub{ORB_ID(hydro_rates_setpoint)};
 	uORB::Publication<vehicle_torque_setpoint_s>	_hydro_torque_setpoint_pub{ORB_ID(hydro_torque_setpoint)};
 	uORB::Publication<vehicle_thrust_setpoint_s>	_hydro_thrust_setpoint_pub{ORB_ID(hydro_thrust_setpoint)};
 	uORB::Publication<hydro_depth_control_message_s>	_hydro_depth_control_message_pub{ORB_ID(hydro_depth_control_message)};
 
-	//自定义模式下的控制状态
-	enum class HydroRunningState : int32_t {
-		WaterOnly,
-		WaterAir,
-		AirOnly
-	};
-	HydroRunningState _hydro_running_state{HydroRunningState::WaterOnly};
-
 	manual_control_setpoint_s		_manual_control_setpoint{0};
-	vehicle_thrust_setpoint_s		_vehicle_thrust_setpoint{};
-	vehicle_torque_setpoint_s		_vehicle_torque_setpoint{};
 	vehicle_rates_setpoint_s		_rates_sp{};
 	vehicle_status_s			_vehicle_status{};
 	vehicle_attitude_s			_vehicle_attitude{};
@@ -235,6 +222,9 @@ private:
 		(ParamFloat<px4::params::HY_HSMC_TS>) _param_hy_hsmc_ts,
 		(ParamFloat<px4::params::HY_HSMC_IMAX>) _param_hy_hsmc_imax,
 		(ParamFloat<px4::params::HY_HSMC_IMIN>) _param_hy_hsmc_imin,
+
+		//手动
+		(ParamFloat<px4::params::HY_MAN_RATIO>) _param_hy_man_ratio,
 
 		//引用外部参数
 		(ParamFloat<px4::params::HY_RT_MAX_THRUST>) _param_hy_rt_max_thrust	//单个水下推进器最大推力

@@ -33,7 +33,6 @@
 
 #include "HydroRateControl.hpp"
 
-#include <include/HyModeName.hpp>
 #include <math.h>
 
 using namespace time_literals;
@@ -145,11 +144,8 @@ void HydroRateControl::Run()
 			_last_run = time_now_us;
 		}
 
-		vehicle_angular_velocity_s angular_velocity{};
-		_vehicle_angular_velocity_sub.copy(&angular_velocity);
-
-		Vector3f rates(angular_velocity.xyz);
-		Vector3f angular_accel{angular_velocity.xyz_derivative};
+		Vector3f rates(vehicle_angular_velocity.xyz);
+		Vector3f angular_accel{vehicle_angular_velocity.xyz_derivative};
 
 		_vehicle_status_sub.update(&_vehicle_status);
 
@@ -157,7 +153,7 @@ void HydroRateControl::Run()
 		_manual_control_setpoint_sub.copy(&_manual_control_setpoint);
 
 		//特技模式下，操控量映射到rate_sp
-		if (_vehicle_status.nav_state == HYDRO_MODE_ACRO)
+		if (_vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_ACRO)
 		{
 			_rates_sp.roll = _manual_control_setpoint.roll * radians(_param_hy_acro_x_max.get());
 			_rates_sp.yaw = _manual_control_setpoint.yaw * radians(_param_hy_acro_z_max.get());
@@ -169,20 +165,20 @@ void HydroRateControl::Run()
 
 		}
 		//手动模式下，操控量映射到torque和thrust
-		else if(_vehicle_status.nav_state == HYDRO_MODE_MANUAL)
+		else if(_vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_MANUAL)
 		{
-			_vehicle_torque_setpoint.xyz[0] = math::constrain(_manual_control_setpoint.roll * _param_hy_man_r_sc.get() +
+			_hydro_torque_setpoint.xyz[0] = math::constrain(_manual_control_setpoint.roll * _param_hy_man_r_sc.get() +
 							_param_trim_roll.get(), -1.f, 1.f);
-			_vehicle_torque_setpoint.xyz[1] = math::constrain(-_manual_control_setpoint.pitch * _param_hy_man_p_sc.get() +
+			_hydro_torque_setpoint.xyz[1] = math::constrain(-_manual_control_setpoint.pitch * _param_hy_man_p_sc.get() +
 							_param_trim_pitch.get(), -1.f, 1.f);
-			_vehicle_torque_setpoint.xyz[2] = math::constrain(_manual_control_setpoint.yaw * _param_hy_man_y_sc.get() +
+			_hydro_torque_setpoint.xyz[2] = math::constrain(_manual_control_setpoint.yaw * _param_hy_man_y_sc.get() +
 							_param_trim_yaw.get(), -1.f, 1.f);
 
-			_vehicle_thrust_setpoint.xyz[0] = math::constrain((_manual_control_setpoint.throttle + 1.f) * .5f, 0.f, 1.f);
+			_hydro_thrust_setpoint.xyz[0] = math::constrain((_manual_control_setpoint.throttle + 1.f) * .5f, 0.f, 1.f);
 		}
 
-		//在非手动的自定义模式下，执行控制算法
-		if (_vehicle_status.nav_state == HYDRO_MODE_STABILIZED || _vehicle_status.nav_state == HYDRO_MODE_AUTO_DIVE || _vehicle_status.nav_state == HYDRO_MODE_ACRO) {
+		//在非手动模式下，执行控制算法
+		if (_vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_STAB || _vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_ACRO) {
 
 			const float airspeed = get_airspeed_and_update_scaling();
 
@@ -228,24 +224,24 @@ void HydroRateControl::Run()
 			Vector3f control_u = angular_acceleration_setpoint * _airspeed_scaling * _airspeed_scaling + feedforward;
 
 			// Special case yaw in Acro: if the parameter HY_ACRO_YAW_CTL is not set then don't control yaw
-			if (_vehicle_status.nav_state == HYDRO_MODE_ACRO && !_param_hy_acro_yaw_en.get()) {
+			if (_vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_ACRO && !_param_hy_acro_yaw_en.get()) {
 				control_u(2) = _manual_control_setpoint.yaw * _param_hy_man_y_sc.get();
 				_rate_control.resetIntegral(2);
 			}
 
 			if (control_u.isAllFinite()) {
-				matrix::constrain(control_u + trim, -1.f, 1.f).copyTo(_vehicle_torque_setpoint.xyz);
+				matrix::constrain(control_u + trim, -1.f, 1.f).copyTo(_hydro_torque_setpoint.xyz);
 
 			} else {
 				_rate_control.resetIntegral();
-				trim.copyTo(_vehicle_torque_setpoint.xyz);
+				trim.copyTo(_hydro_torque_setpoint.xyz);
 			}
 
 			/* throttle passed through if it is finite */
-			_vehicle_thrust_setpoint.xyz[0] = PX4_ISFINITE(_rates_sp.thrust_body[0]) ? _rates_sp.thrust_body[0] : 0.0f;
+			_hydro_thrust_setpoint.xyz[0] = PX4_ISFINITE(_rates_sp.thrust_body[0]) ? _rates_sp.thrust_body[0] : 0.0f;
 
 			/* scale effort by battery status */
-			if (_param_hy_bat_scale_en.get() && _vehicle_thrust_setpoint.xyz[0] > 0.1f) {
+			if (_param_hy_bat_scale_en.get() && _hydro_thrust_setpoint.xyz[0] > 0.1f) {
 
 				if (_battery_status_sub.updated()) {
 					battery_status_s battery_status{};
@@ -255,25 +251,24 @@ void HydroRateControl::Run()
 					}
 				}
 
-				_vehicle_thrust_setpoint.xyz[0] *= _battery_scale;
+				_hydro_thrust_setpoint.xyz[0] *= _battery_scale;
 			}
 
 		} else {
 			_rate_control.resetIntegral();
 		}
 
-		//在全部的自定义模式下，执行补偿操作和滑行深度控制
-		if (_vehicle_status.nav_state == HYDRO_MODE_STABILIZED || _vehicle_status.nav_state == HYDRO_MODE_AUTO_DIVE ||
-			_vehicle_status.nav_state == HYDRO_MODE_ACRO || _vehicle_status.nav_state == HYDRO_MODE_MANUAL)
+		//执行补偿操作和滑行深度控制
+		if (_vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_STAB || _vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_ACRO || _vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_MANUAL)
 		{
 			// Add feed-forward from roll control output to yaw control output
 			// This can be used to counteract the adverse yaw effect when rolling the plane
-			_vehicle_torque_setpoint.xyz[2] = math::constrain(_vehicle_torque_setpoint.xyz[2] + _param_hy_rll_to_yaw_ff.get() *
-							_vehicle_torque_setpoint.xyz[0], -1.f, 1.f);
+			_hydro_torque_setpoint.xyz[2] = math::constrain(_hydro_torque_setpoint.xyz[2] + _param_hy_rll_to_yaw_ff.get() *
+			_hydro_torque_setpoint.xyz[0], -1.f, 1.f);
 
 			//推力前馈到pit轴力矩上
-			_vehicle_torque_setpoint.xyz[1] = math::constrain(_vehicle_torque_setpoint.xyz[1] + _param_thr_to_pit_ff.get() *
-							_vehicle_thrust_setpoint.xyz[0], -1.f, 1.f);
+			_hydro_torque_setpoint.xyz[1] = math::constrain(_hydro_torque_setpoint.xyz[1] + _param_thr_to_pit_ff.get() *
+			_hydro_thrust_setpoint.xyz[0], -1.f, 1.f);
 
 			//读取消息
 			_vehicle_attitude_sub.update(&_vehicle_attitude);
@@ -299,7 +294,7 @@ void HydroRateControl::Run()
 
 			// 水平推力比例限幅，限制遥控器的最大命令
 			float throttle_limited;
-			throttle_limited = math::constrain(_vehicle_thrust_setpoint.xyz[0], -_param_hy_dc_max_thr.get(), _param_hy_dc_max_thr.get());
+			throttle_limited = math::constrain(_hydro_thrust_setpoint.xyz[0], -_param_hy_dc_max_thr.get(), _param_hy_dc_max_thr.get());
 			_hydro_depth_control_message.throttle_limited = throttle_limited;
 
 			//水平推力计算，向前为正，最大为水下推进器推力的2倍
@@ -359,6 +354,10 @@ void HydroRateControl::Run()
 				hydro_vertical_thrust_setpoint = nsf_u_limited + _param_hy_dc_ff.get();
 			else if(dc_mode == 2)
 				hydro_vertical_thrust_setpoint = _hsmc_x3 + _param_hy_dc_ff.get();
+			else if(dc_mode == 3)
+				hydro_vertical_thrust_setpoint = _manual_control_setpoint.pitch * _param_hy_man_ratio.get() + _param_hy_dc_ff.get();
+			else if(dc_mode == 4)
+				hydro_vertical_thrust_setpoint = _param_hy_dc_ff.get();
 			else
 				hydro_vertical_thrust_setpoint = 0;
 
@@ -373,52 +372,12 @@ void HydroRateControl::Run()
 			//y方向推力始终为0
 			_hydro_thrust_setpoint.xyz[1] = 0;
 
-			//力矩和原来保持一致
-			_hydro_torque_setpoint = _vehicle_torque_setpoint;
-
 			_hydro_depth_control_message.timestamp = hrt_absolute_time();
 			_hydro_depth_control_message_pub.publish(_hydro_depth_control_message);
 		}
 
-		//根据遥控器上某个辅助通道的状态，判断当前的运行模式
-		if(_manual_control_setpoint.aux2 < -0.5f)
-		{
-			_hydro_running_state = HydroRunningState::WaterOnly;
-		}
-		else if(_manual_control_setpoint.aux2 > 0.5f)
-		{
-			_hydro_running_state = HydroRunningState::AirOnly;
-		}
-		else
-		{
-			_hydro_running_state = HydroRunningState::WaterAir;
-		}
-
-		//在全部的自定义模式下，要发布vehicle的setpoint（其余模式下px4自带的模块会发布setpoint），但在仅水下部分运行时要发送0
-		if (_vehicle_status.nav_state == HYDRO_MODE_STABILIZED || _vehicle_status.nav_state == HYDRO_MODE_AUTO_DIVE ||
-			_vehicle_status.nav_state == HYDRO_MODE_ACRO || _vehicle_status.nav_state == HYDRO_MODE_MANUAL)
-		{
-			if(_hydro_running_state == HydroRunningState::WaterOnly)
-			{
-				_vehicle_thrust_setpoint.xyz[0] = 0;
-				_vehicle_thrust_setpoint.xyz[1] = 0;
-				_vehicle_thrust_setpoint.xyz[2] = 0;
-				_vehicle_torque_setpoint.xyz[0] = 0;
-				_vehicle_torque_setpoint.xyz[1] = 0;
-				_vehicle_torque_setpoint.xyz[2] = 0;
-			}
-			_vehicle_thrust_setpoint.timestamp = hrt_absolute_time();
-			_vehicle_thrust_setpoint.timestamp_sample = angular_velocity.timestamp_sample;
-			_vehicle_thrust_setpoint_pub.publish(_vehicle_thrust_setpoint);
-
-			_vehicle_torque_setpoint.timestamp = hrt_absolute_time();
-			_vehicle_torque_setpoint.timestamp_sample = angular_velocity.timestamp_sample;
-			_vehicle_torque_setpoint_pub.publish(_vehicle_torque_setpoint);
-		}
-
-		//在全部的自定义模式下且水下部分需要运行时，正常发布hydro的setpoint；其他情况，也要发布0
-		if((_vehicle_status.nav_state == HYDRO_MODE_STABILIZED || _vehicle_status.nav_state == HYDRO_MODE_AUTO_DIVE ||
-			_vehicle_status.nav_state == HYDRO_MODE_ACRO || _vehicle_status.nav_state == HYDRO_MODE_MANUAL) && (_hydro_running_state != HydroRunningState::AirOnly))
+		//发布hydro的setpoint；其他情况下，也要发布0
+		if(_vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_STAB || _vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_ACRO || _vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_MANUAL)
 		{
 			;
 		}
@@ -432,11 +391,11 @@ void HydroRateControl::Run()
 			_hydro_torque_setpoint.xyz[2] = 0;
 		}
 		_hydro_thrust_setpoint.timestamp = hrt_absolute_time();
-		_hydro_thrust_setpoint.timestamp_sample = angular_velocity.timestamp_sample;
+		_hydro_thrust_setpoint.timestamp_sample = vehicle_angular_velocity.timestamp_sample;
 		_hydro_thrust_setpoint_pub.publish(_hydro_thrust_setpoint);
 
 		_hydro_torque_setpoint.timestamp = hrt_absolute_time();
-		_hydro_torque_setpoint.timestamp_sample = angular_velocity.timestamp_sample;
+		_hydro_torque_setpoint.timestamp_sample = vehicle_angular_velocity.timestamp_sample;
 		_hydro_torque_setpoint_pub.publish(_hydro_torque_setpoint);
 	}
 
