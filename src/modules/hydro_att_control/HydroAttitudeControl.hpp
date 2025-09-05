@@ -97,12 +97,12 @@ private:
 
 	uORB::SubscriptionInterval _parameter_update_sub{ORB_ID(parameter_update), 1_s};
 
-	uORB::Subscription _att_sp_sub{ORB_ID(vehicle_attitude_setpoint)};			/**< vehicle attitude setpoint */
+	uORB::Subscription _att_sp_sub{ORB_ID(hydro_attitude_setpoint)};			/**< vehicle attitude setpoint */
 	uORB::Subscription _vehicle_status_sub{ORB_ID(vehicle_status)};				/**< vehicle status subscription */
 	uORB::Subscription _manual_control_setpoint_sub{ORB_ID(manual_control_setpoint)};	/**< notification of manual control updates */
 
-	uORB::Publication<vehicle_rates_setpoint_s>	_rate_sp_pub{ORB_ID(vehicle_rates_setpoint)};
-	uORB::Publication<vehicle_attitude_setpoint_s>	_attitude_sp_pub{ORB_ID(vehicle_attitude_setpoint)};
+	uORB::Publication<vehicle_rates_setpoint_s>	_rate_sp_pub{ORB_ID(hydro_rates_setpoint)};
+	uORB::Publication<vehicle_attitude_setpoint_s>	_attitude_sp_pub{ORB_ID(hydro_attitude_setpoint)};
 
 	vehicle_attitude_setpoint_s		_att_sp{};
 	vehicle_rates_setpoint_s		_rates_sp{};
@@ -132,18 +132,7 @@ private:
 		(ParamFloat<px4::params::HY_PSP_OFF>) _param_hy_psp_off,		//pitch杆量为0时的pitch偏移量
 		(ParamFloat<px4::params::HY_MAN_P_MAX>) _param_hy_man_p_max,		//pitch杆量为最大时的pitch角度
 		(ParamFloat<px4::params::HY_MAN_R_MAX>) _param_hy_man_r_max,		//roll杆量为最大时的roll角度
-		(ParamFloat<px4::params::HY_MAN_YR_MAX>) _param_man_yr_max,		//yaw杆量为最大时的yaw变化率
-
-		(ParamFloat<px4::params::HY_DIVE_DN_DEG>) _param_dive_dn_deg,		//自动潜行（下潜）的角度
-		(ParamFloat<px4::params::HY_DIVE_DN_THR>) _param_dive_dn_thr,		//自动潜行（下潜）的推力
-		(ParamFloat<px4::params::HY_DIVE_DN_SEC>) _param_dive_dn_sec,		//自动潜行（下潜）的时间
-		(ParamFloat<px4::params::HY_DIVE_DN_DEG>) _param_dive_cru_deg,		//自动潜行（航行）
-		(ParamFloat<px4::params::HY_DIVE_DN_THR>) _param_dive_cru_thr,
-		(ParamFloat<px4::params::HY_DIVE_DN_SEC>) _param_dive_cru_sec,
-		(ParamFloat<px4::params::HY_DIVE_DN_DEG>) _param_dive_up_deg,		//自动潜行（上浮）
-		(ParamFloat<px4::params::HY_DIVE_DN_THR>) _param_dive_up_thr,
-		(ParamFloat<px4::params::HY_DIVE_DN_SEC>) _param_dive_up_sec
-
+		(ParamFloat<px4::params::HY_MAN_YR_MAX>) _param_man_yr_max		//yaw杆量为最大时的yaw变化率
 	)
 
 	RollController _roll_ctrl;
@@ -154,11 +143,7 @@ private:
 	hrt_abstime _dive_cru_total_time;
 	hrt_abstime _dive_up_total_time;
 
-	hrt_abstime _auto_dive_start_time{0};
-	uint8_t _last_nav_state{255};
-
 	void parameters_update();
-	void auto_dive_poll(const float yaw_body);
 	void vehicle_manual_poll(const float yaw_body);
 	void vehicle_attitude_setpoint_poll();
 	float get_airspeed_constrained();

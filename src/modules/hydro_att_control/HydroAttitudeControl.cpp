@@ -33,8 +33,6 @@
 
 #include "HydroAttitudeControl.hpp"
 
-#include <include/HyModeName.hpp>
-
 using namespace time_literals;
 using namespace matrix;
 
@@ -77,56 +75,12 @@ HydroAttitudeControl::parameters_update()
 	_pitch_ctrl.set_max_rate_neg(radians(_param_hy_p_rmax_neg.get()));
 
 	_yaw_ctrl.set_max_rate(radians(_param_hy_y_rmax.get()));
-
-	_dive_dn_total_time = (hrt_abstime)(1000000.0f * _param_dive_dn_sec.get());
-	_dive_cru_total_time = _dive_dn_total_time + (hrt_abstime)(1000000.0f * _param_dive_cru_sec.get());
-	_dive_up_total_time = _dive_cru_total_time + (hrt_abstime)(1000000.0f * _param_dive_up_sec.get());
-}
-
-void
-HydroAttitudeControl::auto_dive_poll(const float yaw_body)
-{
-	if (_vehicle_status.nav_state == HYDRO_MODE_AUTO_DIVE) {
-
-		_att_sp.roll_body = 0;
-		_att_sp.yaw_body = yaw_body;
-
-		if(hrt_absolute_time() - _auto_dive_start_time < _dive_dn_total_time)
-		{
-			_att_sp.pitch_body = radians(_param_dive_dn_deg.get());
-			_att_sp.thrust_body[0] = _param_dive_dn_thr.get();
-		}
-		else if(hrt_absolute_time() - _auto_dive_start_time < _dive_cru_total_time)
-		{
-			_att_sp.pitch_body = radians(_param_dive_cru_deg.get());
-			_att_sp.thrust_body[0] = _param_dive_cru_thr.get();
-		}
-		else if(hrt_absolute_time() - _auto_dive_start_time < _dive_up_total_time)
-		{
-			_att_sp.pitch_body = radians(_param_dive_up_deg.get());
-			_att_sp.thrust_body[0] = _param_dive_up_thr.get();
-		}
-		else
-		{
-			_att_sp.pitch_body = radians(0);
-			_att_sp.thrust_body[0] = 0;
-		}
-
-		Quatf q(Eulerf(_att_sp.roll_body, _att_sp.pitch_body, _att_sp.yaw_body));
-		q.copyTo(_att_sp.q_d);
-
-		_att_sp.reset_integral = false;
-
-		_att_sp.timestamp = hrt_absolute_time();
-
-		_attitude_sp_pub.publish(_att_sp);
-	}
 }
 
 void
 HydroAttitudeControl::vehicle_manual_poll(const float yaw_body)
 {
-	if (_vehicle_status.nav_state == HYDRO_MODE_STABILIZED) {
+	if (_vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_STAB) {
 
 		// Always copy the new manual setpoint, even if it wasn't updated, to fill the actuators with valid values
 		if (_manual_control_setpoint_sub.copy(&_manual_control_setpoint)) {
@@ -221,18 +175,12 @@ void HydroAttitudeControl::Run()
 		const matrix::Eulerf euler_angles(_R);
 
 		_vehicle_status_sub.update(&_vehicle_status);
-		if(_last_nav_state != _vehicle_status.nav_state)
-		{
-			_auto_dive_start_time = hrt_absolute_time();
-		}
-
-		auto_dive_poll(euler_angles.psi());
 
 		vehicle_manual_poll(euler_angles.psi());
 
 		vehicle_attitude_setpoint_poll();
 
-		if (_vehicle_status.nav_state == HYDRO_MODE_STABILIZED || _vehicle_status.nav_state == HYDRO_MODE_AUTO_DIVE ) {
+		if (_vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_STAB) {
 
 			if (_att_sp.reset_integral) {
 				_rates_sp.reset_integral = true;
@@ -255,7 +203,7 @@ void HydroAttitudeControl::Run()
 									_yaw_ctrl.get_body_rate_setpoint());
 
 				/* add yaw rate setpoint from sticks */
-				if (_vehicle_status.nav_state == HYDRO_MODE_STABILIZED)
+				if (_vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_STAB)
 				{
 					body_rates_setpoint(2) += math::constrain(_manual_control_setpoint.yaw * radians(_param_man_yr_max.get()),
 										  -radians(_param_hy_y_rmax.get()), radians(_param_hy_y_rmax.get()));
@@ -274,7 +222,6 @@ void HydroAttitudeControl::Run()
 		} else {
 
 		}
-		_last_nav_state = _vehicle_status.nav_state;
 	}
 
 	// backup schedule
