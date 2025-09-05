@@ -584,6 +584,56 @@ parameters:
           min: 0
           max: 8
 
+        #副翼启用与禁用功能
+        HY_AILE_AUX:
+          description:
+            short: aileron aux channel
+          type: enum
+          values:
+            0: Always 0
+            1: Aux1
+            2: Aux2
+            3: Aux3
+            4: Aux4
+            5: Aux5
+            6: Aux6
+            7: Always -1
+            8: Always 1
+          default: 0
+        #副翼启用禁用对应的遥控器阈值
+        HY_AILE_THR:
+          description:
+            short: aileron threshold
+          type: float
+          default: 0.0
+          min: -1.0
+          max: 1.0
+          decimal: 2
+
+        #副翼启用禁用对应的遥控器通道的增益，可以用于反转通道功能
+        HY_AILE_AUXGAIN:
+          description:
+            short: aileron aux gain
+          type: float
+          default: 1.0
+          decimal: 2
+
+        HY_AILE0_IDX:
+          description:
+            short: aileron 0 index, 0 means no aileron
+          type: int32
+          default: 0
+          min: 0
+          max: 8
+
+        HY_AILE1_IDX:
+          description:
+            short: aileron 1 index, 0 means no aileron
+          type: int32
+          default: 0
+          min: 0
+          max: 8
+
 # Mixer
 mixer:
     actuator_types:

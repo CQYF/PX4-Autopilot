@@ -230,7 +230,13 @@ private:
 		(ParamInt<px4::params::HY_PROP_AUX>) _param_hy_prop_aux,
 		(ParamFloat<px4::params::HY_PROP_THR>) _param_hy_prop_thr,
 		(ParamFloat<px4::params::HY_PROP_AUXGAIN>) _param_hy_prop_auxgain,
-		(ParamInt<px4::params::HY_PROP_IDX>) _param_hy_prop_idx
+		(ParamInt<px4::params::HY_PROP_IDX>) _param_hy_prop_idx,
+
+		(ParamInt<px4::params::HY_AILE_AUX>) _param_hy_aile_aux,
+		(ParamFloat<px4::params::HY_AILE_THR>) _param_hy_aile_thr,
+		(ParamFloat<px4::params::HY_AILE_AUXGAIN>) _param_hy_aile_auxgain,
+		(ParamInt<px4::params::HY_AILE0_IDX>) _param_hy_aile0_idx,
+		(ParamInt<px4::params::HY_AILE1_IDX>) _param_hy_aile1_idx
 	)
 
 };

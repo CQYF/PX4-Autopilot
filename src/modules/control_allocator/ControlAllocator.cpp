@@ -739,6 +739,59 @@ ControlAllocator::publish_actuator_controls()
 
 	int prop_idx = _param_hy_prop_idx.get();
 
+	// 副翼启用/禁用功能
+	bool enable_aileron = false;
+	float aile_aux;
+	switch (_param_hy_aile_aux.get()) {
+		case 0:
+		aile_aux = 0;
+		break;
+
+		case 1:
+		aile_aux = _manual_control_setpoint.aux1;
+		break;
+
+		case 2:
+		aile_aux = _manual_control_setpoint.aux2;
+		break;
+
+		case 3:
+		aile_aux = _manual_control_setpoint.aux3;
+		break;
+
+		case 4:
+		aile_aux = _manual_control_setpoint.aux4;
+		break;
+
+		case 5:
+		aile_aux = _manual_control_setpoint.aux5;
+		break;
+
+		case 6:
+		aile_aux = _manual_control_setpoint.aux6;
+		break;
+
+		case 7:
+		aile_aux = -1.0f;
+		break;
+
+		case 8:
+		aile_aux = 1.0f;
+		break;
+
+		default:
+		aile_aux = 0;
+	}
+	aile_aux *= _param_hy_aile_auxgain.get();
+
+	if(aile_aux > _param_hy_aile_thr.get())
+	{
+		enable_aileron = true;
+	}
+
+	int aile_0_idx = _param_hy_aile0_idx.get();
+	int aile_1_idx = _param_hy_aile1_idx.get();
+
 	// motors
 	int motors_idx;
 
@@ -791,6 +844,12 @@ ControlAllocator::publish_actuator_controls()
 			int selected_matrix = _control_allocation_selection_indexes[actuator_idx];
 			float actuator_sp = _control_allocation[selected_matrix]->getActuatorSetpoint()(actuator_idx_matrix[selected_matrix]);
 			actuator_sp += _hydro_servos.control[servos_idx];// 加上hydro_allocator的输出
+
+			//副翼禁用
+			if(!enable_aileron && (servos_idx == aile_0_idx-1 || servos_idx == aile_1_idx-1)){
+				actuator_sp = 0;
+			}
+
 			actuator_servos.control[servos_idx] = PX4_ISFINITE(actuator_sp) ? math::constrain(actuator_sp, -1.0f, 1.0f) : NAN;
 			++actuator_idx_matrix[selected_matrix];
 			++actuator_idx;
