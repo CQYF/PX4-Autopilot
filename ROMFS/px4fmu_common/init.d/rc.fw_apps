@@ -31,7 +31,7 @@ land_detector start fixedwing
 #
 # Start Mode Control.
 #hu
-mode_control start
+# mode_control start
 
 # 控制和控制分配
 # hydro_att_control start
