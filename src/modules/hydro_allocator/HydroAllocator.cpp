@@ -455,7 +455,7 @@ void HydroAllocator::Run()
 	int32_t fdw_idx = _param_hy_fdw_idx.get();
 	if(fdw_idx >=1 && fdw_idx <= 8)
 	{
-		hydro_servos_msg.control[_param_hy_fdw_idx.get() - 1] = _foldwing_sp;
+		hydro_servos_msg.control[fdw_idx - 1] = _foldwing_sp;
 	}
 
 	_hydro_motors_pub.publish(hydro_motors_msg);
