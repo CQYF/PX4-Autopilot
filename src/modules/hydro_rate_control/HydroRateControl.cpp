@@ -174,7 +174,7 @@ void HydroRateControl::Run()
 			_hydro_torque_setpoint.xyz[2] = math::constrain(_manual_control_setpoint.yaw * _param_hy_man_y_sc.get() +
 							_param_trim_yaw.get(), -1.f, 1.f);
 
-			_hydro_thrust_setpoint.xyz[0] = math::constrain((_manual_control_setpoint.throttle + 1.f) * .5f, 0.f, 1.f);
+			_thrust_sp_norm = math::constrain((_manual_control_setpoint.throttle + 1.f) * .5f, 0.f, 1.f);
 		}
 
 		//在非手动模式下，执行控制算法
@@ -238,10 +238,10 @@ void HydroRateControl::Run()
 			}
 
 			/* throttle passed through if it is finite */
-			_hydro_thrust_setpoint.xyz[0] = PX4_ISFINITE(_rates_sp.thrust_body[0]) ? _rates_sp.thrust_body[0] : 0.0f;
+			_thrust_sp_norm = PX4_ISFINITE(_rates_sp.thrust_body[0]) ? _rates_sp.thrust_body[0] : 0.0f;
 
 			/* scale effort by battery status */
-			if (_param_hy_bat_scale_en.get() && _hydro_thrust_setpoint.xyz[0] > 0.1f) {
+			if (_param_hy_bat_scale_en.get() && _thrust_sp_norm > 0.1f) {
 
 				if (_battery_status_sub.updated()) {
 					battery_status_s battery_status{};
@@ -251,7 +251,7 @@ void HydroRateControl::Run()
 					}
 				}
 
-				_hydro_thrust_setpoint.xyz[0] *= _battery_scale;
+				_thrust_sp_norm *= _battery_scale;
 			}
 
 		} else {
@@ -268,7 +268,7 @@ void HydroRateControl::Run()
 
 			//推力前馈到pit轴力矩上
 			_hydro_torque_setpoint.xyz[1] = math::constrain(_hydro_torque_setpoint.xyz[1] + _param_thr_to_pit_ff.get() *
-			_hydro_thrust_setpoint.xyz[0], -1.f, 1.f);
+			_thrust_sp_norm, -1.f, 1.f);
 
 			//读取消息
 			_vehicle_attitude_sub.update(&_vehicle_attitude);
@@ -294,7 +294,7 @@ void HydroRateControl::Run()
 
 			// 水平推力比例限幅，限制遥控器的最大命令
 			float throttle_limited;
-			throttle_limited = math::constrain(_hydro_thrust_setpoint.xyz[0], -_param_hy_dc_max_thr.get(), _param_hy_dc_max_thr.get());
+			throttle_limited = math::constrain(_thrust_sp_norm, -_param_hy_dc_max_thr.get(), _param_hy_dc_max_thr.get());
 			_hydro_depth_control_message.throttle_limited = throttle_limited;
 
 			//水平推力计算，向前为正，最大为水下推进器推力的2倍

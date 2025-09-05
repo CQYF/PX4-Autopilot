@@ -139,6 +139,8 @@ private:
 	vehicle_thrust_setpoint_s		_hydro_thrust_setpoint{};
 	vehicle_torque_setpoint_s		_hydro_torque_setpoint{};
 
+	float _thrust_sp_norm;
+
 	float _hsmc_x3{0}; //高阶滑模的积分项
 
 	perf_counter_t _loop_perf;
