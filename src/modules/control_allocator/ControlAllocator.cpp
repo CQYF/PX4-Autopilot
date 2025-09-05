@@ -688,7 +688,7 @@ ControlAllocator::publish_actuator_controls()
 	_manual_control_setpoint_sub.copy(&_manual_control_setpoint);
 
 	// 螺旋桨启用/禁用功能
-	bool disable_propeller = false;
+	bool enable_propeller = false;
 	float prop_aux;
 	switch (_param_hy_prop_aux.get()) {
 		case 0:
@@ -734,7 +734,7 @@ ControlAllocator::publish_actuator_controls()
 
 	if(prop_aux > _param_hy_prop_thr.get())
 	{
-		disable_propeller = true;
+		enable_propeller = true;
 	}
 
 	int prop_idx = _param_hy_prop_idx.get();
@@ -748,7 +748,7 @@ ControlAllocator::publish_actuator_controls()
 		actuator_sp += _hydro_motors.control[motors_idx];// 加上hydro_allocator的输出
 
 		//螺旋桨禁用
-		if(disable_propeller && motors_idx == prop_idx-1){
+		if(!enable_propeller && motors_idx == prop_idx-1){
 			actuator_sp = 0;
 		}
 
