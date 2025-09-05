@@ -685,6 +685,60 @@ ControlAllocator::publish_actuator_controls()
 	_hydro_motors_sub.update(&_hydro_motors);
 	_hydro_servos_sub.update(&_hydro_servos);
 
+	_manual_control_setpoint_sub.copy(&_manual_control_setpoint);
+
+	// 螺旋桨启用/禁用功能
+	bool disable_propeller = false;
+	float prop_aux;
+	switch (_param_hy_prop_aux.get()) {
+		case 0:
+		prop_aux = 0;
+		break;
+
+		case 1:
+		prop_aux = _manual_control_setpoint.aux1;
+		break;
+
+		case 2:
+		prop_aux = _manual_control_setpoint.aux2;
+		break;
+
+		case 3:
+		prop_aux = _manual_control_setpoint.aux3;
+		break;
+
+		case 4:
+		prop_aux = _manual_control_setpoint.aux4;
+		break;
+
+		case 5:
+		prop_aux = _manual_control_setpoint.aux5;
+		break;
+
+		case 6:
+		prop_aux = _manual_control_setpoint.aux6;
+		break;
+
+		case 7:
+		prop_aux = -1.0f;
+		break;
+
+		case 8:
+		prop_aux = 1.0f;
+		break;
+
+		default:
+		prop_aux = 0;
+	}
+	prop_aux *= _param_hy_prop_auxgain.get();
+
+	if(prop_aux > _param_hy_prop_thr.get())
+	{
+		disable_propeller = true;
+	}
+
+	int prop_idx = _param_hy_prop_idx.get();
+
 	// motors
 	int motors_idx;
 
@@ -692,6 +746,11 @@ ControlAllocator::publish_actuator_controls()
 		int selected_matrix = _control_allocation_selection_indexes[actuator_idx];
 		float actuator_sp = _control_allocation[selected_matrix]->getActuatorSetpoint()(actuator_idx_matrix[selected_matrix]);
 		actuator_sp += _hydro_motors.control[motors_idx];// 加上hydro_allocator的输出
+
+		//螺旋桨禁用
+		if(disable_propeller && motors_idx == prop_idx-1){
+			actuator_sp = 0;
+		}
 
 		if(PX4_ISFINITE(actuator_sp))
 		{

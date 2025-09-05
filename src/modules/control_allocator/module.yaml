@@ -540,6 +540,49 @@ parameters:
                 0: Ignore
                 1: Remove first failed motor from effectiveness
             default: 0
+    - group: Hydro
+      definitions:
+        #螺旋桨启用与禁用功能
+        HY_PROP_AUX:
+          description:
+            short: propeller aux channel
+          type: enum
+          values:
+            0: Always 0
+            1: Aux1
+            2: Aux2
+            3: Aux3
+            4: Aux4
+            5: Aux5
+            6: Aux6
+            7: Always -1
+            8: Always 1
+          default: 0
+        #水翼启用禁用对应的遥控器阈值
+        HY_PROP_THR:
+          description:
+            short: propeller threshold
+          type: float
+          default: 0.0
+          min: -1.0
+          max: 1.0
+          decimal: 2
+
+        #水翼启用禁用对应的遥控器通道的增益，可以用于反转通道功能
+        HY_PROP_AUXGAIN:
+          description:
+            short: propeller aux gain
+          type: float
+          default: 1.0
+          decimal: 2
+
+        HY_PROP_IDX:
+          description:
+            short: propeller index, 0 means no propeller
+          type: int32
+          default: 0
+          min: 0
+          max: 8
 
 # Mixer
 mixer:

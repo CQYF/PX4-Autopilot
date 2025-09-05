@@ -78,6 +78,7 @@
 #include <uORB/topics/vehicle_thrust_setpoint.h>
 #include <uORB/topics/vehicle_status.h>
 #include <uORB/topics/failure_detector_status.h>
+#include <uORB/topics/manual_control_setpoint.h>
 
 class ControlAllocator : public ModuleBase<ControlAllocator>, public ModuleParams, public px4::ScheduledWorkItem
 {
@@ -181,6 +182,8 @@ private:
 	uORB::Subscription _hydro_motors_sub{ORB_ID(hydro_motors)};
 	uORB::Subscription _hydro_servos_sub{ORB_ID(hydro_servos)};
 
+	uORB::Subscription _manual_control_setpoint_sub{ORB_ID(manual_control_setpoint)};
+
 	// Outputs
 	uORB::PublicationMulti<control_allocator_status_s> _control_allocator_status_pub[2] {ORB_ID(control_allocator_status), ORB_ID(control_allocator_status)};
 
@@ -196,6 +199,8 @@ private:
 
 	actuator_motors_s _hydro_motors{0};
 	actuator_servos_s _hydro_servos{0};
+
+	manual_control_setpoint_s	_manual_control_setpoint{0};
 
 	matrix::Vector3f _torque_sp;
 	matrix::Vector3f _thrust_sp;
@@ -220,7 +225,12 @@ private:
 		(ParamInt<px4::params::CA_AIRFRAME>) _param_ca_airframe,
 		(ParamInt<px4::params::CA_METHOD>) _param_ca_method,
 		(ParamInt<px4::params::CA_FAILURE_MODE>) _param_ca_failure_mode,
-		(ParamInt<px4::params::CA_R_REV>) _param_r_rev
+		(ParamInt<px4::params::CA_R_REV>) _param_r_rev,
+
+		(ParamInt<px4::params::HY_PROP_AUX>) _param_hy_prop_aux,
+		(ParamFloat<px4::params::HY_PROP_THR>) _param_hy_prop_thr,
+		(ParamFloat<px4::params::HY_PROP_AUXGAIN>) _param_hy_prop_auxgain,
+		(ParamInt<px4::params::HY_PROP_IDX>) _param_hy_prop_idx
 	)
 
 };
