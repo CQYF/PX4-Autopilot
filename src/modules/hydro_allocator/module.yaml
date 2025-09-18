@@ -224,3 +224,31 @@ parameters:
       type: float
       default: 1.0
       decimal: 2
+
+    #控制分配的模式
+    HY_ALLOCATE_MODE:
+      description:
+        short: hydrofoil aux channel
+      type: enum
+      values:
+        0: Fixed Mode
+        1: Normal Mode
+      default: 0
+
+    HY_SV_L_FM:
+      description:
+        short: hydrofoil left servo angle in Fixed Mode
+      type: float
+      default: 0.0
+      min: -1.0
+      max: 1.0
+      decimal: 2
+
+    HY_SV_R_FM:
+      description:
+        short: hydrofoil right servo angle in Fixed Mode
+      type: float
+      default: 0.0
+      min: -1.0
+      max: 1.0
+      decimal: 2

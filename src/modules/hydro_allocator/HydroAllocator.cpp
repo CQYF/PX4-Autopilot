@@ -462,11 +462,23 @@ void HydroAllocator::Run()
 
 	if(foil_aux > _param_hy_foil_thr.get() && (_vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_STAB || _vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_ACRO || _vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_MANUAL))
 	{
-		hydro_motors_msg.control[_params.hy_rt_idx[0] - 1] = x[0][1];
-		hydro_motors_msg.control[_params.hy_rt_idx[1] - 1] = x[1][1];
+		if(_param_hy_allocate_mode.get() == 1){
+			hydro_motors_msg.control[_params.hy_rt_idx[0] - 1] = x[0][1];
+			hydro_motors_msg.control[_params.hy_rt_idx[1] - 1] = x[1][1];
 
-		hydro_servos_msg.control[_params.hy_sv_idx[0] - 1] = x[0][0];
-		hydro_servos_msg.control[_params.hy_sv_idx[1] - 1] = x[1][0];
+			hydro_servos_msg.control[_params.hy_sv_idx[0] - 1] = x[0][0];
+			hydro_servos_msg.control[_params.hy_sv_idx[1] - 1] = x[1][0];
+		}
+		else{
+			hydro_motors_msg.control[_params.hy_rt_idx[0] - 1] =
+				math::constrain(thrust_x[0] / _param_hy_rt_max_thrust.get(), 0.f, 1.f);
+			hydro_motors_msg.control[_params.hy_rt_idx[1] - 1] =
+				math::constrain(thrust_x[1] / _param_hy_rt_max_thrust.get(), 0.f, 1.f);
+
+			hydro_servos_msg.control[_params.hy_sv_idx[0] - 1] = _param_hy_sv_l_fm.get();
+			hydro_servos_msg.control[_params.hy_sv_idx[1] - 1] = _param_hy_sv_r_fm.get();
+		}
+
 	}
 
 	//机翼的通道
