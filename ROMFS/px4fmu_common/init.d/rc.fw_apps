@@ -43,4 +43,4 @@ hydro_allocator start
 
 # param set DEPTH_FUSION_ENABLE 1
 # depth_fusion start
-# depth_estimator start
+depth_estimator start
