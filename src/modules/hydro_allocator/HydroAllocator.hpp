@@ -164,6 +164,10 @@ private:
 
 		(ParamInt<px4::params::HY_FOIL_AUX>) _param_hy_foil_aux,
 		(ParamFloat<px4::params::HY_FOIL_THR>) _param_hy_foil_thr,
-		(ParamFloat<px4::params::HY_FOIL_AUXGAIN>) _param_hy_foil_auxgain
+		(ParamFloat<px4::params::HY_FOIL_AUXGAIN>) _param_hy_foil_auxgain,
+
+		(ParamInt<px4::params::HY_ALLOCATE_MODE>) _param_hy_allocate_mode,
+		(ParamFloat<px4::params::HY_SV_L_FM>) _param_hy_sv_l_fm,
+		(ParamFloat<px4::params::HY_SV_R_FM>) _param_hy_sv_r_fm
 	)
 };
