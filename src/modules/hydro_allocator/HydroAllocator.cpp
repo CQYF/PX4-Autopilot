@@ -461,6 +461,16 @@ void HydroAllocator::Run()
 
 	_vehicle_status_sub.update(&_vehicle_status);
 
+	float man_delta_motor = torque_vector(2) * _param_hy_alct_yaw_man.get();
+	float man_delta_servo = torque_vector(0) * _param_hy_alct_rol_man.get();
+	float man_manual_motor = (_manual_control_setpoint.throttle+1)*0.5f * _param_hy_alct_mt_man.get();
+	float man_manual_servo = _manual_control_setpoint.pitch * _param_hy_alct_sv_man.get();
+
+	hydro_allocate_message_msg.man_delta_motor = man_delta_motor;
+	hydro_allocate_message_msg.man_delta_servo = man_delta_servo;
+	hydro_allocate_message_msg.man_manual_motor = man_manual_motor;
+	hydro_allocate_message_msg.man_manual_servo = man_manual_servo;
+
 	if(foil_aux > _param_hy_foil_thr.get() && (_vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_STAB || _vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_ACRO || _vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_MANUAL))
 	{
 		int32_t allocate_mode = _param_hy_allocate_mode.get();
@@ -481,19 +491,14 @@ void HydroAllocator::Run()
 			hydro_servos_msg.control[_params.hy_sv_idx[1] - 1] = _param_hy_sv_r_fm.get();
 		}
 		else{
-			float delta_motor = torque_vector(3) * _param_hy_alct_yaw_man.get();
-			float delta_servo = torque_vector(1) * _param_hy_alct_rol_man.get();
-			float manual_motor = (_manual_control_setpoint.throttle+1)*0.5f * _param_hy_alct_mt_man.get();
-			float manual_servo = _manual_control_setpoint.pitch * _param_hy_alct_sv_man.get();
-
 			hydro_motors_msg.control[_params.hy_rt_idx[0] - 1] =
-				math::constrain(manual_motor + delta_motor, 0.f, 1.f);
+				math::constrain(man_manual_motor + man_delta_motor, 0.f, 1.f);
 			hydro_motors_msg.control[_params.hy_rt_idx[1] - 1] =
-				math::constrain(manual_motor - delta_motor, 0.f, 1.f);
+				math::constrain(man_manual_motor - man_delta_motor, 0.f, 1.f);
 			hydro_servos_msg.control[_params.hy_sv_idx[0] - 1] =
-				math::constrain(manual_servo + delta_servo, -1.f, 1.f);
+				math::constrain(man_manual_servo + man_delta_servo, -1.f, 1.f);
 			hydro_servos_msg.control[_params.hy_sv_idx[1] - 1] =
-				math::constrain(manual_servo - delta_servo, -1.f, 1.f);
+				math::constrain(man_manual_servo - man_delta_servo, -1.f, 1.f);
 		}
 	}
 
