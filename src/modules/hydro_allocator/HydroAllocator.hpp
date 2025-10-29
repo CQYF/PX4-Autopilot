@@ -155,7 +155,8 @@ private:
 		(ParamFloat<px4::params::HY_WING_MAX_A>) _param_hy_wing_max_a,
 		(ParamFloat<px4::params::HY_TH_MAX_GAIN>) _param_hy_th_max_gain,
 
-		(ParamFloat<px4::params::HY_FDW_CT>) _param_hy_fdw_ct,
+		(ParamFloat<px4::params::HY_FDW_CTA>) _param_hy_fdw_cta,
+		(ParamFloat<px4::params::HY_FDW_CTB>) _param_hy_fdw_ctb,
 		(ParamInt<px4::params::HY_FDW_IDX>) _param_hy_fdw_idx,
 		(ParamInt<px4::params::HY_FDW_AUX>) _param_hy_fdw_aux,
 		(ParamFloat<px4::params::HY_FDW_UPTHR>) _param_hy_fdw_upthr,

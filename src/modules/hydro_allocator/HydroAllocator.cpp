@@ -218,7 +218,8 @@ void HydroAllocator::Run()
 	const hrt_abstime now = hrt_absolute_time();
 	const float dt = math::constrain(((now - _last_run) / 1e6f), 0.0002f, 0.02f);
 
-	float foldwing_delta = dt / _param_hy_fdw_ct.get();
+	float foldwing_delta_a = dt / _param_hy_fdw_cta.get();
+	float foldwing_delta_b = dt / _param_hy_fdw_ctb.get();
 	float foldwing_sp_final;
 
 	float fdw_aux;
@@ -277,14 +278,14 @@ void HydroAllocator::Run()
 	}
 
 	if(foldwing_sp_final > _foldwing_sp) {
-		if(foldwing_sp_final - _foldwing_sp > foldwing_delta)
-			_foldwing_sp += foldwing_delta;
+		if(foldwing_sp_final - _foldwing_sp > foldwing_delta_a)
+			_foldwing_sp += foldwing_delta_a;
 		else
 			_foldwing_sp = foldwing_sp_final;
 	}
 	else {
-		if(_foldwing_sp - foldwing_sp_final > foldwing_delta)
-			_foldwing_sp -= foldwing_delta;
+		if(_foldwing_sp - foldwing_sp_final > foldwing_delta_b)
+			_foldwing_sp -= foldwing_delta_b;
 		else
 			_foldwing_sp = foldwing_sp_final;
 	}

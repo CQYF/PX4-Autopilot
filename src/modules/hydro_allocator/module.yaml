@@ -128,12 +128,20 @@ parameters:
       decimal: 2
 
     #折叠机翼做动时长
-    HY_FDW_CT:
+    HY_FDW_CTA:
       description:
-        short: foldwing fold time
+        short: foldwing fold time A
       type: float
       default: 2.0
-      min: 0.3
+      min: 0.1
+      decimal: 2
+
+    HY_FDW_CTB:
+      description:
+        short: foldwing fold time B
+      type: float
+      default: 2.0
+      min: 0.1
       decimal: 2
 
     #折叠机翼对应的输出通道
