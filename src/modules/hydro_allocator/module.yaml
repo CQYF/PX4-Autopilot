@@ -228,11 +228,12 @@ parameters:
     #控制分配的模式
     HY_ALLOCATE_MODE:
       description:
-        short: hydrofoil aux channel
+        short: allocate mode
       type: enum
       values:
-        0: Fixed Mode
-        1: Normal Mode
+        0: Normal Mode
+        1: Fixed Mode
+        2: Manual Mode
       default: 0
 
     HY_SV_L_FM:
@@ -249,6 +250,42 @@ parameters:
         short: hydrofoil right servo angle in Fixed Mode
       type: float
       default: 0.0
+      min: -1.0
+      max: 1.0
+      decimal: 2
+
+    HY_ALCT_MT_MAN:
+      description:
+        short: allocate motor ratio in manual mode
+      type: float
+      default: 1.0
+      min: 0.0
+      max: 1.0
+      decimal: 2
+
+    HY_ALCT_SV_MAN:
+      description:
+        short: allocate servo ratio in manual mode
+      type: float
+      default: 1.0
+      min: -1.0
+      max: 1.0
+      decimal: 2
+
+    HY_ALCT_YAW_MAN:
+      description:
+        short: allocate yaw ratio in manual mode
+      type: float
+      default: 1.0
+      min: -1.0
+      max: 1.0
+      decimal: 2
+
+    HY_ALCT_ROL_MAN:
+      description:
+        short: allocate roll ratio in manual mode
+      type: float
+      default: 1.0
       min: -1.0
       max: 1.0
       decimal: 2

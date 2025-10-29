@@ -168,6 +168,11 @@ private:
 
 		(ParamInt<px4::params::HY_ALLOCATE_MODE>) _param_hy_allocate_mode,
 		(ParamFloat<px4::params::HY_SV_L_FM>) _param_hy_sv_l_fm,
-		(ParamFloat<px4::params::HY_SV_R_FM>) _param_hy_sv_r_fm
+		(ParamFloat<px4::params::HY_SV_R_FM>) _param_hy_sv_r_fm,
+
+		(ParamFloat<px4::params::HY_ALCT_MT_MAN>) _param_hy_alct_mt_man,
+		(ParamFloat<px4::params::HY_ALCT_SV_MAN>) _param_hy_alct_sv_man,
+		(ParamFloat<px4::params::HY_ALCT_YAW_MAN>) _param_hy_alct_yaw_man,
+		(ParamFloat<px4::params::HY_ALCT_ROL_MAN>) _param_hy_alct_rol_man
 	)
 };
