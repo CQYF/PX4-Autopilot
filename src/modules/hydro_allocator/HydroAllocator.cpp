@@ -470,21 +470,21 @@ void HydroAllocator::Run()
 
 	Quatf q(_vehicle_attitude.q);
 	Vector3f Oz_in_A; // O系z轴在A系下的表示
-	Oz_in_A(0) = 2*(q(1)*q(3) + q(0)*q(2));
-	Oz_in_A(1) = 2*(q(2)*q(3) - q(0)*q(1));
+	Oz_in_A(0) = 2*(q(1)*q(3) - q(0)*q(2));
+	Oz_in_A(1) = 2*(q(2)*q(3) + q(0)*q(1));
 	Oz_in_A(2) = 1 - 2*(q(1)*q(1) + q(2)*q(2));
 
+	Vector3f Ax_in_A(1,0,0);// A系x轴在A系下的表示
+	Vector3f Ay_in_A(0,1,0);// A系y轴在A系下的表示，也即倾转平面的法向量
 	Vector3f Az_in_A(0,0,1);// A系z轴在A系下的表示
 
-	float angle_between_z = acos((Az_in_A * Oz_in_A) / (Az_in_A.norm() * Oz_in_A.norm()));
-	tilt_sp_simple = 1.0f - ( angle_between_z / (float)M_PI_2 );
+	float angle_simple = acos((Ax_in_A * Oz_in_A) / (Ax_in_A.norm() * Oz_in_A.norm()));
+	tilt_sp_simple = 2.0f - ( angle_simple / (float)M_PI_2 );
 
 	Vector3f m_in_A; // 理想竖直平面的法向量，相当于A系x轴投影到O系xy平面
 	m_in_A(0) = 1 - Oz_in_A(0)*Oz_in_A(0);
 	m_in_A(1) =   - Oz_in_A(0)*Oz_in_A(1);
 	m_in_A(2) =   - Oz_in_A(0)*Oz_in_A(2);
-
-	Vector3f Ay_in_A(0,1,0);// A系y轴在A系下的表示，也即倾转平面的法向量
 
 	Vector3f F_in_A = Ay_in_A.cross(m_in_A); // 两个平面的交线向量，也即期望的推力方向
 
@@ -517,8 +517,11 @@ void HydroAllocator::Run()
 	hydro_tilt_message_msg.tilt_sp_complex = tilt_sp_complex;
 	hydro_tilt_message_msg.tilt_sp = tilt_sp;
 	hydro_tilt_message_msg.tilt_output = tilt_output;
-	hydro_tilt_message_msg.angle_between_z = angle_between_z;
+	hydro_tilt_message_msg.angle_simple = angle_simple;
 	hydro_tilt_message_msg.angle_complex = angle_complex;
+	hydro_tilt_message_msg.oz_in_a[0] = Oz_in_A(0);
+	hydro_tilt_message_msg.oz_in_a[1] = Oz_in_A(1);
+	hydro_tilt_message_msg.oz_in_a[2] = Oz_in_A(2);
 
 
 
