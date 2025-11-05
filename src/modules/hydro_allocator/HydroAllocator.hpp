@@ -51,6 +51,7 @@
 #include <uORB/topics/debug_vect.h>
 #include <uORB/topics/hydro_allocate_message.h>
 #include <uORB/topics/vehicle_status.h>
+#include <uORB/topics/hydro_tilt_message.h>
 
 #include <drivers/drv_hrt.h>
 
@@ -117,6 +118,7 @@ private:
 	uORB::Publication<actuator_motors_s>	_hydro_motors_pub{ORB_ID(hydro_motors)};
 	uORB::Publication<actuator_servos_s>	_hydro_servos_pub{ORB_ID(hydro_servos)};
 	uORB::Publication<hydro_allocate_message_s>	_hydro_allocate_message_pub{ORB_ID(hydro_allocate_message)};
+	uORB::Publication<hydro_tilt_message_s>	_hydro_tilt_message_pub{ORB_ID(hydro_tilt_message)};
 
 	perf_counter_t _loop_perf;
 
@@ -174,6 +176,15 @@ private:
 		(ParamFloat<px4::params::HY_ALCT_MT_MAN>) _param_hy_alct_mt_man,
 		(ParamFloat<px4::params::HY_ALCT_SV_MAN>) _param_hy_alct_sv_man,
 		(ParamFloat<px4::params::HY_ALCT_YAW_MAN>) _param_hy_alct_yaw_man,
-		(ParamFloat<px4::params::HY_ALCT_ROL_MAN>) _param_hy_alct_rol_man
+		(ParamFloat<px4::params::HY_ALCT_ROL_MAN>) _param_hy_alct_rol_man,
+
+		(ParamInt<px4::params::HY_TILT_AUX>) _param_hy_tilt_aux,
+		(ParamFloat<px4::params::HY_TILT_THR>) _param_hy_tilt_thr,
+		(ParamFloat<px4::params::HY_TILT_AUXGAIN>) _param_hy_tilt_auxgain,
+		(ParamFloat<px4::params::HY_TILT_DIS>) _param_hy_tilt_dis,
+		(ParamInt<px4::params::HY_TILT_MODE>) _param_hy_tilt_mode,
+		(ParamFloat<px4::params::HY_TILT_B>) _param_hy_tilt_b,
+		(ParamFloat<px4::params::HY_TILT_K>) _param_hy_tilt_k,
+		(ParamInt<px4::params::HY_TILT_IDX>) _param_hy_tilt_idx
 	)
 };

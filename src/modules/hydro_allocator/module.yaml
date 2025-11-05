@@ -297,3 +297,84 @@ parameters:
       min: -1.0
       max: 1.0
       decimal: 2
+
+    #倾转启用禁用对应的遥控器通道
+    HY_TILT_AUX:
+      description:
+        short: tilt aux channel
+      type: enum
+      values:
+        0: Always 0
+        1: Aux1
+        2: Aux2
+        3: Aux3
+        4: Aux4
+        5: Aux5
+        6: Aux6
+        7: Always -1
+        8: Always 1
+      default: 0
+
+    #倾转启用禁用对应的遥控器阈值
+    HY_TILT_THR:
+      description:
+        short: tilt threshold
+      type: float
+      default: 0.0
+      min: -1.0
+      max: 1.0
+      decimal: 2
+
+    #倾转启用禁用对应的遥控器通道的增益，可以用于反转通道功能
+    HY_TILT_AUXGAIN:
+      description:
+        short: tilt aux gain
+      type: float
+      default: 1.0
+      decimal: 2
+
+    HY_TILT_DIS:
+      description:
+        short: tilt servo output in disable status
+      type: float
+      default: 0.0
+      min: -1.0
+      max: 1.0
+      decimal: 2
+
+    # 主螺旋桨倾转的模式
+    HY_TILT_MODE:
+      description:
+        short: main motor tilt mode
+      type: enum
+      values:
+        0: Fixed
+        1: Simple
+        2: Complex
+      default: 0
+
+    HY_TILT_B:
+      description:
+        short: tilt feedforward for all modes
+      type: float
+      default: 0.0
+      min: -2.0
+      max: 2.0
+      decimal: 2
+
+    HY_TILT_K:
+      description:
+        short: tilt gain for all modes
+      type: float
+      default: 1.0
+      min: -2.0
+      max: 2.0
+      decimal: 2
+
+    HY_TILT_IDX:
+      description:
+        short: tilt servo index, set 0 to disable output
+      type: int32
+      default: 0
+      min: 0
+      max: 8

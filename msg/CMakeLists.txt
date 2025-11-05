@@ -256,6 +256,7 @@ set(msg_files
 	DepthEstimated.msg
 	HydroAllocateMessage.msg
 	HydroDepthControlMessage.msg
+	HydroTiltMessage.msg
 )
 list(SORT msg_files)
 

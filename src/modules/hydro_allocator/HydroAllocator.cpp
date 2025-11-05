@@ -214,6 +214,11 @@ void HydroAllocator::Run()
 	}
 	_manual_control_setpoint_sub.copy(&_manual_control_setpoint);
 
+	_vehicle_status_sub.update(&_vehicle_status);
+
+	_vehicle_attitude_sub.copy(&_vehicle_attitude);
+	Eulerf euler_angles(Quatf(_vehicle_attitude.q));
+
 	// 机翼折叠功能
 	const hrt_abstime now = hrt_absolute_time();
 	const float dt = math::constrain(((now - _last_run) / 1e6f), 0.0002f, 0.02f);
@@ -364,10 +369,7 @@ void HydroAllocator::Run()
 	};
 
 	//填入方程的参数
-	_vehicle_attitude_sub.copy(&_vehicle_attitude);
-	Eulerf euler_angles(Quatf(_vehicle_attitude.q));
 	_nf_params.alpha0 = euler_angles.theta();
-
 	_nf_params.KL = _param_hy_wing_kl.get();
 
 	if(_param_hy_speed_select.get() == 0)//使用替代速度
@@ -415,6 +417,111 @@ void HydroAllocator::Run()
 	hydro_servos_msg.timestamp = hrt_absolute_time();
 	hydro_servos_msg.timestamp_sample = _hydro_torque_setpoint_msg.timestamp_sample;
 
+	// 主螺旋桨倾转功能
+	hydro_tilt_message_s hydro_tilt_message_msg{0};
+	float tilt_aux;
+	switch (_param_hy_tilt_aux.get()) {
+		case 0:
+		tilt_aux = 0;
+		break;
+
+		case 1:
+		tilt_aux = _manual_control_setpoint.aux1;
+		break;
+
+		case 2:
+		tilt_aux = _manual_control_setpoint.aux2;
+		break;
+
+		case 3:
+		tilt_aux = _manual_control_setpoint.aux3;
+		break;
+
+		case 4:
+		tilt_aux = _manual_control_setpoint.aux4;
+		break;
+
+		case 5:
+		tilt_aux = _manual_control_setpoint.aux5;
+		break;
+
+		case 6:
+		tilt_aux = _manual_control_setpoint.aux6;
+		break;
+
+		case 7:
+		tilt_aux = -1.0f;
+		break;
+
+		case 8:
+		tilt_aux = 1.0f;
+		break;
+
+		default:
+		tilt_aux = 0;
+	}
+	tilt_aux *= _param_hy_tilt_auxgain.get();
+
+	float tilt_output = 0.0f;
+	float tilt_sp = 0.0f;
+
+	float tilt_sp_simple;
+	float tilt_sp_complex;
+
+	Quatf q(_vehicle_attitude.q);
+	Vector3f Oz_in_A; // O系z轴在A系下的表示
+	Oz_in_A(0) = 2*(q(1)*q(3) + q(0)*q(2));
+	Oz_in_A(1) = 2*(q(2)*q(3) - q(0)*q(1));
+	Oz_in_A(2) = 1 - 2*(q(1)*q(1) + q(2)*q(2));
+
+	Vector3f Az_in_A(0,0,1);// A系z轴在A系下的表示
+
+	float angle_between_z = acos((Az_in_A * Oz_in_A) / (Az_in_A.norm() * Oz_in_A.norm()));
+	tilt_sp_simple = 1.0f - ( angle_between_z / (float)M_PI_2 );
+
+	Vector3f m_in_A; // 理想竖直平面的法向量，相当于A系x轴投影到O系xy平面
+	m_in_A(0) = 1 - Oz_in_A(0)*Oz_in_A(0);
+	m_in_A(1) =   - Oz_in_A(0)*Oz_in_A(1);
+	m_in_A(2) =   - Oz_in_A(0)*Oz_in_A(2);
+
+	Vector3f Ay_in_A(0,1,0);// A系y轴在A系下的表示，也即倾转平面的法向量
+
+	Vector3f F_in_A = Ay_in_A.cross(m_in_A); // 两个平面的交线向量，也即期望的推力方向
+
+	float angle_complex = acos((Az_in_A * F_in_A) / (Az_in_A.norm() * F_in_A.norm()));
+	tilt_sp_complex = 1.0f - ( angle_complex / (float)M_PI_2 );
+
+	int32_t mode = _param_hy_tilt_mode.get();
+	if(mode == 0){
+		tilt_sp = 0;
+	}
+	else if(mode == 1){
+		tilt_sp = tilt_sp_simple;
+	}
+	else {
+		tilt_sp = tilt_sp_complex;
+	}
+	tilt_sp = tilt_sp * _param_hy_tilt_k.get() + _param_hy_tilt_b.get();
+	tilt_sp = math::constrain(tilt_sp, -1.0f, 1.0f);
+
+	if(tilt_aux > _param_hy_tilt_thr.get() && (_vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_STAB || _vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_ACRO || _vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_MANUAL)) {
+		//启用倾转
+		tilt_output = tilt_sp;
+	}
+	else{
+		//禁用倾转
+		tilt_output = _param_hy_tilt_dis.get();
+	}
+
+	hydro_tilt_message_msg.tilt_sp_simple = tilt_sp_simple;
+	hydro_tilt_message_msg.tilt_sp_complex = tilt_sp_complex;
+	hydro_tilt_message_msg.tilt_sp = tilt_sp;
+	hydro_tilt_message_msg.tilt_output = tilt_output;
+	hydro_tilt_message_msg.angle_between_z = angle_between_z;
+	hydro_tilt_message_msg.angle_complex = angle_complex;
+
+
+
 	//水翼启用与禁用功能
 	float foil_aux;
 	switch (_param_hy_foil_aux.get()) {
@@ -458,8 +565,6 @@ void HydroAllocator::Run()
 		foil_aux = 0;
 	}
 	foil_aux *= _param_hy_foil_auxgain.get();
-
-	_vehicle_status_sub.update(&_vehicle_status);
 
 	float man_delta_motor = torque_vector(2) * _param_hy_alct_yaw_man.get();
 	float man_delta_servo = torque_vector(0) * _param_hy_alct_rol_man.get();
@@ -509,11 +614,21 @@ void HydroAllocator::Run()
 		hydro_servos_msg.control[fdw_idx - 1] = _foldwing_sp;
 	}
 
+	//倾转的通道
+	int32_t tilt_idx = _param_hy_tilt_idx.get();
+	if(tilt_idx >=1 && tilt_idx <= 8)
+	{
+		hydro_servos_msg.control[tilt_idx - 1] = tilt_output;
+	}
+
 	_hydro_motors_pub.publish(hydro_motors_msg);
 	_hydro_servos_pub.publish(hydro_servos_msg);
 
 	hydro_allocate_message_msg.timestamp = hrt_absolute_time();
 	_hydro_allocate_message_pub.publish(hydro_allocate_message_msg);
+
+	hydro_tilt_message_msg.timestamp = hrt_absolute_time();
+	_hydro_tilt_message_pub.publish(hydro_tilt_message_msg);
 
 	// backup schedule
 	ScheduleDelayed(100_ms);
