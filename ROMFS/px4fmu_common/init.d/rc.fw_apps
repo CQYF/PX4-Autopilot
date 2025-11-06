@@ -36,7 +36,7 @@ land_detector start fixedwing
 # 控制和控制分配
 hydro_att_control start
 hydro_rate_control start
-# hydro_allocator start
+hydro_allocator start
 
 # vtrack start
 # mavdebug start
