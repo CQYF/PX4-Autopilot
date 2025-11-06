@@ -481,15 +481,21 @@ void HydroAllocator::Run()
 	float angle_simple = acos((Ax_in_A * Oz_in_A) / (Ax_in_A.norm() * Oz_in_A.norm()));
 	tilt_sp_simple = 2.0f - ( angle_simple / (float)M_PI_2 );
 
-	Vector3f m_in_A; // 理想竖直平面的法向量，相当于A系x轴投影到O系xy平面
-	m_in_A(0) = 1 - Oz_in_A(0)*Oz_in_A(0);
-	m_in_A(1) =   - Oz_in_A(0)*Oz_in_A(1);
-	m_in_A(2) =   - Oz_in_A(0)*Oz_in_A(2);
+	Vector3f F_in_A; // 期望的推力方向，相当于Oz_in_A投影到A系xz平面
+	F_in_A(0) = -Oz_in_A(0);
+	F_in_A(1) = 0;
+	F_in_A(2) = -Oz_in_A(2);
 
-	Vector3f F_in_A = Ay_in_A.cross(m_in_A); // 两个平面的交线向量，也即期望的推力方向
+	if(F_in_A.norm() < 0.1f){
+		;//防抖
+	}
 
-	float angle_complex = acos((Az_in_A * F_in_A) / (Az_in_A.norm() * F_in_A.norm()));
-	tilt_sp_complex = 1.0f - ( angle_complex / (float)M_PI_2 );
+	float angle_complex = acos((Ax_in_A * F_in_A) / (Ax_in_A.norm() * F_in_A.norm()));
+
+	Vector3f y1_complex = Ax_in_A.cross(F_in_A);
+	if(y1_complex * Ay_in_A < 0) angle_complex *= -1.0f;
+
+	tilt_sp_complex = angle_complex / (float)M_PI_2;
 
 	int32_t mode = _param_hy_tilt_mode.get();
 	if(mode == 0){
