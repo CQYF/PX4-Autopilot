@@ -351,6 +351,7 @@ parameters:
         0: Fixed
         1: Simple
         2: Complex
+        3: Pitch
       default: 0
 
     HY_TILT_B:

@@ -504,8 +504,11 @@ void HydroAllocator::Run()
 	else if(mode == 1){
 		tilt_sp = tilt_sp_simple;
 	}
-	else {
+	else if(mode == 2) {
 		tilt_sp = tilt_sp_complex;
+	}
+	else {
+		tilt_sp = _hydro_torque_setpoint_msg.xyz[1];
 	}
 	tilt_sp = tilt_sp * _param_hy_tilt_k.get() + _param_hy_tilt_b.get();
 	tilt_sp = math::constrain(tilt_sp, -1.0f, 1.0f);
