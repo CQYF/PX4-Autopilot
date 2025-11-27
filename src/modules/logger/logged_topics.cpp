@@ -46,6 +46,7 @@ using namespace px4::logger;
 void LoggedTopics::add_default_topics()
 {
 	// USER TOPIC START
+	add_topic("water_level", 0);
 	add_topic("diffed_visual_odometry", 0);
 	add_topic("depth_fusion");
 	add_topic("depth_estimated");
