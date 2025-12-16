@@ -31,4 +31,18 @@
 #
 ############################################################################
 
-px4_add_library(ai ai.cpp)
+px4_add_library(ai
+	X-CUBE-AI/App/network_config.h
+	X-CUBE-AI/App/network_data_params.c
+	X-CUBE-AI/App/network_data_params.h
+	X-CUBE-AI/App/network_data.c
+	X-CUBE-AI/App/network_data.h
+	X-CUBE-AI/App/network.c
+	X-CUBE-AI/App/network.h
+
+	AI/Lib/NetworkRuntime1020_CM7_GCC.a
+	)
+
+target_include_directories(ai PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/AI/Inc)
+
+target_compile_options(ai PRIVATE -Wno-error=float-equal)

@@ -32,6 +32,7 @@
 ############################################################################
 
 add_subdirectory(adsb EXCLUDE_FROM_ALL)
+add_subdirectory(ai EXCLUDE_FROM_ALL)
 add_subdirectory(airspeed EXCLUDE_FROM_ALL)
 add_subdirectory(atmosphere EXCLUDE_FROM_ALL)
 add_subdirectory(avoidance EXCLUDE_FROM_ALL)

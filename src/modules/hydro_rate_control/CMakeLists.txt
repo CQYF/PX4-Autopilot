@@ -41,4 +41,5 @@ px4_add_module(
 		px4_work_queue
 		RateControl
 		SlewRate
+		ai
 	)
