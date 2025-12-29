@@ -59,8 +59,6 @@ public:
 
 	int probe() override;
 
-	uint8_t get_device_address() const;
-
 protected:
 
 	void print_status() override;
@@ -71,19 +69,12 @@ private:
 
 	uORB::Publication<diff_pressure_s>		_diff_pressure_pub{ORB_ID(diff_pressure)};
 
-	static const hrt_abstime	SAMPLE_INTERVAL{100_ms};
-	static const uint8_t sensor_num{2};
+	static const hrt_abstime	SAMPLE_INTERVAL{1000_ms};
+	static const uint8_t sensor_num{2}; // 必须正确填写数量，并且从小编号到大编号依次连接传感器
 
 	diff_pressure_s _diff_pressure{};
 
 	perf_counter_t			_cycle_perf;
-
-	typedef enum {
-		MUX,
-		SENSOR
-	} AddStatus_t;
-
-	AddStatus_t add_status;
 
 	void loop(void);
 
@@ -91,6 +82,6 @@ private:
 	int readReg(uint8_t addr, uint8_t *buf, size_t len);
 	int writeReg(uint8_t addr, uint8_t *buf, size_t len);
 
-	void rwMux(void) {add_status = MUX;};
-	void rwSensor(void) {add_status = SENSOR;};
+	void rwMux(void) {set_device_address(0x70);};
+	void rwSensor(void) {set_device_address(0x5C);};
 };
