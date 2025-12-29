@@ -47,9 +47,10 @@ int DiffPressure::init()
 	while (cnt < sensor_num){
 		setchannel(cnt);
 		uint8_t buf = 0b01000000;
-		ret = writeReg(0x10, buf, 1);
+		ret = writeReg(0x10, &buf, 1);
 		if (ret != PX4_OK) {
 			PX4_ERR("writeReg failed (%i)", ret);
+			return ret;
 		}
 
 		cnt++;
@@ -62,8 +63,8 @@ int DiffPressure::init()
 
 int DiffPressure::probe()
 {
-	uint8_t buf[9] = {};
-	int ret = readReg(FAKE_ADDR, buf, 9);
+	uint8_t buf = {};
+	int ret = readReg(FAKE_ADDR, &buf, 1);
 
 	if (ret != PX4_OK) {
 		DEVICE_DEBUG("readReg failed (%i)", ret);
@@ -71,6 +72,12 @@ int DiffPressure::probe()
 	}
 
 	return PX4_OK;
+}
+
+uint8_t DiffPressure::get_device_address() const
+{
+	if(add_status == MUX) return 0x70;
+	else return 0x5C;
 }
 
 void DiffPressure::loop(void)

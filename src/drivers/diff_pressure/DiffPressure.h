@@ -59,11 +59,7 @@ public:
 
 	int probe() override;
 
-	uint8_t get_device_address() const override
-	{
-		if(add_status == MUX) return 0x70;
-		else return 0x5C;
-	}
+	uint8_t get_device_address() const;
 
 protected:
 
@@ -95,6 +91,6 @@ private:
 	int readReg(uint8_t addr, uint8_t *buf, size_t len);
 	int writeReg(uint8_t addr, uint8_t *buf, size_t len);
 
-	void rwMux(void) {add_status = MUX};
-	void rwSensor(void) {add_status = SENSOR};
+	void rwMux(void) {add_status = MUX;};
+	void rwSensor(void) {add_status = SENSOR;};
 };
