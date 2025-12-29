@@ -106,6 +106,7 @@ void DiffPressure::loop(void)
 
 		cnt++;
 	}
+	_diff_pressure.num = sensor_num;
 	_diff_pressure.timestamp = hrt_absolute_time();
 	_diff_pressure_pub.publish(_diff_pressure);
 }
