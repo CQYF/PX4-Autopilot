@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2022 PX4 Development Team. All rights reserved.
+ *   Copyright (C) 2020 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,14 +31,70 @@
  *
  ****************************************************************************/
 
-/**
- * Enable waterlevel gauge (unused)
- *
- *
- * @boolean
- * @reboot_required true
- * @group WaterLevel
- */
-PARAM_DEFINE_INT32(WATERLV_EN, 0);
+#pragma once
 
+#include <stdint.h>
+#include <drivers/device/i2c.h>
+#include <px4_platform_common/i2c_spi_buses.h>
+#include <uORB/topics/diff_pressure.h>
+#include <uORB/PublicationMulti.hpp>
+#include <lib/perf/perf_counter.h>
+#include <drivers/drv_hrt.h>
 
+#define FAKE_ADDR    0x00
+
+using namespace time_literals;
+
+class DiffPressure : public device::I2C, public I2CSPIDriver<DiffPressure>
+{
+public:
+	DiffPressure(const I2CSPIDriverConfig &config);
+	~DiffPressure() override;
+
+	int init() override;
+
+	static void print_usage();
+
+	void RunImpl();
+
+	int probe() override;
+
+	uint8_t get_device_address() const override
+	{
+		if(add_status == MUX) return 0x70;
+		else return 0x5C;
+	}
+
+protected:
+
+	void print_status() override;
+
+	void exit_and_cleanup() override;
+
+private:
+
+	uORB::Publication<diff_pressure_s>		_diff_pressure_pub{ORB_ID(diff_pressure)};
+
+	static const hrt_abstime	SAMPLE_INTERVAL{100_ms};
+	static const uint8_t sensor_num{2};
+
+	diff_pressure_s _diff_pressure{};
+
+	perf_counter_t			_cycle_perf;
+
+	typedef enum {
+		MUX,
+		SENSOR
+	} AddStatus_t;
+
+	AddStatus_t add_status;
+
+	void loop(void);
+
+	int setchannel(uint8_t ch);
+	int readReg(uint8_t addr, uint8_t *buf, size_t len);
+	int writeReg(uint8_t addr, uint8_t *buf, size_t len);
+
+	void rwMux(void) {add_status = MUX};
+	void rwSensor(void) {add_status = SENSOR};
+};

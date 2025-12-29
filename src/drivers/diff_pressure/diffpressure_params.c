@@ -32,13 +32,15 @@
  ****************************************************************************/
 
 /**
- * Enable waterlevel gauge (unused)
+ * Diffpressure sensor num (unused)
  *
  *
  * @boolean
  * @reboot_required true
- * @group WaterLevel
+ * @min 0
+ * @max 8
+ * @group DiffPressure
  */
-PARAM_DEFINE_INT32(WATERLV_EN, 0);
+PARAM_DEFINE_INT32(DIFFPRSR_NUM, 0);
 
 
