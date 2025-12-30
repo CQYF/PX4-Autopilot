@@ -1,0 +1,5 @@
+menuconfig MODULES_speed_estimator
+	bool "speed_estimator"
+	default n
+	---help---
+		Enable support for speed_estimator

@@ -203,6 +203,7 @@ set(msg_files
 	SensorUwb.msg
 	SensorAirflow.msg
 	SlideEstimated.msg
+	SpeedEstimated.msg
 	SystemPower.msg
 	TakeoffStatus.msg
 	TaskStackInfo.msg

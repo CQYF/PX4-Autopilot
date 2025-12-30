@@ -1,0 +1,10 @@
+module_name: speed_estimator
+parameters:
+- group: SpeedEstimator
+  definitions:
+
+    HY_SE_TMP:
+      description:
+        short: HY_SE_TMP
+      type: boolean
+      default: 1
