@@ -52,12 +52,16 @@
 #include <string.h>
 
 #include "app_x-cube-ai.h"
-#include "main.h"
+// #include "main.h"
 #include "ai_datatypes_defines.h"
 #include "network.h"
 #include "network_data.h"
 
 /* USER CODE BEGIN includes */
+
+float* ai_input_pointer;
+float* ai_output_pointer;
+
 /* USER CODE END includes */
 
 /* IO buffers ----------------------------------------------------------------*/
@@ -178,6 +182,8 @@ int acquire_and_process_data(ai_i8* data[])
   }
 
   */
+	memcpy(data[0], ai_input_pointer, 20);
+
   return 0;
 }
 
@@ -190,6 +196,8 @@ int post_process(ai_i8* data[])
   }
 
   */
+ 	memcpy(ai_output_pointer, data[0], 12);
+
   return 0;
 }
 /* USER CODE END 2 */
@@ -210,20 +218,19 @@ void MX_X_CUBE_AI_Process(void)
     /* USER CODE BEGIN 6 */
   int res = -1;
 
-  printf("TEMPLATE - run - main loop\r\n");
+//   printf("TEMPLATE - run - main loop\r\n");
 
   if (network) {
 
-    do {
-      /* 1 - acquire and pre-process input data */
-      res = acquire_and_process_data(data_ins);
-      /* 2 - process the data - call inference engine */
-      if (res == 0)
-        res = ai_run();
-      /* 3- post-process the predictions */
-      if (res == 0)
-        res = post_process(data_outs);
-    } while (res==0);
+	/* 1 - acquire and pre-process input data */
+	res = acquire_and_process_data(data_ins);
+	/* 2 - process the data - call inference engine */
+	if (res == 0)
+	res = ai_run();
+	/* 3- post-process the predictions */
+	if (res == 0)
+	res = post_process(data_outs);
+
   }
 
   if (res) {
@@ -232,6 +239,17 @@ void MX_X_CUBE_AI_Process(void)
   }
     /* USER CODE END 6 */
 }
+
+void ai_set_input_pointer(float input[]){
+	ai_input_pointer = input;
+}
+
+void ai_set_output_pointer(float output[]){
+	ai_output_pointer = output;
+}
+
+
+
 #ifdef __cplusplus
 }
 #endif
