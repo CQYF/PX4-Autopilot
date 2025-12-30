@@ -1,0 +1,5 @@
+menuconfig DRIVERS_DIFF_PRESSURE
+	bool "diff_pressure"
+	default n
+	---help---
+		Enable support for diff_pressure

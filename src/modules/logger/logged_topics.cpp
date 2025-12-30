@@ -59,6 +59,7 @@ void LoggedTopics::add_default_topics()
 	add_topic("hydro_thrust_setpoint");
 	add_topic("hydro_depth_control_message");
 	add_topic("hydro_tilt_message");
+	add_topic("diff_pressure");
 
 	// USER TOPIC END
 	add_topic("action_request");
