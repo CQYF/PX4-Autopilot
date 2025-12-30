@@ -105,6 +105,7 @@ void SpeedEstimator::Run()
 		speed_estimated.speed[1] = ai_outputs[1];
 		speed_estimated.speed[2] = ai_outputs[2];
 
+		speed_estimated.timestamp = hrt_absolute_time();
 		_speed_estimated_pub.publish(speed_estimated);
 	}
 
