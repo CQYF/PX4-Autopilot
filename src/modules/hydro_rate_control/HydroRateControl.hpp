@@ -76,8 +76,6 @@
 #include <uORB/topics/depth_estimated.h>
 #include <uORB/topics/hydro_depth_control_message.h>
 
-#include <lib/ai/X-CUBE-AI/App/network.h>
-
 using matrix::Eulerf;
 using matrix::Quatf;
 

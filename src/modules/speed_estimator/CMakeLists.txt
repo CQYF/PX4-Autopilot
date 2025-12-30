@@ -40,6 +40,7 @@ px4_add_module(
 	DEPENDS
 		px4_work_queue
 		mathlib
+		ai
 	MODULE_CONFIG
 		module.yaml
 	)

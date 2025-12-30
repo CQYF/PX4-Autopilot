@@ -32,6 +32,7 @@
  ****************************************************************************/
 
 #include "SpeedEstimator.hpp"
+#include <lib/ai/X-CUBE-AI/App/app_x-cube-ai.h>
 
 using namespace time_literals;
 
