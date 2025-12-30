@@ -52,7 +52,7 @@
 #include <string.h>
 
 #include "app_x-cube-ai.h"
-#include "main.h"
+// #include "main.h"
 #include "ai_datatypes_defines.h"
 #include "network.h"
 #include "network_data.h"

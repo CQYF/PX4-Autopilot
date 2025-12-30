@@ -32,6 +32,8 @@
 ############################################################################
 
 px4_add_library(ai
+	X-CUBE-AI/App/app_x-cube-ai.c
+	X-CUBE-AI/App/app_x-cube-ai.h
 	X-CUBE-AI/App/network_config.h
 	X-CUBE-AI/App/network_data_params.c
 	X-CUBE-AI/App/network_data_params.h
