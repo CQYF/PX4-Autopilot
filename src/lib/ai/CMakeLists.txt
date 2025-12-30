@@ -42,9 +42,9 @@ px4_add_library(ai
 	X-CUBE-AI/App/network.c
 	X-CUBE-AI/App/network.h
 
-	AI/Lib/NetworkRuntime1020_CM7_GCC.a
 	)
 
 target_include_directories(ai PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/AI/Inc)
+target_link_libraries(ai PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/AI/Lib/NetworkRuntime1020_CM7_GCC.a)
 
 target_compile_options(ai PRIVATE -Wno-error=float-equal)

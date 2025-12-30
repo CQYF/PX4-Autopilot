@@ -79,6 +79,9 @@ public:
 
 	bool init();
 
+	float ai_inputs[5];
+	float ai_outputs[3];
+
 private:
 	void Run() override;
 

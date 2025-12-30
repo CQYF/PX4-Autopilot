@@ -58,6 +58,10 @@ SpeedEstimator::init()
 		return false;
 	}
 
+	MX_X_CUBE_AI_Init();
+	ai_set_input_pointer(ai_inputs);
+	ai_set_output_pointer(ai_outputs);
+
 	return true;
 }
 
@@ -85,13 +89,21 @@ void SpeedEstimator::Run()
 	}
 
 	diff_pressure_s diff_pressure;
+	speed_estimated_s speed_estimated;
 	if(_diff_pressure_sub.update(&diff_pressure)){
 
 		//运行神经网络
+		ai_inputs[0] = diff_pressure.pressure[0];
+		ai_inputs[1] = diff_pressure.pressure[1];
+		ai_inputs[2] = diff_pressure.pressure[2];
+		ai_inputs[3] = diff_pressure.pressure[3];
+		ai_inputs[4] = diff_pressure.pressure[4];
 
-		//输出
-		speed_estimated_s speed_estimated;
+		MX_X_CUBE_AI_Process();
 
+		speed_estimated.speed[0] = ai_outputs[0];
+		speed_estimated.speed[1] = ai_outputs[1];
+		speed_estimated.speed[2] = ai_outputs[2];
 
 		_speed_estimated_pub.publish(speed_estimated);
 	}
