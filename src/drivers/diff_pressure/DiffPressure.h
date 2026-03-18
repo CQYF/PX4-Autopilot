@@ -70,7 +70,7 @@ private:
 	uORB::Publication<diff_pressure_s>		_diff_pressure_pub{ORB_ID(diff_pressure)};
 
 	static const hrt_abstime	SAMPLE_INTERVAL{5_ms};
-	static const uint8_t sensor_num{5}; // 必须正确填写数量，并且从小编号到大编号依次连接传感器
+	static const uint8_t sensor_num{8}; // 必须正确填写数量，并且从小编号到大编号依次连接传感器
 
 	diff_pressure_s _diff_pressure{};
 

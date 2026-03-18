@@ -50,7 +50,7 @@ int DiffPressure::init()
 		ret = writeReg(0x10, &buf, 1);
 		if (ret != PX4_OK) {
 			PX4_ERR("writeReg failed (%i)", ret);
-			return ret;
+			// return ret;
 		}
 
 		cnt++;
@@ -63,19 +63,19 @@ int DiffPressure::init()
 
 int DiffPressure::probe()
 {
-	uint8_t cnt = 0;
+	// uint8_t cnt = 0;
 
-	while (cnt < sensor_num){
-		setchannel(cnt);
-		uint8_t buf;
-		int ret = readReg(0x0F, &buf, 1); // 随便读了一下
-		if (ret != PX4_OK) {
-			DEVICE_DEBUG("readReg failed (%i)", ret);
-			return ret;
-		}
+	// while (cnt < sensor_num){
+	// 	setchannel(cnt);
+	// 	uint8_t buf;
+	// 	int ret = readReg(0x0F, &buf, 1); // 随便读了一下
+	// 	if (ret != PX4_OK) {
+	// 		DEVICE_DEBUG("readReg failed (%i)", ret);
+	// 		return ret;
+	// 	}
 
-		cnt++;
-	}
+	// 	cnt++;
+	// }
 
 	return PX4_OK;
 }
