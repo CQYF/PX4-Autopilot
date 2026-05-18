@@ -63,6 +63,18 @@ make clang-tidy-quiet
 - **GTest**: Unit tests use Google Test framework; tests live alongside source in `test/` subdirectories within modules
 - **Code style**: Enforced via astyle; CI runs clang-tidy checks
 - **Configuration**: Uses Kconfig for board configuration (see `boards/*/*.px4board` files)
+- **Board-specific builds**: If you create new modules, you MUST enable them in `boards/<board>/<board>.px4board` via Kconfig, otherwise they will NOT be compiled. Example: `make matek_h743_dummy` requires enabling modules in `boards/matek_h743/dummy.px4board`.
+
+## New Module / Feature Implementation Checklist
+
+When adding a new module or feature that requires a new uORB message, navigation state, or parameter:
+
+1. **uORB Message**: Define in `msg/*.msg`, auto-generates headers
+2. **Navigation State**: Add to `msg/VehicleStatus.msg` + `commander/px4_custom_mode.h`
+3. **New Parameters**: Define param macros in the module's header/params file
+4. **Board Configuration**: If creating a new module, enable in `boards/<target>/<target>.px4board` (CONFIG_MODULES_*)
+5. **Build**: `make matek_h743_dummy` (or your target)
+6. **Verify**: Check `build/<target>/.../CMakeCache.txt` or `make verbose <target>` for module inclusion
 
 ## CI Targets
 
