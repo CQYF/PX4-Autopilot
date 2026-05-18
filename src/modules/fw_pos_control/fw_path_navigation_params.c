@@ -987,3 +987,32 @@ PARAM_DEFINE_FLOAT(FW_SPOILERS_LND, 0.f);
  * @group FW Attitude Control
  */
 PARAM_DEFINE_FLOAT(FW_SPOILERS_DESC, 0.f);
+
+/**
+ * Ground roll / water taxi thrust
+ *
+ * Throttle setpoint for automatic ground roll / water taxi mode.
+ *
+ * @unit norm
+ * @min 0.0
+ * @max 1.0
+ * @decimal 2
+ * @increment 0.01
+ * @group FW Ground Roll
+ */
+PARAM_DEFINE_FLOAT(FW_GRNDROLL_THR, 0.3f);
+
+/**
+ * Ground roll control mode
+ *
+ * Selects the control algorithm for automatic ground roll / water taxi mode.
+ * 0: Pure heading tracking (simple yaw rate control)
+ * 1: Custom algorithm (for future extensions)
+ *
+ * @min 0
+ * @max 1
+ * @decimal 0
+ * @increment 1
+ * @group FW Ground Roll
+ */
+PARAM_DEFINE_INT32(FW_GRNDROLL_MODE, 0);

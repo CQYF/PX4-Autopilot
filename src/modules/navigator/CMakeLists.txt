@@ -49,6 +49,7 @@ set(NAVIGATOR_SOURCES
 	takeoff.cpp
 	land.cpp
 	precland.cpp
+	groundroll.cpp
 	mission_feasibility_checker.cpp
 	geofence.cpp)
 

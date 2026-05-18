@@ -178,9 +178,15 @@ void getModeRequirements(uint8_t vehicle_type, failsafe_flags_s &flags)
 	setRequirement(vehicle_status_s::NAVIGATION_STATE_AUTO_VTOL_TAKEOFF, flags.mode_req_local_position);
 	setRequirement(vehicle_status_s::NAVIGATION_STATE_AUTO_VTOL_TAKEOFF, flags.mode_req_local_alt);
 
+	// NAVIGATION_STATE_AUTO_GROUNDROLL
+	setRequirement(vehicle_status_s::NAVIGATION_STATE_AUTO_GROUNDROLL, flags.mode_req_angular_velocity);
+	setRequirement(vehicle_status_s::NAVIGATION_STATE_AUTO_GROUNDROLL, flags.mode_req_attitude);
+	setRequirement(vehicle_status_s::NAVIGATION_STATE_AUTO_GROUNDROLL, flags.mode_req_local_position);
+	setRequirement(vehicle_status_s::NAVIGATION_STATE_AUTO_GROUNDROLL, flags.mode_req_prevent_arming);
+
 	// NAVIGATION_STATE_EXTERNALx: handled outside
 
-	static_assert(vehicle_status_s::NAVIGATION_STATE_MAX == 31, "update mode requirements");
+	static_assert(vehicle_status_s::NAVIGATION_STATE_MAX == 32, "update mode requirements");
 }
 
 } // namespace mode_util

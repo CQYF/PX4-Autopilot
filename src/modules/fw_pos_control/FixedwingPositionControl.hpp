@@ -256,6 +256,7 @@ private:
 		FW_POSCTRL_MODE_AUTO_LANDING_STRAIGHT,
 		FW_POSCTRL_MODE_AUTO_LANDING_CIRCULAR,
 		FW_POSCTRL_MODE_AUTO_PATH,
+		FW_POSCTRL_MODE_AUTO_GROUNDROLL,
 		FW_POSCTRL_MODE_MANUAL_POSITION,
 		FW_POSCTRL_MODE_MANUAL_ALTITUDE,
 		FW_POSCTRL_MODE_TRANSITON,
@@ -685,6 +686,20 @@ private:
 	void control_auto_landing_circular(const hrt_abstime &now, const float control_interval, const Vector2f &ground_speed,
 					   const position_setpoint_s &pos_sp_curr);
 
+	/**
+	 * @brief Controls automatic ground roll / water taxi.
+	 *
+	 * Outputs thrust and yaw rate setpoints for ground navigation.
+	 * No roll or pitch control (airplane stays level on ground).
+	 *
+	 * @param control_interval Time since last position control call [s]
+	 * @param curr_pos Current 2D global position [deg]
+	 * @param ground_speed Local 2D ground speed of vehicle [m/s]
+	 * @param pos_sp_curr current position setpoint
+	 */
+	void control_auto_groundroll(const float control_interval, const Vector2d &curr_pos, const Vector2f &ground_speed,
+				     const position_setpoint_s &pos_sp_curr);
+
 	/* manual control methods */
 
 	/**
@@ -1026,7 +1041,10 @@ private:
 		(ParamFloat<px4::params::FW_TKO_AIRSPD>) _param_fw_tko_airspd,
 
 		(ParamFloat<px4::params::RWTO_PSP>) _param_rwto_psp,
-		(ParamBool<px4::params::FW_LAUN_DETCN_ON>) _param_fw_laun_detcn_on
+		(ParamBool<px4::params::FW_LAUN_DETCN_ON>) _param_fw_laun_detcn_on,
+
+		(ParamInt<px4::params::FW_GRNDROLL_MODE>) _param_fw_groundroll_mode,
+		(ParamFloat<px4::params::FW_GRNDROLL_THR>) _param_fw_groundroll_thr
 	)
 
 };

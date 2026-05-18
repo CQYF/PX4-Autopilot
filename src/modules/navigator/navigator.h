@@ -49,6 +49,7 @@
 #include "navigator_mode.h"
 #include "rtl.h"
 #include "takeoff.h"
+#include "groundroll.h"
 #if CONFIG_MODE_NAVIGATOR_VTOL_TAKEOFF
 #include "vtol_takeoff.h"
 #endif //CONFIG_MODE_NAVIGATOR_VTOL_TAKEOFF
@@ -90,7 +91,7 @@ using namespace time_literals;
 /**
  * Number of navigation modes that need on_active/on_inactive calls
  */
-#define NAVIGATOR_MODE_ARRAY_SIZE 8
+#define NAVIGATOR_MODE_ARRAY_SIZE 9
 
 class Navigator : public ModuleBase<Navigator>, public ModuleParams
 {
@@ -351,6 +352,7 @@ private:
 	Land		_land;			/**< class for handling land commands */
 	PrecLand	_precland;			/**< class for handling precision land commands */
 	RTL 		_rtl;				/**< class that handles RTL */
+	GroundRoll	_groundroll;			/**< class for handling ground roll / water taxi */
 	AdsbConflict 	_adsb_conflict;			/**< class that handles ADSB conflict avoidance */
 
 	NavigatorMode *_navigation_mode{nullptr};	/**< abstract pointer to current navigation mode class */

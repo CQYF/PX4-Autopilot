@@ -744,7 +744,10 @@ FixedwingPositionControl::set_control_mode_current(const hrt_abstime &now)
 
 			} else {
 				_control_mode_current = FW_POSCTRL_MODE_AUTO_LANDING_CIRCULAR;
+
 			}
+		} else if (_pos_sp_triplet.current.type == position_setpoint_s::SETPOINT_TYPE_GROUNDROLL) {
+			_control_mode_current = FW_POSCTRL_MODE_AUTO_GROUNDROLL;
 
 		} else {
 			_control_mode_current = FW_POSCTRL_MODE_AUTO;
@@ -1642,6 +1645,46 @@ FixedwingPositionControl::control_auto_takeoff(const hrt_abstime &now, const flo
 }
 
 void
+FixedwingPositionControl::control_auto_groundroll(const float control_interval, const Vector2d &curr_pos,
+		const Vector2f &ground_speed, const position_setpoint_s &pos_sp_curr)
+{
+	if (!_control_mode.flag_armed) {
+		_att_sp.thrust_body[0] = _param_fw_thr_idle.get();
+		return;
+	}
+
+	const int control_mode_groundroll = _param_fw_groundroll_mode.get();
+
+	if (control_mode_groundroll == 0) {
+		const Vector2f local_vehicle_pos{_local_pos.x, _local_pos.y};
+		const Vector2f local_target_pos = _global_local_proj_ref.project(pos_sp_curr.lat, pos_sp_curr.lon);
+		const Vector2f target_vector = local_target_pos - local_vehicle_pos;
+
+		float desired_heading = atan2f(target_vector(1), target_vector(0));
+
+		float heading_error = wrap_pi(desired_heading - _yaw);
+
+		static constexpr float yaw_rate_gain = 2.0f;
+		const float yaw_rate_setpoint = heading_error * yaw_rate_gain;
+
+		_att_sp.roll_body = 0.0f;
+		_att_sp.pitch_body = 0.0f;
+		_att_sp.yaw_sp_move_rate = yaw_rate_setpoint;
+		_att_sp.thrust_body[0] = _param_fw_groundroll_thr.get();
+		_att_sp.fw_control_yaw_wheel = true;
+
+	} else {
+		_att_sp.roll_body = 0.0f;
+		_att_sp.pitch_body = 0.0f;
+		_att_sp.yaw_sp_move_rate = 0.0f;
+		_att_sp.thrust_body[0] = _param_fw_groundroll_thr.get();
+		_att_sp.fw_control_yaw_wheel = true;
+	}
+
+	_att_sp.reset_integral = true;
+}
+
+void
 FixedwingPositionControl::control_auto_landing_straight(const hrt_abstime &now, const float control_interval,
 		const Vector2f &ground_speed, const position_setpoint_s &pos_sp_prev, const position_setpoint_s &pos_sp_curr)
 {
@@ -2527,6 +2570,11 @@ FixedwingPositionControl::Run()
 
 		case FW_POSCTRL_MODE_AUTO_TAKEOFF: {
 				control_auto_takeoff(_local_pos.timestamp, control_interval, curr_pos, ground_speed, _pos_sp_triplet.current);
+				break;
+			}
+
+		case FW_POSCTRL_MODE_AUTO_GROUNDROLL: {
+				control_auto_groundroll(control_interval, curr_pos, ground_speed, _pos_sp_triplet.current);
 				break;
 			}
 
