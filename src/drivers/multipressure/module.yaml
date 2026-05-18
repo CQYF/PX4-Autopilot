@@ -1,0 +1,6 @@
+module_name: Multipressure Sensor
+serial_config:
+    - command: multipressure start -d ${SERIAL_DEV}
+      port_config_param:
+        name: SENS_MULTIP_CFG
+        group: Sensors

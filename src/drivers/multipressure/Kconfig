@@ -1,0 +1,5 @@
+menuconfig DRIVERS_MULTIPRESSURE
+	bool "multipressure"
+	default n
+	---help---
+		Enable support for multipressure
