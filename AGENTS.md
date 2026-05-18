@@ -9,6 +9,9 @@ make px4_sitl_default
 # Build for specific board (e.g., fmu-v5)
 make px4_fmu-v5_default
 
+# Build for Matek H743
+make matek_h743_dummy
+
 # Build with sanitizers
 PX4_ASAN=1 make px4_sitl_default    # AddressSanitizer
 PX4_MSAN=1 make px4_sitl_default    # MemorySanitizer
