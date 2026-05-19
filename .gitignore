@@ -114,3 +114,5 @@ mavros/
 ulog/
 params/
 tmp/
+
+!src/lib/ai/AI/Lib/NetworkRuntime1020_CM7_GCC.a
