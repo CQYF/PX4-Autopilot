@@ -125,13 +125,13 @@ MULTIPRESSURE::collect()
     int64_t read_elapsed = hrt_elapsed_time(&_last_read);
 
     char readbuf[sizeof(_linebuf)] {};
-    unsigned readlen = sizeof(readbuf) - 1;
+    unsigned readlen = sizeof(readbuf);
 
     int ret = 0;
     float pressures[16] {};
 
     for (int i = 0; i < 16; i++) {
-        pressures[i] = 0.0f;
+        pressures[i] = 1.0f;
     }
 
     int bytes_available = 0;
@@ -144,8 +144,9 @@ MULTIPRESSURE::collect()
 
     const hrt_abstime timestamp_sample = hrt_absolute_time();
 
-    do {
+    if (bytes_available >= 67) {
         ret = ::read(_fd, &readbuf[0], readlen);
+	tcflush(_fd, TCIFLUSH);
 
         if (ret < 0) {
             PX4_ERR("read err: %d", ret);
@@ -166,10 +167,14 @@ MULTIPRESSURE::collect()
         for (int i = 0; i < ret; i++) {
             multipressure_parse(readbuf[i], _linebuf, &_linebuf_index, &_parse_state, pressures);
         }
+	// 查看原始数据的代码
+	// char hex_str[ret * 3 + 1] {};
+	// for (int j = 0; j < ret; j++) {
+	//     snprintf(&hex_str[j * 3], 4, "%02x ", (uint8_t)readbuf[j]);
+	// }
+	// PX4_INFO("(%d bytes): %s", ret, hex_str);
 
-        bytes_available -= ret;
-
-    } while (bytes_available > 0);
+    }
 
     perf_end(_sample_perf);
 

@@ -42,8 +42,7 @@
 enum class MULTIPRESSURE_PARSE_STATE {
 	STATE0_UNSYNC = 0,
 	STATE1_SYNC_1,
-	STATE2_GOT_DATA,
-	STATE3_GOT_CHECKSUM
+	STATE2_GOT_DATA
 };
 
 int multipressure_parse(char c, char *parserbuf, unsigned *parserbuf_index,

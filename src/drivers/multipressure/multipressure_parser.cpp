@@ -40,7 +40,7 @@
 #include "multipressure_parser.h"
 #include <string.h>
 
-#define MULTIPRESSURE_FRAME_SIZE 66
+#define MULTIPRESSURE_FRAME_SIZE 67
 
 int multipressure_parse(char c, char *parserbuf, unsigned *parserbuf_index,
                         MULTIPRESSURE_PARSE_STATE *state, float *pressures)
@@ -49,7 +49,7 @@ int multipressure_parse(char c, char *parserbuf, unsigned *parserbuf_index,
 
     switch (*state) {
     case MULTIPRESSURE_PARSE_STATE::STATE0_UNSYNC:
-        if (c == 0x55) {
+        if (c == 0xAA) {
             *state = MULTIPRESSURE_PARSE_STATE::STATE1_SYNC_1;
             parserbuf[*parserbuf_index] = c;
             (*parserbuf_index)++;
@@ -58,7 +58,7 @@ int multipressure_parse(char c, char *parserbuf, unsigned *parserbuf_index,
         break;
 
     case MULTIPRESSURE_PARSE_STATE::STATE1_SYNC_1:
-        if (c == 0xAA) {
+        if (c == 0x55) {
             *state = MULTIPRESSURE_PARSE_STATE::STATE2_GOT_DATA;
             parserbuf[*parserbuf_index] = c;
             (*parserbuf_index)++;
@@ -75,32 +75,27 @@ int multipressure_parse(char c, char *parserbuf, unsigned *parserbuf_index,
         (*parserbuf_index)++;
 
         if (*parserbuf_index >= MULTIPRESSURE_FRAME_SIZE) {
-            *state = MULTIPRESSURE_PARSE_STATE::STATE3_GOT_CHECKSUM;
+		unsigned char checksum = 0;
+
+		for (int i = 0; i < MULTIPRESSURE_FRAME_SIZE - 1; i++) {
+		checksum += parserbuf[i];
+		}
+
+		// if (c == checksum) {
+		for (int i = 0; i < 16; i++) {
+			unsigned int val = (unsigned char)parserbuf[2 + i * 4]
+					| ((unsigned char)parserbuf[3 + i * 4] << 8)
+					| ((unsigned char)parserbuf[4 + i * 4] << 16)
+					| ((unsigned char)parserbuf[5 + i * 4] << 24);
+			pressures[i] = *(float *)&val;
+		}
+
+		ret = 0;
+		// }
+
+		*state = MULTIPRESSURE_PARSE_STATE::STATE0_UNSYNC;
+		*parserbuf_index = 0;
         }
-
-        break;
-
-    case MULTIPRESSURE_PARSE_STATE::STATE3_GOT_CHECKSUM:
-        unsigned char checksum = 0;
-
-        for (int i = 0; i < MULTIPRESSURE_FRAME_SIZE - 1; i++) {
-            checksum += parserbuf[i];
-        }
-
-        if (c == checksum) {
-            for (int i = 0; i < 16; i++) {
-                unsigned int val = (unsigned char)parserbuf[2 + i * 4]
-                                   | ((unsigned char)parserbuf[3 + i * 4] << 8)
-                                   | ((unsigned char)parserbuf[4 + i * 4] << 16)
-                                   | ((unsigned char)parserbuf[5 + i * 4] << 24);
-                pressures[i] = *(float *)&val;
-            }
-
-            ret = 0;
-        }
-
-        *state = MULTIPRESSURE_PARSE_STATE::STATE0_UNSYNC;
-        *parserbuf_index = 0;
 
         break;
     }

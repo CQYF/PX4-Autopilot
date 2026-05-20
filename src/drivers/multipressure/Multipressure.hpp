@@ -51,7 +51,7 @@
 
 #include "multipressure_parser.h"
 
-#define MULTIPRESSURE_DEFAULT_PORT	"/dev/ttyS3"
+#define MULTIPRESSURE_DEFAULT_PORT	"/dev/ttyS1"
 
 using namespace time_literals;
 
@@ -78,10 +78,10 @@ private:
 
     MULTIPRESSURE_PARSE_STATE _parse_state {MULTIPRESSURE_PARSE_STATE::STATE0_UNSYNC};
 
-    char _linebuf[66] {};
+    char _linebuf[67] {};
     char _port[20] {};
 
-    static constexpr int kCONVERSIONINTERVAL{10_ms};
+    static constexpr int kCONVERSIONINTERVAL{3000_ms}; // 这个似乎没什么用
 
     int _fd{-1};
 
