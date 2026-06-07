@@ -122,7 +122,7 @@ MULTIPRESSURE::collect()
 {
     perf_begin(_sample_perf);
 
-    int64_t read_elapsed = hrt_elapsed_time(&_last_read);
+//     int64_t read_elapsed = hrt_elapsed_time(&_last_read);
 
     char readbuf[sizeof(_linebuf)] {};
     unsigned readlen = sizeof(readbuf);
@@ -131,13 +131,13 @@ MULTIPRESSURE::collect()
     float pressures[16] {};
 
     for (int i = 0; i < 16; i++) {
-        pressures[i] = 1.0f;
+        pressures[i] = -1.0f;
     }
 
     int bytes_available = 0;
     ::ioctl(_fd, FIONREAD, (unsigned long)&bytes_available);
 
-    if (!bytes_available) {
+    if (bytes_available < 67) {
         perf_end(_sample_perf);
         return 0;
     }
@@ -148,19 +148,19 @@ MULTIPRESSURE::collect()
         ret = ::read(_fd, &readbuf[0], readlen);
 	tcflush(_fd, TCIFLUSH);
 
-        if (ret < 0) {
-            PX4_ERR("read err: %d", ret);
-            perf_count(_comms_errors);
-            perf_end(_sample_perf);
+        // if (ret < 0) {
+        //     PX4_ERR("read err: %d", ret);
+        //     perf_count(_comms_errors);
+        //     perf_end(_sample_perf);
 
-            if (read_elapsed > (kCONVERSIONINTERVAL * 2)) {
-                tcflush(_fd, TCIFLUSH);
-                return ret;
+        //     if (read_elapsed > (kCONVERSIONINTERVAL * 2)) {
+        //         tcflush(_fd, TCIFLUSH);
+        //         return ret;
 
-            } else {
-                return -EAGAIN;
-            }
-        }
+        //     } else {
+        //         return -EAGAIN;
+        //     }
+        // }
 
         _last_read = hrt_absolute_time();
 
@@ -174,18 +174,19 @@ MULTIPRESSURE::collect()
 	// }
 	// PX4_INFO("(%d bytes): %s", ret, hex_str);
 
+	sensor_multipressure_s report{};
+	report.timestamp = timestamp_sample;
+
+	for (int i = 0; i < 16; i++) {
+		report.pressure[i] = pressures[i];
+	}
+
+	_sensor_multipressure_pub.publish(report);
     }
 
     perf_end(_sample_perf);
 
-    sensor_multipressure_s report{};
-    report.timestamp = timestamp_sample;
 
-    for (int i = 0; i < 16; i++) {
-        report.pressure[i] = pressures[i];
-    }
-
-    _sensor_multipressure_pub.publish(report);
 
     return PX4_OK;
 }
