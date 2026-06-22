@@ -204,3 +204,37 @@ PARAM_DEFINE_FLOAT(HY_MAN_P_MAX, 30.0f);
  * @group Hydro Attitude Control
  */
 PARAM_DEFINE_FLOAT(HY_MAN_R_MAX, 45.0f);
+
+/**
+ * Hydro Path Follow aux channel
+ *
+ * @group Hydro Path Follow
+ * @value 0 Always 0
+ * @value 1 Aux1
+ * @value 2 Aux2
+ * @value 3 Aux3
+ * @value 4 Aux4
+ * @value 5 Aux5
+ * @value 6 Aux6
+ * @value 7 Always -1
+ * @value 8 Always 1
+ */
+PARAM_DEFINE_INT32(HY_PATH_AUX, 0);
+
+/**
+ * Hydro Path Follow aux threshold
+ *
+ * @min -1.0
+ * @max 1.0
+ * @decimal 2
+ * @group Hydro Path Follow
+ */
+PARAM_DEFINE_FLOAT(HY_PATH_THR, 0.0f);
+
+/**
+ * Hydro Path Follow aux gain
+ *
+ * @decimal 2
+ * @group Hydro Path Follow
+ */
+PARAM_DEFINE_FLOAT(HY_PATH_AUXGAIN, 1.0f);

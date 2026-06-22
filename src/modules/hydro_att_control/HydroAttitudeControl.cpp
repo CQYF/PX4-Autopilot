@@ -214,6 +214,56 @@ void HydroAttitudeControl::Run()
 				_rates_sp.pitch = body_rates_setpoint(1);
 				_rates_sp.yaw = body_rates_setpoint(2);
 
+				// 执行替换，将地面端的yaw角速度命令和推力命令覆盖_rates_sp.yaw和_rates_sp.thrust_body[0]
+				_manual_control_setpoint_sub.copy(&_manual_control_setpoint);
+				_debug_vect_sub.update(&_debug_vect);
+				float path_aux;
+				switch (_param_hy_path_aux.get()) {
+					case 0:
+					path_aux = 0;
+					break;
+
+					case 1:
+					path_aux = _manual_control_setpoint.aux1;
+					break;
+
+					case 2:
+					path_aux = _manual_control_setpoint.aux2;
+					break;
+
+					case 3:
+					path_aux = _manual_control_setpoint.aux3;
+					break;
+
+					case 4:
+					path_aux = _manual_control_setpoint.aux4;
+					break;
+
+					case 5:
+					path_aux = _manual_control_setpoint.aux5;
+					break;
+
+					case 6:
+					path_aux = _manual_control_setpoint.aux6;
+					break;
+
+					case 7:
+					path_aux = -1.0f;
+					break;
+
+					case 8:
+					path_aux = 1.0f;
+					break;
+
+					default:
+					path_aux = 0;
+				}
+				path_aux *= _param_hy_path_auxgain.get();
+				if(path_aux > _param_hy_path_thr.get()){
+					_rates_sp.yaw = _debug_vect.x;
+					_rates_sp.thrust_body[0] = _debug_vect.y;
+				}
+
 				_rates_sp.timestamp = hrt_absolute_time();
 
 				_rate_sp_pub.publish(_rates_sp);

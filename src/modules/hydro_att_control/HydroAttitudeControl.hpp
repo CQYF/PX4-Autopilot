@@ -63,6 +63,7 @@
 #include <uORB/topics/vehicle_local_position.h>
 #include <uORB/topics/vehicle_land_detected.h>
 #include <uORB/topics/vehicle_rates_setpoint.h>
+#include <uORB/topics/debug_vect.h>
 #include <uORB/topics/vehicle_status.h>
 
 using matrix::Eulerf;
@@ -101,6 +102,8 @@ private:
 	uORB::Subscription _vehicle_status_sub{ORB_ID(vehicle_status)};				/**< vehicle status subscription */
 	uORB::Subscription _manual_control_setpoint_sub{ORB_ID(manual_control_setpoint)};	/**< notification of manual control updates */
 
+	uORB::Subscription _debug_vect_sub{ORB_ID(debug_vect)};
+
 	uORB::Publication<vehicle_rates_setpoint_s>	_rate_sp_pub{ORB_ID(hydro_rates_setpoint)};
 	uORB::Publication<vehicle_attitude_setpoint_s>	_attitude_sp_pub{ORB_ID(hydro_attitude_setpoint)};
 
@@ -108,6 +111,7 @@ private:
 	vehicle_rates_setpoint_s		_rates_sp{};
 	vehicle_status_s			_vehicle_status{};
 	manual_control_setpoint_s		_manual_control_setpoint{};
+	debug_vect_s				_debug_vect{};
 
 	matrix::Dcmf _R{matrix::eye<float, 3>()};
 
@@ -132,7 +136,12 @@ private:
 		(ParamFloat<px4::params::HY_PSP_OFF>) _param_hy_psp_off,		//pitch杆量为0时的pitch偏移量
 		(ParamFloat<px4::params::HY_MAN_P_MAX>) _param_hy_man_p_max,		//pitch杆量为最大时的pitch角度
 		(ParamFloat<px4::params::HY_MAN_R_MAX>) _param_hy_man_r_max,		//roll杆量为最大时的roll角度
-		(ParamFloat<px4::params::HY_MAN_YR_MAX>) _param_man_yr_max		//yaw杆量为最大时的yaw变化率
+		(ParamFloat<px4::params::HY_MAN_YR_MAX>) _param_man_yr_max,		//yaw杆量为最大时的yaw变化率
+
+		(ParamInt<px4::params::HY_PATH_AUX>) _param_hy_path_aux,
+		(ParamFloat<px4::params::HY_PATH_AUXGAIN>) _param_hy_path_auxgain,
+		(ParamFloat<px4::params::HY_PATH_THR>) _param_hy_path_thr
+
 	)
 
 	RollController _roll_ctrl;
